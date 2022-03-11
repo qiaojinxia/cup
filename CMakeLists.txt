@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.20)
 project(boddy)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(boddy main.cpp Lexer.cpp Lexer.h Parser.cpp Parser.h CodeGenerate.cpp CodeGenerate.h AstNode.cpp AstNode.h PrintVisitor.cpp PrintVisitor.h)
+add_executable(boddy src/main.cpp src/Lexer.cpp src/Lexer.h src/Parser.cpp src/Parser.h src/CodeGenerate.cpp src/CodeGenerate.h src/AstNode.cpp src/AstNode.h src/PrintVisitor.cpp src/PrintVisitor.h)
