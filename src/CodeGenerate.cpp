@@ -22,7 +22,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\tsub %%rdi,%%rax\n");
             break;
         case BinaryOperator::Mul:
-            printf("\tmul %%rdi,%%rax\n");
+            printf("\timul %%rdi,%%rax\n");
             break;
         case BinaryOperator::Div:
             printf("\tcqo\n");
@@ -64,6 +64,6 @@ void BDD::CodeGenerate::Push() {
 }
 
 void CodeGenerate::Pop(const char *reg) {
-    printf("\tpop %s\n");
+    printf("\tpop %s\n",reg);
     StackLevel --;
 }
