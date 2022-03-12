@@ -16,6 +16,8 @@ namespace BDD{
         Div,
         Num,
         Eof,
+        LParen,
+        RParen,
     };
     class Token{
     public:

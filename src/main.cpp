@@ -6,7 +6,7 @@
 #include "CodeGenerate.h"
 
 using namespace BDD;
-const char *code = "    3 + 8 - 21 * 42 / 7";
+const char *code = "    (3 / 2 ) ";
 
 void testLexer(){
     Lexer lexer(code);
@@ -29,7 +29,7 @@ void testParser(){
 int main(int argc,char *argv[]) {
 
     if (argc != 2){
-        printf("please input parameter");
+        testParser();
         return 0;
     }
     const char *source = argv[1];

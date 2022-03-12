@@ -7,3 +7,4 @@ MultiExpr   := PrimaryExpr
             := MultiExpr * PrimaryExpr
             := MultiExpr / PrimaryExpr
 PrimaryExpr := Num
+            := (Num)

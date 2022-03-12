@@ -8,41 +8,45 @@
 
 using namespace BDD;
 
-std::shared_ptr<AstNode> Parser::ParseAddExpr() {
-    std::shared_ptr<AstNode> left = ParsePrimaryExpr();
+std::shared_ptr<AstNode> Parser::ParseAddExpr(std::shared_ptr<AstNode> left) {
     while (Lex.CurrentToken -> Kind == TokenKind::Add
     || Lex.CurrentToken -> Kind == TokenKind::Sub) {
+        auto node = std::make_shared<BinaryNode>();
         BinaryOperator anOperator = BinaryOperator::Add;
         if(Lex.CurrentToken -> Kind == TokenKind::Sub)
             anOperator = BinaryOperator::Sub;
         Lex.GetNextToken();
-        auto node = std::make_shared<BinaryNode>();
         node -> BinOp = anOperator;
         node -> Lhs = left;
-        node -> Rhs = ParseMultiExpr();
-        left = node;
+        node -> Rhs = ParseExpr();
+        return node;
     }
-    return left;
+    return nullptr;
 }
 
-std::shared_ptr<AstNode> Parser::ParseMultiExpr() {
-    std::shared_ptr<AstNode> left = ParsePrimaryExpr();
+std::shared_ptr<AstNode> Parser::ParseMultiExpr(std::shared_ptr<AstNode> left) {
     while (Lex.CurrentToken -> Kind == TokenKind::Mul
            || Lex.CurrentToken -> Kind == TokenKind::Div) {
+        auto node = std::make_shared<BinaryNode>();
         BinaryOperator anOperator = BinaryOperator::Mul;
         if(Lex.CurrentToken -> Kind == TokenKind::Div)
             anOperator = BinaryOperator::Div;
         Lex.GetNextToken();
-        auto node = std::make_shared<BinaryNode>();
-        node -> BinOp = anOperator;
         node -> Lhs = left;
-        node -> Rhs = ParsePrimaryExpr();
-        left = node;
+        node -> BinOp = anOperator;
+        node -> Rhs = ParseExpr();
+        return node;
     }
-    return left;
+    return nullptr;
 }
 
 std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
+    if (Lex.CurrentToken -> Kind == TokenKind::LParen){
+        Lex.GetNextToken();
+        auto node = ParseExpr();
+        Lex.GetNextToken();
+        return node;
+    }
     auto node = std::make_shared<ConstantNode>();
     node -> Value = Lex.CurrentToken -> Value;
     Lex.GetNextToken();
@@ -50,7 +54,16 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
 }
 
 std::shared_ptr<AstNode> Parser::ParseExpr() {
-    return ParseAddExpr();
+    std::shared_ptr<AstNode> left = ParsePrimaryExpr();
+    auto node1 = ParseAddExpr(left);
+    if (node1){
+        return node1;
+    }
+    auto node2 = ParseMultiExpr(left);
+    if (node2){
+        return node2;
+    }
+    return left;
 }
 
 std::shared_ptr<ProgramNode> Parser::Parse() {

@@ -35,6 +35,12 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == '/'){
         kind = TokenKind::Div;
         GetNextChar();
+    }else if(CurChar == '('){
+        kind = TokenKind::LParen;
+        GetNextChar();
+    }else if(CurChar == ')'){
+        kind = TokenKind::RParen;
+        GetNextChar();
     }else if(isdigit(CurChar)){
         kind = TokenKind::Num;
         value = 0;

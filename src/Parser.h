@@ -18,8 +18,8 @@ namespace BDD{
 
     private:
         std::shared_ptr<AstNode> ParseExpr();
-        std::shared_ptr<AstNode> ParseAddExpr();
-        std::shared_ptr<AstNode> ParseMultiExpr();
+        std::shared_ptr<AstNode> ParseAddExpr(std::shared_ptr<AstNode> left);
+        std::shared_ptr<AstNode> ParseMultiExpr(std::shared_ptr<AstNode> left);
         std::shared_ptr<AstNode> ParsePrimaryExpr();
 
     };
