@@ -16,9 +16,16 @@ void BDD::Lexer::GetNextChar() {
 
 void BDD::Lexer::GetNextToken() {
     while(isspace(CurChar)){
+        if (CurChar == '\n'){
+            Line ++;
+            LineHead = Cursor;
+        }
         GetNextChar();
     }
+    SourceLocation Location;
     TokenKind kind;
+    Location.Line = Line;
+    Location.Col = Cursor - 1 -LineHead;
     int value = 0;
     int startPos = Cursor -1;
     if (CurChar == '\0'){
@@ -41,6 +48,12 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == ')'){
         kind = TokenKind::RParen;
         GetNextChar();
+    }else if(CurChar == ';'){
+        kind = TokenKind::Semicolon;
+        GetNextChar();
+    }else if(CurChar == '='){
+        kind = TokenKind::Assign;
+        GetNextChar();
     }else if(isdigit(CurChar)){
         kind = TokenKind::Num;
         value = 0;
@@ -49,11 +62,33 @@ void BDD::Lexer::GetNextToken() {
             GetNextChar();
         }while (isdigit(CurChar));
     }else{
-        printf("not support %c\n",CurChar);
+        if (IsLetter()){
+            GetNextChar();
+            while(IsLetterOrDigit()){
+                GetNextChar();
+            }
+            kind = TokenKind::Identifier;
+        }else{
+            printf("not support %c\n",CurChar);
+            assert(0);
+        }
     }
     CurrentToken = std::make_shared<Token>();
     CurrentToken->Kind = kind;
     CurrentToken->Value = value;
+    CurrentToken -> Location = Location;
     CurrentToken->Content = SourceCode.substr(startPos,Cursor - 1 -startPos);
+}
+
+bool BDD::Lexer::IsLetter() {
+    return (CurChar >= 'a' && CurChar <= 'z') || (CurChar >= 'A' && CurChar <= 'Z') || CurChar == '_';
+}
+
+bool BDD::Lexer::IsDigit() {
+    return CurChar >= '0' && CurChar <= '9';
+}
+
+bool BDD::Lexer::IsLetterOrDigit() {
+    return IsLetter() || IsDigit();
 }
 

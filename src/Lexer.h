@@ -18,18 +18,29 @@ namespace BDD{
         Eof,
         LParen,
         RParen,
+        Semicolon,
+        Identifier,
+        Assign,
+    };
+    class SourceLocation{
+    public:
+        int Line;
+        int Col;
     };
     class Token{
     public:
         TokenKind Kind;
         int Value;
         std::string_view Content;
+        SourceLocation Location;
     };
     class Lexer {
     private:
         std::string_view SourceCode;
         char CurChar{' '};
         char Cursor{0};
+        int Line{0};
+        int LineHead{0};
     public:
         std::shared_ptr<Token> CurrentToken;
     public:
@@ -38,7 +49,11 @@ namespace BDD{
         }
         void GetNextToken();
         void GetNextChar();
-
+    private:
+        bool IsLetter();
+        bool IsDigit();
+        bool IsLetterOrDigit();
     };
+
 }
 #endif //BODDY_LEXER_H

@@ -18,3 +18,11 @@ void BinaryNode::Accept(AstVisitor *visitor) {
 void ProgramNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void ExprStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void ExprVarNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

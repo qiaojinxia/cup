@@ -5,3 +5,5 @@ a toy c compailer
 - 2022-03-11
   - Code Generate Support Sample Arithmetic expression to asm
     to run with instruct `make build express="1 + 9 * 3 /2 "`
+- 2022-03-12
+  - Support assign express  ` make build express="ab = 2;c = ab + 3; d = c + 2 / 2; d * 3 /2;"`

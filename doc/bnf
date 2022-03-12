@@ -1,5 +1,6 @@
-Prog        := Expr
-Expr        := PrimaryExpr | BinaryExpr
-BinaryExpr  := Expr + Expr | Expr - Expr | Expr * Expr | Expr /  Expr
+Prog        := Stmt*
+Stmt        := Expr*
+Expr        :=  PrimaryExprs | BinaryExpr
+BinaryExpr  := Expr + Expr | Expr - Expr | Expr * Expr | Expr /  Expr | Expr =  Expr
 PrimaryExpr := Num
             := ( Expr )

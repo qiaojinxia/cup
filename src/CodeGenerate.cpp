@@ -9,61 +9,89 @@
 
 using namespace BDD;
 
+
 void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
-    node->Rhs -> Accept(this);
+    if (node->BinOp == BinaryOperator::Assign){
+        auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node->Lhs);
+        assert(varNode != nullptr);
+        printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj->Offset);
+        Push();
+        node -> Rhs -> Accept(this);
+        Pop("%rdi");
+        printf("\t  mov %%rax,(%%rdi)\n");
+        return;
+    }
+    node -> Lhs -> Accept(this);
     Push();
-    node -> Lhs ->Accept(this);
+    node -> Rhs ->Accept(this);
     Pop("%rdi");
     switch (node -> BinOp) {
         case BinaryOperator::Add:
-            printf("\tadd %%rdi,%%rax\n");
+            printf("\t  add %%rdi,%%rax\n");
             break;
         case BinaryOperator::Sub:
-            printf("\tsub %%rdi,%%rax\n");
+            printf("\t  sub %%rdi,%%rax\n");
             break;
         case BinaryOperator::Mul:
-            printf("\timul %%rdi,%%rax\n");
+            printf("\t  imul %%rdi,%%rax\n");
             break;
         case BinaryOperator::Div:
-            printf("\tcqo\n");
-            printf("\tidiv %%rdi\n");
+            printf("\t  cqo\n");
+            printf("\t  idiv %%rdi\n");
             break;
         default:
             assert(0);
-            break;
     }
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
-    printf("\tmov $%d, %%rax\n",node->Value);
+    printf("\t  mov $%d, %%rax\n",node->Value);
 }
 
-void BDD::CodeGenerate::Visitor(BDD::ProgramNode *node) {
-    printf("\t.text\n");
-#ifdef __linux__
-    printf("\t.globl prog\n");
-    printf("prog:\n");
-#else
-    ///macos
-    printf("\t.globl _prog\n");
-    printf("_prog:\n");
-#endif
-    printf("\tpush %%rbp\n");
-    printf("\tmov %%rsp, %%rbp\n");
-    printf("\tsub $32, %%rsp\n");
+void BDD::CodeGenerate::Visitor(BDD::ExprStmtNode *node) {
     node->Lhs ->Accept(this);
-    assert(StackLevel == 0);
-    printf("\tmov %%rbp,%%rsp\n");
-    printf("\tpop %%rbp\n");
-    printf("\tret \n");
 }
 
 void BDD::CodeGenerate::Push() {
-    printf("\tpush %%rax\n");
+    printf("\t  push %%rax\n");
     StackLevel ++;
 }
 
 void CodeGenerate::Pop(const char *reg) {
-    printf("\tpop %s\n",reg);
+    printf("\t  pop %s\n",reg);
     StackLevel --;
 }
+
+void CodeGenerate::Visitor(ExprVarNode *node) {
+    printf("\t  lea %d(%%rbp),%%rax\n",node->VarObj->Offset); //the stack grows toward the lower address, so the address is offset negatively
+    printf("\t  mov (%%rax),%%rax\n"); //load rax mem address value to rax
+}
+
+void CodeGenerate::Visitor(ProgramNode *node) {
+    printf("\t.text\n");
+#ifdef __linux__
+    printf("\t  .globl prog\n");
+    printf("prog:\n");
+#else
+    ///macos
+    printf("\t  .globl _prog\n");
+    printf("\t_prog:\n");
+#endif
+    int stackSize = 0;
+    for (auto &v: node -> LocalVariables) {
+        stackSize += 8;
+        v ->Offset = stackSize * -1;
+    }
+    printf("\t  push %%rbp\n");
+    printf("\t  mov %%rsp, %%rbp\n");
+    printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
+
+    for (auto &s:node->Statements) {
+        s ->Accept(this);
+        assert(StackLevel == 0);
+    }
+    printf("\t  mov %%rbp,%%rsp\n");
+    printf("\t  pop %%rbp\n");
+    printf("\t  ret \n");
+}
+

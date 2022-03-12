@@ -8,8 +8,8 @@
 
 using namespace BDD;
 
+//inorder traversing print formula
 void PrintVisitor::Visitor(BinaryNode *node) {
-    node -> Rhs -> Accept(this);
     node -> Lhs ->Accept(this);
     switch (node -> BinOp) {
         case BinaryOperator::Add:
@@ -24,18 +24,34 @@ void PrintVisitor::Visitor(BinaryNode *node) {
         case BinaryOperator::Div:
             printf(" / ");
             break;
+        case BinaryOperator::Assign:
+            printf(" = ");
+            break;
         default:
             assert(0);
             break;
-
     }
+    node -> Rhs -> Accept(this);
+
 }
 
 void PrintVisitor::Visitor(ConstantNode *node) {
-    printf(" %d ",node->Value);
+    printf("%d",node->Value);
 }
 
 void PrintVisitor::Visitor(ProgramNode *node) {
-    node -> Lhs ->Accept(this);
-    printf("\n");
+    for (auto &s:node -> Statements ) {
+        s ->Accept(this);
+        printf(";\n");
+    }
 }
+
+void PrintVisitor::Visitor(ExprStmtNode *node) {
+    node-> Lhs -> Accept(this);
+}
+
+void PrintVisitor::Visitor(ExprVarNode *node) {
+    printf("%.*s", static_cast<int>(node -> Name.size()), node ->Name.data());
+}
+
+

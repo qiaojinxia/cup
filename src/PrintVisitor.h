@@ -13,8 +13,11 @@ namespace BDD{
         PrintVisitor(){}
         void Visitor(ProgramNode *node) override;
     private:
+        void Visitor(ExprStmtNode *node) override;
+        void Visitor(ExprVarNode *node) override;
         void Visitor(BinaryNode *node) override;
         void Visitor(ConstantNode *node) override;
+
     };
 
 }
