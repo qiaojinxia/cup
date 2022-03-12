@@ -1,10 +1,5 @@
 Prog        := Expr
-Expr        := AddExpr
-            := MutiExpr
-            := AddExpr + MultiExpr
-            := AddExpr - MultiExpr
-MultiExpr   := PrimaryExpr
-            := MultiExpr * PrimaryExpr
-            := MultiExpr / PrimaryExpr
+Expr        := PrimaryExpr | BinaryExpr
+BinaryExpr  := Expr + Expr | Expr - Expr | Expr * Expr | Expr /  Expr
 PrimaryExpr := Num
-            := (Num)
+            := ( Expr )

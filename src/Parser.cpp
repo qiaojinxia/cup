@@ -8,36 +8,30 @@
 
 using namespace BDD;
 
-std::shared_ptr<AstNode> Parser::ParseAddExpr(std::shared_ptr<AstNode> left) {
-    while (Lex.CurrentToken -> Kind == TokenKind::Add
-    || Lex.CurrentToken -> Kind == TokenKind::Sub) {
-        auto node = std::make_shared<BinaryNode>();
-        BinaryOperator anOperator = BinaryOperator::Add;
-        if(Lex.CurrentToken -> Kind == TokenKind::Sub)
+std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) {
+    auto node = std::make_shared<BinaryNode>();
+    BinaryOperator anOperator ;
+    switch (Lex.CurrentToken -> Kind) {
+        case TokenKind::Add:
+            anOperator = BinaryOperator::Add;
+            break;
+        case TokenKind::Sub:
             anOperator = BinaryOperator::Sub;
-        Lex.GetNextToken();
-        node -> BinOp = anOperator;
-        node -> Lhs = left;
-        node -> Rhs = ParseExpr();
-        return node;
-    }
-    return nullptr;
-}
-
-std::shared_ptr<AstNode> Parser::ParseMultiExpr(std::shared_ptr<AstNode> left) {
-    while (Lex.CurrentToken -> Kind == TokenKind::Mul
-           || Lex.CurrentToken -> Kind == TokenKind::Div) {
-        auto node = std::make_shared<BinaryNode>();
-        BinaryOperator anOperator = BinaryOperator::Mul;
-        if(Lex.CurrentToken -> Kind == TokenKind::Div)
+            break;
+        case TokenKind::Mul:
+            anOperator = BinaryOperator::Mul;
+            break;
+        case TokenKind::Div:
             anOperator = BinaryOperator::Div;
-        Lex.GetNextToken();
-        node -> Lhs = left;
-        node -> BinOp = anOperator;
-        node -> Rhs = ParseExpr();
-        return node;
+            break;
+        default:
+            return left;
     }
-    return nullptr;
+    Lex.GetNextToken();
+    node -> Lhs = left;
+    node -> BinOp = anOperator;
+    node -> Rhs = ParseExpr();
+    return node;
 }
 
 std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
@@ -55,15 +49,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
 
 std::shared_ptr<AstNode> Parser::ParseExpr() {
     std::shared_ptr<AstNode> left = ParsePrimaryExpr();
-    auto node1 = ParseAddExpr(left);
-    if (node1){
-        return node1;
-    }
-    auto node2 = ParseMultiExpr(left);
-    if (node2){
-        return node2;
-    }
-    return left;
+    auto node = ParseBinaryExpr(left);
+    return node;
 }
 
 std::shared_ptr<ProgramNode> Parser::Parse() {
