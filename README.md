@@ -7,3 +7,5 @@ a toy c compailer
     to run with instruct `make program code="1 + 9 * 3 /2 "`
 - 2022-03-12
   - Support assign express  ` make program code="ab = 2;c = ab + 3; d = c + 2 / 2; d * 3 /2;"`
+- 2022-03-13
+    - Support mod express  ` make program code="ab = 7 % 4;"`
