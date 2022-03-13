@@ -24,12 +24,14 @@ void PrintVisitor::Visitor(BinaryNode *node) {
         case BinaryOperator::Div:
             printf(" / ");
             break;
+        case BinaryOperator::Mod:
+            printf(" %c ",'%');
+            break;
         case BinaryOperator::Assign:
             printf(" = ");
             break;
         default:
             assert(0);
-            break;
     }
     node -> Rhs -> Accept(this);
 

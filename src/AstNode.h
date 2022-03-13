@@ -33,6 +33,7 @@ namespace BDD{
         Sub,
         Mul,
         Div,
+        Mod,
         Assign,
     };
 

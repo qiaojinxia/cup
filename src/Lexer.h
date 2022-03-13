@@ -14,6 +14,7 @@ namespace BDD{
         Sub,
         Mul,
         Div,
+        Mod,
         Num,
         Eof,
         LParen,
@@ -36,23 +37,27 @@ namespace BDD{
     };
     class Lexer {
     private:
-        std::string_view SourceCode;
         char CurChar{' '};
         char Cursor{0};
         int Line{0};
         int LineHead{0};
     public:
         std::shared_ptr<Token> CurrentToken;
+        std::string_view SourceCode;
     public:
         Lexer(const char *code){
             SourceCode = code;
         }
         void GetNextToken();
         void GetNextChar();
+        void ExceptToken(TokenKind  kind);
     private:
         bool IsLetter();
         bool IsDigit();
         bool IsLetterOrDigit();
+
+        const char* GetTokenName(TokenKind kind);
+
     };
 
 }

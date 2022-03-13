@@ -5,6 +5,7 @@
 #include "Parser.h"
 #include "Lexer.h"
 #include "AstNode.h"
+#include "Diag.h"
 
 using namespace BDD;
 
@@ -27,6 +28,9 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) 
         case TokenKind::Assign:
             anOperator = BinaryOperator::Assign;
             break;
+        case TokenKind::Mod:
+            anOperator = BinaryOperator::Mod;
+            break;
         default:
             return left;
     }
@@ -44,7 +48,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         {
             Lex.GetNextToken();
             node = ParseExpr();
-            Lex.GetNextToken();
+            Lex.ExceptToken(TokenKind::RParen);
             break;
         }
         case TokenKind::Identifier:
@@ -69,7 +73,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
            break;
        }
        default:
-            assert(0);
+           DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"not support type");
     }
     return node;
 }
@@ -92,7 +96,9 @@ std::shared_ptr<ProgramNode> Parser::Parse() {
 std::shared_ptr<AstNode> Parser::ParseStatement() {
     auto node = std::make_shared<ExprStmtNode>();
     node -> Lhs = ParseExpr();
-    assert( Lex.CurrentToken -> Kind == TokenKind::Semicolon);
+    if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
+        DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"except ';'");
+    }
     Lex.GetNextToken();
     return node;
 }

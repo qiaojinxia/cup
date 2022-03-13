@@ -5,7 +5,10 @@
 #include <cstdio>
 #include <cctype>
 #include "Lexer.h"
+#include "Diag.h"
+#include <string>
 
+using namespace BDD;
 void BDD::Lexer::GetNextChar() {
     if (Cursor == SourceCode.size()){
         CurChar = '\0';
@@ -42,6 +45,9 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == '/'){
         kind = TokenKind::Div;
         GetNextChar();
+    }else if(CurChar == '%'){
+        kind = TokenKind::Mod;
+        GetNextChar();
     }else if(CurChar == '('){
         kind = TokenKind::LParen;
         GetNextChar();
@@ -69,8 +75,7 @@ void BDD::Lexer::GetNextToken() {
             }
             kind = TokenKind::Identifier;
         }else{
-            printf("not support %c\n",CurChar);
-            assert(0);
+            DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
         }
     }
     CurrentToken = std::make_shared<Token>();
@@ -90,5 +95,39 @@ bool BDD::Lexer::IsDigit() {
 
 bool BDD::Lexer::IsLetterOrDigit() {
     return IsLetter() || IsDigit();
+}
+
+void Lexer::ExceptToken(TokenKind kind) {
+    if (CurrentToken->Kind == kind){
+        GetNextToken();
+    }else{
+        DiagE(SourceCode,Line,CurrentToken->Location.Col,"'%s' excepted",GetTokenName(kind));
+    }
+}
+
+const char *Lexer::GetTokenName(TokenKind kind) {
+    switch (kind) {
+        case TokenKind::Add:
+            return "+";
+        case TokenKind::Sub:
+            return "-";
+        case TokenKind::Mul:
+            return "*";
+        case TokenKind::Div:
+            return "/";
+        case TokenKind::Semicolon:
+            return ";";
+        case TokenKind::LParen:
+            return "(";
+        case TokenKind::RParen:
+            return ")";
+        case TokenKind::Assign:
+            return "=";
+        case TokenKind::Eof:
+            return "eof ";
+        default:
+            break;
+    }
+    return "";
 }
 

@@ -21,10 +21,10 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         printf("\t  mov %%rax,(%%rdi)\n");
         return;
     }
-    node -> Lhs -> Accept(this);
-    Push();
     node -> Rhs ->Accept(this);
+    Push();
     Pop("%rdi");
+    node -> Lhs -> Accept(this);
     switch (node -> BinOp) {
         case BinaryOperator::Add:
             printf("\t  add %%rdi,%%rax\n");
@@ -36,9 +36,16 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  imul %%rdi,%%rax\n");
             break;
         case BinaryOperator::Div:
-            printf("\t  cqo\n");
             printf("\t  idiv %%rdi\n");
             break;
+        case BinaryOperator::Mod:
+            printf("\t  push %%rax\n");
+            printf("\t  movl +4(%%rsp),%%edx\n");
+            printf("\t  movl +0(%%rsp),%%eax\n");
+            printf("\t  add  $8,%%rsp \n");
+            printf("\t  idiv %%rdi\n");
+            printf("\t  mov %%edx,%%eax\n");
+            return;
         default:
             assert(0);
     }
@@ -84,7 +91,9 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     }
     printf("\t  push %%rbp\n");
     printf("\t  mov %%rsp, %%rbp\n");
-    printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
+    if (stackSize > 0 ){
+        printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
+    }
 
     for (auto &s:node->Statements) {
         s ->Accept(this);
