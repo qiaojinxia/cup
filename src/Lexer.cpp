@@ -58,7 +58,20 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::Semicolon;
         GetNextChar();
     }else if(CurChar == '='){
-        kind = TokenKind::Assign;
+        if (PeekChar(1)=='='){
+            GetNextChar();
+            kind = TokenKind::Equal;
+        }else{
+            kind = TokenKind::Assign;
+        }
+        GetNextChar();
+    }else if (CurChar == '!'){
+        if (PeekChar(1) == '='){
+            GetNextChar();
+            kind = TokenKind::NotEqual;
+        }else{
+            DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
+        }
         GetNextChar();
     }else if(isdigit(CurChar)){
         kind = TokenKind::Num;
@@ -67,6 +80,22 @@ void BDD::Lexer::GetNextToken() {
             value = value * 10 + CurChar - '0';
             GetNextChar();
         }while (isdigit(CurChar));
+    }else if (CurChar == '>'){
+        if (PeekChar(1) == '='){
+            GetNextChar();
+            kind = TokenKind::GreaterEqual;
+        }else{
+            kind = TokenKind::Greater;
+        }
+        GetNextChar();
+    }else if (CurChar == '<'){
+        if (PeekChar(1) == '='){
+            GetNextChar();
+            kind = TokenKind::LesserEqual;
+        }else{
+            kind = TokenKind::Lesser;
+        }
+        GetNextChar();
     }else{
         if (IsLetter()){
             GetNextChar();
@@ -129,5 +158,13 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             break;
     }
     return "";
+}
+
+char Lexer::PeekChar(int n) {
+    assert(n >0);
+    if (Cursor - 1 + n < SourceCode.size()){
+        return SourceCode[Cursor - 1 + n];
+    }
+    return '\0';
 }
 

@@ -31,6 +31,24 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) 
         case TokenKind::Mod:
             anOperator = BinaryOperator::Mod;
             break;
+        case TokenKind::Greater:
+            anOperator = BinaryOperator::Greater;
+            break;
+        case TokenKind::GreaterEqual:
+            anOperator = BinaryOperator::GreaterEqual;
+            break;
+        case TokenKind::Lesser:
+            anOperator = BinaryOperator::Lesser;
+            break;
+        case TokenKind::LesserEqual:
+            anOperator = BinaryOperator::LesserEqual;
+            break;
+        case TokenKind::Equal:
+            anOperator = BinaryOperator::Equal;
+            break;
+        case TokenKind::NotEqual:
+            anOperator = BinaryOperator::NotEqual;
+            break;
         default:
             return left;
     }

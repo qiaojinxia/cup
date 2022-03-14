@@ -7,7 +7,7 @@
 
 using namespace BDD;
 
-const char *source = "   5 % 2 ; ";
+const char *source = "   5 > 2 + 1 ; 5 < 2 + 3; 5 == 2 + 4; 5 <= 2;5 >= 2; ";
 
 void testLexer(){
     Lexer lexer(source);

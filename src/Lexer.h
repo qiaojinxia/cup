@@ -10,6 +10,12 @@
 
 namespace BDD{
     enum class TokenKind{
+        Equal,
+        NotEqual,
+        Greater,
+        GreaterEqual,
+        Lesser,
+        LesserEqual,
         Add,
         Sub,
         Mul,
@@ -55,7 +61,7 @@ namespace BDD{
         bool IsLetter();
         bool IsDigit();
         bool IsLetterOrDigit();
-
+        char PeekChar(int n);
         const char* GetTokenName(TokenKind kind);
 
     };

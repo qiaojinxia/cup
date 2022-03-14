@@ -1,6 +1,13 @@
-Prog        := Stmt*
-Stmt        := Expr*
-Expr        :=  PrimaryExprs | BinaryExpr
-BinaryExpr  := Expr + Expr | Expr - Expr | Expr * Expr | Expr /  Expr | Expr =  Expr
-PrimaryExpr := Num
-            := ( Expr )
+Prog           := Stmt*
+Stmt           := BinaryExpr*
+BinaryExpr     := AddExpr  | EqualityExpr | EqualityExpr | AssignExpr | RelationalExpr
+AddExpr        := PrimaryExpr | AddExpr + AddExpr | AddExpr - AddExpr |
+                  AddExpr * AddExpr | AddExpr /  AddExpr
+AssignExpr     := AddExpr = AddExpr
+EqualityExpr   := EqualityExpr == EqualityExpr
+               := EqualityExpr != EqualityExpr
+RelationalExpr := AddExpr < AddExpr | AddExpr <= AddExpr |
+                  AddExpr > AddExpr | AddExpr >= AddExpr
+PrimaryExpr    := Num
+               := ID
+               := ( Expr )

@@ -35,6 +35,12 @@ namespace BDD{
         Div,
         Mod,
         Assign,
+        Equal,
+        NotEqual,
+        Greater,
+        GreaterEqual,
+        Lesser,
+        LesserEqual,
     };
 
     class BinaryNode :public  AstNode{

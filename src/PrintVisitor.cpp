@@ -30,6 +30,24 @@ void PrintVisitor::Visitor(BinaryNode *node) {
         case BinaryOperator::Assign:
             printf(" = ");
             break;
+        case BinaryOperator::Greater:
+            printf(" > ");
+            break;
+        case BinaryOperator::GreaterEqual:
+            printf(" >= ");
+            break;
+        case BinaryOperator::Lesser:
+            printf(" < ");
+            break;
+        case BinaryOperator::LesserEqual:
+            printf(" <= ");
+            break;
+        case BinaryOperator::Equal:
+            printf(" == ");
+            break;
+        case BinaryOperator::NotEqual:
+            printf(" != ");
+            break;
         default:
             assert(0);
     }

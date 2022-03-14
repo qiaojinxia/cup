@@ -46,6 +46,36 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  idiv %%rdi\n");
             printf("\t  mov %%edx,%%eax\n");
             return;
+        case BinaryOperator::Greater:
+            printf("\tcmp %%rdi,%%rax\n");
+            printf("\tsetg %%al\n");
+            printf("\tmovzb %%al,%%rax\n");
+            break;
+        case BinaryOperator::GreaterEqual:
+            printf("\tcmp %%rdi,%%rax\n");
+            printf("\tsetge %%al\n");
+            printf("\tmovzb %%al,%%rax\n");
+            break;
+        case BinaryOperator::Lesser:
+            printf("\tcmp %%rdi,%%rax\n");
+            printf("\tsetl %%al\n");
+            printf("\tmovzb %%al,%%rax\n");
+            break;
+        case BinaryOperator::LesserEqual:
+            printf("\tcmp %%rdi,%%rax\n");
+            printf("\tsetle %%al\n");
+            printf("\tmovzb %%al,%%rax\n");
+            break;
+        case BinaryOperator::Equal:
+            printf("\tcmp %%rdi,%%rax\n");
+            printf("\tsete %%al\n");
+            printf("\tmovzb %%al,%%rax\n");
+            break;
+        case BinaryOperator::NotEqual:
+            printf("\tcmp %%rdi,%%rax\n");
+            printf("\tsetne %%al\n");
+            printf("\tmovzb %%al,%%rax\n");
+            break;
         default:
             assert(0);
     }

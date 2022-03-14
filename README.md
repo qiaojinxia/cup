@@ -9,3 +9,11 @@ a toy c compailer
   - Support assign express  ` make program code="ab = 2;c = ab + 3; d = c + 2 / 2; d * 3 /2;"`
 - 2022-03-13
     - Support mod express  ` make program code="ab = 7 % 4;"`
+- 2022-03-14 
+    - Support Equal,NotEqual,Greater,GreaterEqual,Lesser,LesserEqual express  
+      - ` make program code="a = 7 ; a > 1; a < 1;"`
+      - ` make program code="a = 6 ; a < 7; a > 0 ;"`
+      - ` make program code="a = 5 ; a == 5; a != 0;"`
+      - ` make program code="a = 5 ; a != 5 ; a == 1;"`
+      - ` make program code="a = 5 ; a >= 1;a <= 0;"`
+      - ` make program code="a = 5 ; a <= 6; a >= 1;"`
