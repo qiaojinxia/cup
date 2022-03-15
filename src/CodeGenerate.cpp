@@ -86,7 +86,9 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ExprStmtNode *node) {
-    node->Lhs ->Accept(this);
+    if (node->Lhs){
+        node->Lhs ->Accept(this);
+    }
 }
 
 void BDD::CodeGenerate::Push() {
@@ -157,5 +159,16 @@ void CodeGenerate::Visitor(BlockStmtNode *node) {
     for (auto &s:node->Stmts) {
         s ->Accept(this);
     }
+}
+
+void CodeGenerate::Visitor(WhileStmtNode *node) {
+    int n = Sequence++;
+    printf("\t.L.begin_%d:\n",n);
+    node -> Cond ->Accept(this);
+    printf("\t  cmp $0,%%rax\n");
+    printf("\t  je .L.end_%d\n",n);
+    node -> Then ->Accept(this);
+    printf("\t  jmp .L.begin_%d\n",n);
+    printf("\t.L.end_%d:\n",n);
 }
 

@@ -30,6 +30,7 @@ namespace BDD{
         Semicolon,
         If,
         Else,
+        While,
         Identifier,
         Assign,
     };

@@ -35,3 +35,7 @@ void IfStmtNode::Accept(AstVisitor *visitor) {
 void BlockStmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void WhileStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

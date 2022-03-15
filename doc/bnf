@@ -1,7 +1,8 @@
 Prog           := Stmt* | BlockStmt
-BlockStmt      := '{' Stmt '}'
 Stmt           := BinaryExpr*
-               := if '(' EqualityExpr | RelationalExpr ')' BlockStmt 'else' BlockStmt
+               := if '(' EqualityExpr | RelationalExpr ')' Stmt 'else' Stmt
+               := := '{' Stmt '}'
+               := := while '(' Stmt ')'  '{' Stmt '}'
 BinaryExpr     := AddExpr  | EqualityExpr | EqualityExpr | AssignExpr | RelationalExpr
 AddExpr        := PrimaryExpr | AddExpr + AddExpr | AddExpr - AddExpr |
                   AddExpr * AddExpr | AddExpr /  AddExpr

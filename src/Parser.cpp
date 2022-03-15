@@ -132,13 +132,20 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         }
         Lex.ExceptToken(TokenKind::RBrace);
         return node;
+    }else if (Lex.CurrentToken -> Kind == TokenKind::While){
+        auto node = std::make_shared<WhileStmtNode>();
+        Lex.GetNextToken();
+        Lex.ExceptToken(TokenKind::LParen);
+        node -> Cond = ParseExpr();
+        Lex.ExceptToken(TokenKind::RParen);
+        node -> Then = ParseStatement();
+        return node;
     }
     auto node = std::make_shared<ExprStmtNode>();
-    node -> Lhs = ParseExpr();
     if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
-        DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"except ';'");
+        node -> Lhs = ParseExpr();
     }
-    Lex.GetNextToken();
+    Lex.ExceptToken(TokenKind::Semicolon);
     return node;
 }
 

@@ -66,7 +66,9 @@ void PrintVisitor::Visitor(ProgramNode *node) {
 }
 
 void PrintVisitor::Visitor(ExprStmtNode *node) {
-    node-> Lhs -> Accept(this);
+    if (node-> Lhs){
+        node-> Lhs -> Accept(this);
+    }
 }
 
 void PrintVisitor::Visitor(ExprVarNode *node) {
@@ -93,6 +95,14 @@ void PrintVisitor::Visitor(BlockStmtNode *node) {
         s ->    Accept(this);
     }
     printf("}");
+}
+
+void PrintVisitor::Visitor(WhileStmtNode *node) {
+    printf("while");
+    printf("(");
+    node -> Cond -> Accept(this);
+    printf(")");
+    node -> Then ->Accept(this);
 }
 
 

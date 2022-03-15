@@ -114,6 +114,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::If;
             }else if (content == "else"){
                 kind = TokenKind::Else;
+            }else if (content == "while"){
+                kind = TokenKind::While;
             }
         }else{
             DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);

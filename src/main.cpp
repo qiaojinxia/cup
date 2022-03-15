@@ -7,7 +7,7 @@
 
 using namespace BDD;
 
-const char *source = " a = 5; if (a < 7){b =3;}else {b  = 5;} ";
+const char *source = " a = 5; while(a < 10){a = a +1;} ";
 
 void testLexer(){
     Lexer lexer(source);
@@ -16,7 +16,7 @@ void testLexer(){
         std::cout << lexer.CurrentToken->Content << std::endl;
     }while (lexer.CurrentToken->Kind != BDD::TokenKind::Eof);
 }
-void testParser(){
+    void testParser(){
     Lexer lex(source);
     lex.GetNextToken();
 

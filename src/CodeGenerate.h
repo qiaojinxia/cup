@@ -22,6 +22,7 @@ namespace BDD{
         void Visitor(ProgramNode *node) override;
         void Visitor(IfStmtNode *node) override;
         void Visitor(BlockStmtNode *node) override;
+        void Visitor(WhileStmtNode *node) override;
         void Push();
         void Pop(const char *reg);
     };
