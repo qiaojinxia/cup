@@ -17,3 +17,6 @@ a toy c compailer
       - ` make program code="a = 5 ; a != 5 ; a == 1;"`
       - ` make program code="a = 5 ; a >= 1;a <= 0;"`
       - ` make program code="a = 5 ; a <= 6; a >= 1;"`
+- 2022-03-15
+  - Support if Statements blockStatement `if(){}els{}` 
+    - `make program code="a = 5; if (a < 7){b =3;b + 1;b * 2;}else {b  = 5;}"`

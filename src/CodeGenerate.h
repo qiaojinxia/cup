@@ -11,6 +11,7 @@ namespace BDD{
     class CodeGenerate:public AstVisitor{
     private:
         int StackLevel{0};
+        int Sequence{0};
     public:
         CodeGenerate(){}
     private:
@@ -19,6 +20,8 @@ namespace BDD{
         void Visitor(ConstantNode *node) override;
         void Visitor(ExprVarNode *node) override;
         void Visitor(ProgramNode *node) override;
+        void Visitor(IfStmtNode *node) override;
+        void Visitor(BlockStmtNode *node) override;
         void Push();
         void Pop(const char *reg);
     };

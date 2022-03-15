@@ -47,34 +47,34 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  mov %%edx,%%eax\n");
             return;
         case BinaryOperator::Greater:
-            printf("\tcmp %%rdi,%%rax\n");
-            printf("\tsetg %%al\n");
-            printf("\tmovzb %%al,%%rax\n");
+            printf("\t  cmp %%rdi,%%rax\n");
+            printf("\t  setg %%al\n");
+            printf("\t  movzb %%al,%%rax\n");
             break;
         case BinaryOperator::GreaterEqual:
-            printf("\tcmp %%rdi,%%rax\n");
-            printf("\tsetge %%al\n");
-            printf("\tmovzb %%al,%%rax\n");
+            printf("\t  cmp %%rdi,%%rax\n");
+            printf("\t  setge %%al\n");
+            printf("\t  movzb %%al,%%rax\n");
             break;
         case BinaryOperator::Lesser:
-            printf("\tcmp %%rdi,%%rax\n");
-            printf("\tsetl %%al\n");
-            printf("\tmovzb %%al,%%rax\n");
+            printf("\t  cmp %%rdi,%%rax\n");
+            printf("\t  setl %%al\n");
+            printf("\t  movzb %%al,%%rax\n");
             break;
         case BinaryOperator::LesserEqual:
-            printf("\tcmp %%rdi,%%rax\n");
-            printf("\tsetle %%al\n");
-            printf("\tmovzb %%al,%%rax\n");
+            printf("\t  cmp %%rdi,%%rax\n");
+            printf("\t  setle %%al\n");
+            printf("\t  movzb %%al,%%rax\n");
             break;
         case BinaryOperator::Equal:
-            printf("\tcmp %%rdi,%%rax\n");
-            printf("\tsete %%al\n");
-            printf("\tmovzb %%al,%%rax\n");
+            printf("\t  cmp %%rdi,%%rax\n");
+            printf("\t  sete %%al\n");
+            printf("\t  movzb %%al,%%rax\n");
             break;
         case BinaryOperator::NotEqual:
-            printf("\tcmp %%rdi,%%rax\n");
-            printf("\tsetne %%al\n");
-            printf("\tmovzb %%al,%%rax\n");
+            printf("\t  cmp %%rdi,%%rax\n");
+            printf("\t  setne %%al\n");
+            printf("\t  movzb %%al,%%rax\n");
             break;
         default:
             assert(0);
@@ -132,5 +132,30 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     printf("\t  mov %%rbp,%%rsp\n");
     printf("\t  pop %%rbp\n");
     printf("\t  ret \n");
+}
+
+void CodeGenerate::Visitor(IfStmtNode *node) {
+    int n = Sequence ++;
+    node -> Cond ->Accept(this);
+    printf("\t  cmp $0,%%rax\n");
+    if (node -> Else){
+        printf("\t  je .L.else_%d\n",n);
+    }else{
+        printf("\t  je .L.end_%d\n",n);
+    }
+    node -> Then->Accept(this);
+    printf("\t jmp .L.end_%d\n",n);
+    if (node -> Else){
+        printf("\t.L.else_%d:\n",n);
+        node ->Else->Accept(this);
+        printf("\t jmp .L.end_%d\n",n);
+    }
+    printf("\t.L.end_%d:\n",n);
+}
+
+void CodeGenerate::Visitor(BlockStmtNode *node) {
+    for (auto &s:node->Stmts) {
+        s ->Accept(this);
+    }
 }
 

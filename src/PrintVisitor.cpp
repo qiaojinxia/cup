@@ -62,7 +62,6 @@ void PrintVisitor::Visitor(ConstantNode *node) {
 void PrintVisitor::Visitor(ProgramNode *node) {
     for (auto &s:node -> Statements ) {
         s ->Accept(this);
-        printf(";\n");
     }
 }
 
@@ -72,6 +71,28 @@ void PrintVisitor::Visitor(ExprStmtNode *node) {
 
 void PrintVisitor::Visitor(ExprVarNode *node) {
     printf("%.*s", static_cast<int>(node -> Name.size()), node ->Name.data());
+}
+
+void PrintVisitor::Visitor(IfStmtNode *node) {
+    printf("if");
+    printf("(");
+    node -> Cond ->Accept(this);
+    printf(") ");
+    node -> Then->Accept(this);
+    printf(";");
+    if (node -> Else){
+        printf(" else ");
+        node -> Else ->Accept(this);
+        printf(";");
+    }
+}
+
+void PrintVisitor::Visitor(BlockStmtNode *node) {
+    printf("{");
+    for (auto &s : node -> Stmts ){
+        s ->    Accept(this);
+    }
+    printf("}");
 }
 
 

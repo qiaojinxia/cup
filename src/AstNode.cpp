@@ -26,3 +26,12 @@ void ExprStmtNode::Accept(AstVisitor *visitor) {
 void ExprVarNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void IfStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+
+void BlockStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

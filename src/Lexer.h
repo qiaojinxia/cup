@@ -25,7 +25,11 @@ namespace BDD{
         Eof,
         LParen,
         RParen,
+        LBrace,
+        RBrace,
         Semicolon,
+        If,
+        Else,
         Identifier,
         Assign,
     };

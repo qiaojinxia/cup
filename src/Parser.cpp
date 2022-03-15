@@ -112,6 +112,27 @@ std::shared_ptr<ProgramNode> Parser::Parse() {
 }
 
 std::shared_ptr<AstNode> Parser::ParseStatement() {
+    if (Lex.CurrentToken -> Kind == TokenKind::If){
+        auto node = std::make_shared<IfStmtNode>();
+        Lex.GetNextToken();
+        Lex.ExceptToken(TokenKind::LParen);
+        node ->Cond = ParseExpr();
+        Lex.ExceptToken(TokenKind::RParen);
+        node -> Then = ParseStatement();
+        if (Lex.CurrentToken -> Kind == TokenKind::Else){
+            Lex.GetNextToken();
+            node -> Else = ParseStatement();
+        }
+        return node;
+    }else if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
+        auto node = std::make_shared<BlockStmtNode>();
+        Lex.GetNextToken();
+        while (Lex.CurrentToken->Kind != TokenKind::RBrace){
+            node -> Stmts.push_back(ParseStatement());
+        }
+        Lex.ExceptToken(TokenKind::RBrace);
+        return node;
+    }
     auto node = std::make_shared<ExprStmtNode>();
     node -> Lhs = ParseExpr();
     if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
