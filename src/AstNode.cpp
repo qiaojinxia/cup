@@ -39,3 +39,11 @@ void BlockStmtNode::Accept(AstVisitor *visitor) {
 void WhileStmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void DoWhileStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void ForStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

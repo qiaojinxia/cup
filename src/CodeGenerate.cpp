@@ -172,3 +172,33 @@ void CodeGenerate::Visitor(WhileStmtNode *node) {
     printf("\t.L.end_%d:\n",n);
 }
 
+void CodeGenerate::Visitor(DoWhileStmtNode *node) {
+    int n = Sequence ++;
+    printf(".L.begin_%d:\n",n);
+    node -> Stmt -> Accept(this);
+    node -> Cond ->Accept(this);
+    printf("\t  cmp $0, %%rax\n");
+    printf("\t  je .L.end_%d\n",n);
+    printf("\t  jmp .L.begin_%d\n",n);
+    printf("\t.L.end_%d:\n",n);
+
+}
+
+void CodeGenerate::Visitor(ForStmtNode *node) {
+    int n  = Sequence++;
+    if (node -> Init)
+        node -> Init ->Accept(this);
+    printf(".L.begin_%d:\n",n);
+    if (node -> Cond) {
+        node->Cond->Accept(this);
+        printf("\t  cmp $0,%%rax\n");
+        printf("\t  je .L.end_%d\n", n);
+    }
+    node -> Stmt ->Accept(this);
+    if (node -> Inc){
+        node -> Inc ->Accept(this);
+    }
+    printf("\t  jmp .L.begin_%d\n",n);
+    printf(".L.end_%d:\n",n);
+}
+

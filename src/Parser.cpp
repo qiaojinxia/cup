@@ -140,9 +140,34 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         Lex.ExceptToken(TokenKind::RParen);
         node -> Then = ParseStatement();
         return node;
+    }else if (Lex.CurrentToken -> Kind == TokenKind::Do){
+        auto node = std::make_shared<DoWhileStmtNode>();
+        Lex.GetNextToken();
+        node -> Stmt = ParseStatement();
+        Lex.ExceptToken(TokenKind::While);
+        Lex.ExceptToken(TokenKind::LParen);
+        node -> Cond = ParseExpr();
+        Lex.ExceptToken(TokenKind::RParen);
+        return node;
+    } else if (Lex.CurrentToken -> Kind == TokenKind::For){
+        auto node = std::make_shared<ForStmtNode>();
+        Lex.GetNextToken();
+        Lex.ExceptToken(TokenKind::LParen);
+        if (Lex.CurrentToken->Kind != TokenKind::Semicolon){
+            node -> Init = ParseExpr();
+            Lex.ExceptToken(TokenKind::Semicolon);
+            if (Lex.CurrentToken -> Kind !=TokenKind::Semicolon)
+                node -> Cond = ParseExpr();
+            Lex.ExceptToken(TokenKind::Semicolon);
+            if (Lex.CurrentToken -> Kind != TokenKind::RParen)
+                node -> Inc = ParseExpr();
+            Lex.ExceptToken(TokenKind::RParen);
+            node -> Stmt = ParseStatement();
+            return node;
+        }
     }
     auto node = std::make_shared<ExprStmtNode>();
-    if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
+        if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
         node -> Lhs = ParseExpr();
     }
     Lex.ExceptToken(TokenKind::Semicolon);

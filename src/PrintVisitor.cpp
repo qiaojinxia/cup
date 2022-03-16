@@ -105,4 +105,31 @@ void PrintVisitor::Visitor(WhileStmtNode *node) {
     node -> Then ->Accept(this);
 }
 
+void PrintVisitor::Visitor(DoWhileStmtNode *node) {
+    printf("do");
+    node -> Stmt ->Accept(this);
+    printf("while");
+    printf("(");
+    node -> Cond ->Accept(this);
+    printf(")");
+}
+
+void PrintVisitor::Visitor(ForStmtNode *node) {
+    printf("for");
+    printf("(");
+    if (node -> Init)
+        node -> Init ->Accept(this);
+    printf(";");
+
+    if (node -> Cond)
+        node -> Cond ->Accept(this);
+    printf(";");
+
+    if (node -> Inc)
+        node -> Inc ->Accept(this);
+    printf(")");
+
+    node -> Stmt ->Accept(this);
+}
+
 

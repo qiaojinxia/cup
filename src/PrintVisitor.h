@@ -20,6 +20,8 @@ namespace BDD{
         void Visitor(IfStmtNode *node) override;
         void Visitor(BlockStmtNode *node) override;
         void Visitor(WhileStmtNode *node) override;
+        void Visitor(DoWhileStmtNode *node) override;
+        void Visitor(ForStmtNode *node) override;
     };
 
 }

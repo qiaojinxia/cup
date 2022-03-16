@@ -31,6 +31,8 @@ namespace BDD{
         If,
         Else,
         While,
+        Do,
+        For,
         Identifier,
         Assign,
     };

@@ -92,6 +92,20 @@ namespace BDD{
         std::list<std::shared_ptr<AstNode>> Stmts;
         void Accept(AstVisitor *visitor) override;
     };
+    class DoWhileStmtNode :public AstNode{
+    public:
+        std::shared_ptr<AstNode> Stmt{nullptr};
+        std::shared_ptr<AstNode> Cond{nullptr};
+        void Accept(AstVisitor *visitor) override;
+    };
+    class ForStmtNode : public AstNode{
+    public:
+        std::shared_ptr<AstNode> Init{nullptr};
+        std::shared_ptr<AstNode> Cond{nullptr};
+        std::shared_ptr<AstNode> Inc{nullptr};
+        std::shared_ptr<AstNode> Stmt{nullptr};
+        void Accept(AstVisitor *visitor) override;
+    };
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -103,6 +117,8 @@ namespace BDD{
         virtual void Visitor(IfStmtNode *node){};
         virtual void Visitor(BlockStmtNode *node){};
         virtual void Visitor(WhileStmtNode *node){};
+        virtual void Visitor(DoWhileStmtNode *node){};
+        virtual void Visitor(ForStmtNode *node){};
     };
 
 }
