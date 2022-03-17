@@ -7,7 +7,7 @@
 
 using namespace BDD;
 
-const char *source = " b = 0; for(i =0;i<10;i=i+1){ b = b + 1;}b; ";
+const char *source = "func main(a){a = a+ 1;b = a + b;} ";
 
 void testLexer(){
     Lexer lexer(source);

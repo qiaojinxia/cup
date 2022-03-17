@@ -25,3 +25,6 @@ a toy c compailer
     - Support for dowhile Statement `do{}while{}` while statement `while(){}`
         - `make program code="a = 0;b = 0; for(a = 1;a <= 10; a = a + 1) {b= b +1;}b;"`
         - `make program code="a = 5;b = 0; while (a < 700){a = a + 1;b = b + 1;}b;"`
+- 2022-03-17
+    - Support for function Statement `func main(){}`
+        - `make program code="func main(c) {a = 0;b = 0; for(a = 1;a <= 10; a = a + 1) {b= b +1;}b;}"`

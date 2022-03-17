@@ -1,4 +1,6 @@
 Prog           := Stmt* | BlockStmt
+Function       := identifier '(' FuncArg? ')' '{' Stmt* '}'
+FuncArg        := identifier (,identifier)*
 Stmt           := BinaryExpr*
                := if '(' EqualityExpr | RelationalExpr ')' Stmt 'else' Stmt
                :=  '{' Stmt '}'

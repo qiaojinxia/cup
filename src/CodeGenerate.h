@@ -25,7 +25,9 @@ namespace BDD{
         void Visitor(WhileStmtNode *node) override;
         void Visitor(DoWhileStmtNode *node) override;
         void Visitor(ForStmtNode *node) override;
+        void Visitor(FunctionNode *node) override;
         void Push();
+        int  AlignTo(int size,int  align) ;
         void Pop(const char *reg);
     };
 }

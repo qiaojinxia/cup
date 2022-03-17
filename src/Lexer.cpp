@@ -39,6 +39,9 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == '-'){
         kind = TokenKind::Sub;
         GetNextChar();
+    }else if (CurChar == ','){
+        kind = TokenKind::Comma;
+        GetNextChar();
     }else if(CurChar == '*'){
         kind = TokenKind::Mul;
         GetNextChar();
@@ -120,6 +123,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Do;
             }else if (content == "for"){
                 kind = TokenKind::For;
+            }else if (content == "func"){
+                kind = TokenKind::Function;
             }
         }else{
             DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
@@ -170,6 +175,9 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return ")";
         case TokenKind::Assign:
             return "=";
+
+        case TokenKind::Function:
+            return "func_name ";
         case TokenKind::Eof:
             return "eof ";
         default:

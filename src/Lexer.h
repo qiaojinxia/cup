@@ -33,6 +33,8 @@ namespace BDD{
         While,
         Do,
         For,
+        Function,
+        Comma,
         Identifier,
         Assign,
     };

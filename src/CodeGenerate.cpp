@@ -6,7 +6,7 @@
 #include <cassert>
 #include "CodeGenerate.h"
 #include "AstNode.h"
-
+#include <string>
 using namespace BDD;
 
 
@@ -107,33 +107,8 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
 }
 
 void CodeGenerate::Visitor(ProgramNode *node) {
-    printf("\t.text\n");
-#ifdef __linux__
-    printf("\t  .globl prog\n");
-    printf("prog:\n");
-#else
-    ///macos
-    printf("\t  .globl _prog\n");
-    printf("\t_prog:\n");
-#endif
-    int stackSize = 0;
-    for (auto &v: node -> LocalVariables) {
-        stackSize += 8;
-        v ->Offset = stackSize * -1;
-    }
-    printf("\t  push %%rbp\n");
-    printf("\t  mov %%rsp, %%rbp\n");
-    if (stackSize > 0 ){
-        printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
-    }
-
-    for (auto &s:node->Statements) {
-        s ->Accept(this);
-        assert(StackLevel == 0);
-    }
-    printf("\t  mov %%rbp,%%rsp\n");
-    printf("\t  pop %%rbp\n");
-    printf("\t  ret \n");
+    for (auto &s: node -> Funcs)
+        s->Accept(this);
 }
 
 void CodeGenerate::Visitor(IfStmtNode *node) {
@@ -200,5 +175,46 @@ void CodeGenerate::Visitor(ForStmtNode *node) {
     }
     printf("\t  jmp .L.begin_%d\n",n);
     printf(".L.end_%d:\n",n);
+}
+
+void CodeGenerate::Visitor(FunctionNode *node) {
+    printf("\t.text\n");
+
+    std::string name(node -> FuncName);
+#ifdef __linux__
+    printf(".globl %s\n",name.data());
+    printf("%s:\n",name.data());
+#else
+    ///macos
+    printf("\t.globl _%s1\n",name.data());
+    printf("_%s1:\n",name.data());
+#endif
+    int stackSize = 0;
+    for (auto &v: node -> Locals) {
+        stackSize += 8;
+        v ->Offset = stackSize * -1;
+    }
+    stackSize = AlignTo(stackSize,16);
+
+    printf("\t  push %%rbp\n");
+    printf("\t  mov %%rsp, %%rbp\n");
+    if (stackSize > 0 ){
+        printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
+    }
+    const char *reg[] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8d","%r9d"};
+    for (int i = 0;i < node -> Params.size(); i++){
+        printf("\t mov %s, %d(%%rbp)\n",reg[i],node -> Params[i] -> Offset);
+    }
+    for (auto &s:node->Stmts) {
+        s ->Accept(this);
+        assert(StackLevel == 0);
+    }
+    printf("\t  mov %%rbp,%%rsp\n");
+    printf("\t  pop %%rbp\n");
+    printf("\t  ret \n");
+}
+
+int CodeGenerate::AlignTo(int size, int align) {
+    return (size + align - 1) / align * align;
 }
 

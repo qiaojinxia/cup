@@ -47,3 +47,7 @@ void DoWhileStmtNode::Accept(AstVisitor *visitor) {
 void ForStmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void FunctionNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

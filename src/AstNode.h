@@ -8,6 +8,7 @@
 #include <memory>
 #include <list>
 #include <string_view>
+#include <vector>
 
 namespace BDD{
     class AstVisitor;
@@ -25,9 +26,19 @@ namespace BDD{
     class ProgramNode:public  AstNode{
     public:
         void Accept(AstVisitor *visitor) override;
-        std::list<std::shared_ptr<AstNode>> Statements;
-        std::list<std::shared_ptr<Var>> LocalVariables;
+        std::list<std::shared_ptr<AstNode>> Funcs;
     };
+
+    class FunctionNode: public AstNode{
+    public:
+        std::string_view FuncName;
+        std::vector<std::shared_ptr<Var>> Params;
+        std::list<std::shared_ptr<Var>> Locals;
+        std::list<std::shared_ptr<AstNode>> Stmts;
+
+        void Accept(AstVisitor *visitor) override;
+    };
+
     enum class BinaryOperator{
         Add,
         Sub,
@@ -119,6 +130,7 @@ namespace BDD{
         virtual void Visitor(WhileStmtNode *node){};
         virtual void Visitor(DoWhileStmtNode *node){};
         virtual void Visitor(ForStmtNode *node){};
+        virtual void Visitor(FunctionNode *node){};
     };
 
 }

@@ -4,7 +4,9 @@
 
 #include <cstdio>
 #include <cassert>
+#include <string>
 #include "PrintVisitor.h"
+
 
 using namespace BDD;
 
@@ -60,7 +62,7 @@ void PrintVisitor::Visitor(ConstantNode *node) {
 }
 
 void PrintVisitor::Visitor(ProgramNode *node) {
-    for (auto &s:node -> Statements ) {
+    for (auto &s:node -> Funcs ) {
         s ->Accept(this);
     }
 }
@@ -130,6 +132,22 @@ void PrintVisitor::Visitor(ForStmtNode *node) {
     printf(")");
 
     node -> Stmt ->Accept(this);
+}
+
+void PrintVisitor::Visitor(FunctionNode *node) {
+    printf("%s", std::string(node->FuncName).c_str());
+    printf("(");
+    for(int i = 0;i <node->Params.size();i++){
+        printf("%s",std::string(node -> Params[i]->Name).c_str());
+        if (i != node ->Params.size() -1){
+            printf(",");
+        }
+        printf(")");
+        printf("{");
+        for (auto &s:node -> Stmts)
+            s ->Accept(this);
+        printf("}");
+    }
 }
 
 

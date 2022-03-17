@@ -104,9 +104,8 @@ std::shared_ptr<AstNode> Parser::ParseExpr() {
 
 std::shared_ptr<ProgramNode> Parser::Parse() {
     auto node = std::make_shared<ProgramNode>();
-    LocalVars = &node -> LocalVariables;
     while (Lex.CurrentToken -> Kind != TokenKind::Eof){
-        node -> Statements.push_back(ParseStatement());
+        node ->Funcs.push_back(ParseFunc());
     }
     return node;
 }
@@ -188,6 +187,34 @@ std::shared_ptr<Var> Parser::NewLocalVar(std::string_view varName) {
     LocalVars -> push_front(obj);
     LocalsMap[varName] = obj;
     return obj;
+}
+
+std::shared_ptr<AstNode> Parser::ParseFunc() {
+    auto node =std::make_shared<FunctionNode>();
+    LocalVars = &node -> Locals;
+    LocalsMap.clear();
+    Lex.ExceptToken(TokenKind::Function);
+    node -> FuncName = Lex.CurrentToken->Content;
+    Lex.ExceptToken(TokenKind::Identifier);
+    Lex.ExceptToken(TokenKind::LParen);
+    if (Lex.CurrentToken -> Kind != TokenKind::RParen){
+        auto token = Lex.CurrentToken;
+        ParsePrimaryExpr();
+        node -> Params.push_back(LocalsMap[token->Content]);
+        while (Lex.CurrentToken -> Kind == TokenKind::Comma){
+            Lex.GetNextToken();
+            auto token = Lex.CurrentToken;
+            ParsePrimaryExpr();
+            node -> Params.push_back(LocalsMap[token->Content]);
+        }
+    }
+    Lex.ExceptToken(TokenKind::RParen);
+    Lex.ExceptToken(TokenKind::LBrace);
+    while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
+        node -> Stmts.push_back(ParseStatement());
+    }
+    Lex.ExceptToken(TokenKind::RBrace);
+    return node;
 }
 
 
