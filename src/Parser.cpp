@@ -62,15 +62,23 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) 
 std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
     auto node = std::make_shared<AstNode>();
     switch (Lex.CurrentToken -> Kind){
-        case TokenKind::LParen:
+        case TokenKind::LParent:
         {
             Lex.GetNextToken();
             node = ParseExpr();
-            Lex.ExceptToken(TokenKind::RParen);
+            Lex.ExceptToken(TokenKind::RParent);
             break;
         }
         case TokenKind::Identifier:
         {
+            Lex.BeginPeekToken();
+            Lex.GetNextToken();
+            if (Lex.CurrentToken -> Kind == TokenKind::LParent){
+                Lex.EndPeekToken();
+                return ParseFuncCallNode();
+            }
+            Lex.EndPeekToken();
+
             auto exprVarNode = std::make_shared<ExprVarNode>();
             exprVarNode -> Name = Lex.CurrentToken->Content;
             auto obj = FindLocalVar(Lex.CurrentToken -> Content);
@@ -114,9 +122,9 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
     if (Lex.CurrentToken -> Kind == TokenKind::If){
         auto node = std::make_shared<IfStmtNode>();
         Lex.GetNextToken();
-        Lex.ExceptToken(TokenKind::LParen);
+        Lex.ExceptToken(TokenKind::LParent);
         node ->Cond = ParseExpr();
-        Lex.ExceptToken(TokenKind::RParen);
+        Lex.ExceptToken(TokenKind::RParent);
         node -> Then = ParseStatement();
         if (Lex.CurrentToken -> Kind == TokenKind::Else){
             Lex.GetNextToken();
@@ -134,9 +142,9 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
     }else if (Lex.CurrentToken -> Kind == TokenKind::While){
         auto node = std::make_shared<WhileStmtNode>();
         Lex.GetNextToken();
-        Lex.ExceptToken(TokenKind::LParen);
+        Lex.ExceptToken(TokenKind::LParent);
         node -> Cond = ParseExpr();
-        Lex.ExceptToken(TokenKind::RParen);
+        Lex.ExceptToken(TokenKind::RParent);
         node -> Then = ParseStatement();
         return node;
     }else if (Lex.CurrentToken -> Kind == TokenKind::Do){
@@ -144,26 +152,32 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         Lex.GetNextToken();
         node -> Stmt = ParseStatement();
         Lex.ExceptToken(TokenKind::While);
-        Lex.ExceptToken(TokenKind::LParen);
+        Lex.ExceptToken(TokenKind::LParent);
         node -> Cond = ParseExpr();
-        Lex.ExceptToken(TokenKind::RParen);
+        Lex.ExceptToken(TokenKind::RParent);
         return node;
     } else if (Lex.CurrentToken -> Kind == TokenKind::For){
         auto node = std::make_shared<ForStmtNode>();
         Lex.GetNextToken();
-        Lex.ExceptToken(TokenKind::LParen);
+        Lex.ExceptToken(TokenKind::LParent);
         if (Lex.CurrentToken->Kind != TokenKind::Semicolon){
             node -> Init = ParseExpr();
             Lex.ExceptToken(TokenKind::Semicolon);
             if (Lex.CurrentToken -> Kind !=TokenKind::Semicolon)
                 node -> Cond = ParseExpr();
             Lex.ExceptToken(TokenKind::Semicolon);
-            if (Lex.CurrentToken -> Kind != TokenKind::RParen)
+            if (Lex.CurrentToken -> Kind != TokenKind::RParent)
                 node -> Inc = ParseExpr();
-            Lex.ExceptToken(TokenKind::RParen);
+            Lex.ExceptToken(TokenKind::RParent);
             node -> Stmt = ParseStatement();
             return node;
         }
+    }else if (Lex.CurrentToken-> Kind == TokenKind::Return){
+        auto node = std::make_shared<ReturnStmtNode>();
+        Lex.GetNextToken();
+        node -> Lhs = ParseExpr();
+        Lex.ExceptToken(TokenKind::Semicolon);
+        return node;
     }
     auto node = std::make_shared<ExprStmtNode>();
         if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
@@ -193,11 +207,11 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     auto node =std::make_shared<FunctionNode>();
     LocalVars = &node -> Locals;
     LocalsMap.clear();
-    Lex.ExceptToken(TokenKind::Function);
+    Lex.ExceptToken(TokenKind::FunctionDefine);
     node -> FuncName = Lex.CurrentToken->Content;
     Lex.ExceptToken(TokenKind::Identifier);
-    Lex.ExceptToken(TokenKind::LParen);
-    if (Lex.CurrentToken -> Kind != TokenKind::RParen){
+    Lex.ExceptToken(TokenKind::LParent);
+    if (Lex.CurrentToken -> Kind != TokenKind::RParent){
         auto token = Lex.CurrentToken;
         ParsePrimaryExpr();
         node -> Params.push_back(LocalsMap[token->Content]);
@@ -208,12 +222,28 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
             node -> Params.push_back(LocalsMap[token->Content]);
         }
     }
-    Lex.ExceptToken(TokenKind::RParen);
+    Lex.ExceptToken(TokenKind::RParent);
     Lex.ExceptToken(TokenKind::LBrace);
     while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
         node -> Stmts.push_back(ParseStatement());
     }
     Lex.ExceptToken(TokenKind::RBrace);
+    return node;
+}
+
+std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
+    auto node=std::make_shared<FuncCallNode>();
+    node -> FuncName = Lex.CurrentToken -> Content;
+    Lex.ExceptToken(TokenKind::Identifier);
+    Lex.ExceptToken(TokenKind::LParent);
+    if (Lex.CurrentToken -> Kind!= TokenKind::RParent){
+        node -> Args.push_back(ParseExpr());
+        while(Lex.CurrentToken -> Kind == TokenKind::Comma){
+            Lex.GetNextToken();
+            node -> Args.push_back(ParsePrimaryExpr());
+        }
+    }
+    Lex.ExceptToken(TokenKind::RParent);
     return node;
 }
 

@@ -23,6 +23,8 @@ namespace BDD{
         void Visitor(WhileStmtNode *node) override;
         void Visitor(DoWhileStmtNode *node) override;
         void Visitor(ForStmtNode *node) override;
+        void Visitor(FuncCallNode *node) override;
+        void Visitor(ReturnStmtNode *node) override;
     };
 
 }

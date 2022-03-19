@@ -51,3 +51,11 @@ void ForStmtNode::Accept(AstVisitor *visitor) {
 void FunctionNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void FuncCallNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void ReturnStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

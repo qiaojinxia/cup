@@ -117,6 +117,20 @@ namespace BDD{
         std::shared_ptr<AstNode> Stmt{nullptr};
         void Accept(AstVisitor *visitor) override;
     };
+
+    class FuncCallNode:public AstNode{
+    public:
+        std::string_view FuncName;
+        std::vector<std::shared_ptr<AstNode>> Args;
+
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class ReturnStmtNode:public AstNode{
+    public:
+        std::shared_ptr<AstNode> Lhs;
+        void Accept(AstVisitor *visitor) override;
+    };
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -131,6 +145,8 @@ namespace BDD{
         virtual void Visitor(DoWhileStmtNode *node){};
         virtual void Visitor(ForStmtNode *node){};
         virtual void Visitor(FunctionNode *node){};
+        virtual void Visitor(FuncCallNode *node){};
+        virtual void Visitor(ReturnStmtNode *node){};
     };
 
 }

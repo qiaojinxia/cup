@@ -7,7 +7,7 @@
 
 using namespace BDD;
 
-const char *source = "func main(a){a = a+ 1;b = a + b;} ";
+const char *source = "func fib(n) { if(n <= 2){return 1;}else{  return fib(n-1) + fib(n-2);}} func prog(){ a = 6; return c(a);}";
 
 void testLexer(){
     Lexer lexer(source);
@@ -21,18 +21,31 @@ void testLexer(){
     lex.GetNextToken();
 
     Parser parser(lex);
-    PrintVisitor visitor;
+    CodeGenerate visitor;
 
     auto root = parser.Parse();
     root -> Accept(&visitor);
 }
 
 int main(int argc,char *argv[]) {
-    if (argc != 2) {
+    if (argc != 3) {
         testParser();
         exit(0);
     }
-    source = argv[1];
+    char * code_file = argv[1];
+
+    if (std::string(code_file) == "path"){
+        FILE *fp = fopen(argv[2],"r");
+        if (fp == nullptr){
+            printf("file open failed :%s\n",argv[1]);
+            return 0;
+        }
+        char buffer[1024 * 10];
+        size_t len = fread(buffer,1,sizeof(buffer),fp);
+        buffer[len] = '\0';
+        source = buffer;
+    }
+    source = argv[2];
 
     Lexer lex(source);
     lex.GetNextToken();

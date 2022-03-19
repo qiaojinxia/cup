@@ -52,10 +52,10 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::Mod;
         GetNextChar();
     }else if(CurChar == '('){
-        kind = TokenKind::LParen;
+        kind = TokenKind::LParent;
         GetNextChar();
     }else if(CurChar == ')'){
-        kind = TokenKind::RParen;
+        kind = TokenKind::RParent;
         GetNextChar();
     }else if(CurChar == '{'){
         kind = TokenKind::LBrace;
@@ -124,7 +124,9 @@ void BDD::Lexer::GetNextToken() {
             }else if (content == "for"){
                 kind = TokenKind::For;
             }else if (content == "func"){
-                kind = TokenKind::Function;
+                kind = TokenKind::FunctionDefine;
+            }else if (content == "return"){
+                kind = TokenKind::Return;
             }
         }else{
             DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
@@ -169,15 +171,15 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "/";
         case TokenKind::Semicolon:
             return ";";
-        case TokenKind::LParen:
+        case TokenKind::LParent:
             return "(";
-        case TokenKind::RParen:
+        case TokenKind::RParent:
             return ")";
         case TokenKind::Assign:
             return "=";
 
-        case TokenKind::Function:
-            return "func_name ";
+        case TokenKind::FunctionDefine:
+            return "func ";
         case TokenKind::Eof:
             return "eof ";
         default:
@@ -193,4 +195,23 @@ char Lexer::PeekChar(int n) {
     }
     return '\0';
 }
+
+void Lexer::EndPeekToken() {
+    CurChar = PeekPointCurChar;
+    Cursor = PeekPointCursor;
+    Line = PeekPointLine;
+    LineHead = PeekPointLineHead;
+    CurrentToken = PeekPointCurrentToken;
+}
+
+void Lexer::BeginPeekToken() {
+    PeekPointCurChar = CurChar;
+    PeekPointCursor = Cursor;
+    PeekPointLine = Line;
+    PeekPointLineHead = LineHead;
+    PeekPointCurrentToken = CurrentToken;
+}
+
+
+
 

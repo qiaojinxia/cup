@@ -25,6 +25,9 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseFunc();
 
+        std::shared_ptr<AstNode> ParseFuncCallNode();
+
+
         std::shared_ptr<AstNode> ParseBinaryExpr(std::shared_ptr<AstNode> left);
         std::shared_ptr<AstNode> ParsePrimaryExpr();
 

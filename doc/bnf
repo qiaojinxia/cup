@@ -18,3 +18,5 @@ RelationalExpr := AddExpr < AddExpr | AddExpr <= AddExpr |
 PrimaryExpr    := Num
                := ID
                := ( BinaryExpr )
+               := Identifier"(" Args? ")"?
+Args           := AssignExpr (,AssignExpr)*

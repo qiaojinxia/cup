@@ -5,13 +5,17 @@
 #ifndef BODDY_CODEGENERATE_H
 #define BODDY_CODEGENERATE_H
 
+#include <string>
 #include "AstNode.h"
+
 
 namespace BDD{
     class CodeGenerate:public AstVisitor{
     private:
         int StackLevel{0};
         int Sequence{0};
+        const char *Regx64[6] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8d","%r9d"};
+        std::string CurrentFuncName;
     public:
         CodeGenerate(){}
     private:
@@ -26,6 +30,8 @@ namespace BDD{
         void Visitor(DoWhileStmtNode *node) override;
         void Visitor(ForStmtNode *node) override;
         void Visitor(FunctionNode *node) override;
+        void Visitor(FuncCallNode *node) override;
+        void Visitor(ReturnStmtNode *node) override;
         void Push();
         int  AlignTo(int size,int  align) ;
         void Pop(const char *reg);

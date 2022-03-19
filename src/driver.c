@@ -5,9 +5,9 @@
 
 #include <stdio.h>
 
-extern int main1();
+extern int prog();
 
 int main(){
-    printf("%d\n",main1());
+    printf("%d\n",prog());
     return 0;
 }

@@ -54,7 +54,7 @@ void PrintVisitor::Visitor(BinaryNode *node) {
             assert(0);
     }
     node -> Rhs -> Accept(this);
-
+    printf(";");
 }
 
 void PrintVisitor::Visitor(ConstantNode *node) {
@@ -135,19 +135,39 @@ void PrintVisitor::Visitor(ForStmtNode *node) {
 }
 
 void PrintVisitor::Visitor(FunctionNode *node) {
-    printf("%s", std::string(node->FuncName).c_str());
+    printf("func %s", std::string(node->FuncName).c_str());
     printf("(");
-    for(int i = 0;i <node->Params.size();i++){
-        printf("%s",std::string(node -> Params[i]->Name).c_str());
-        if (i != node ->Params.size() -1){
+    for(int i = 0;i <node->Params.size();i++) {
+        printf("%s", std::string(node->Params[i]->Name).c_str());
+        if (i != node->Params.size() - 1) {
             printf(",");
         }
-        printf(")");
-        printf("{");
-        for (auto &s:node -> Stmts)
-            s ->Accept(this);
-        printf("}");
+
     }
+    printf(")");
+    printf("{");
+    for (auto &s:node -> Stmts)
+        s ->Accept(this);
+    printf("}");
+}
+
+void PrintVisitor::Visitor(FuncCallNode *node) {
+    printf("%s", std::string(node->FuncName).c_str());
+    printf("(");
+    for (int i = 0; i < node->Args.size(); ++i) {
+        node-> Args[i] ->Accept(this);
+        if (i != node -> Args.size() -1){
+            printf(",");
+        }
+    }
+    printf(")");
+
+}
+
+void PrintVisitor::Visitor(ReturnStmtNode *node) {
+    printf("return ");
+    node -> Lhs ->Accept(this);
+    printf(";");
 }
 
 

@@ -23,8 +23,8 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
     }
     node -> Rhs ->Accept(this);
     Push();
-    Pop("%rdi");
     node -> Lhs -> Accept(this);
+    Pop("%rdi");
     switch (node -> BinOp) {
         case BinaryOperator::Add:
             printf("\t  add %%rdi,%%rax\n");
@@ -123,11 +123,11 @@ void CodeGenerate::Visitor(IfStmtNode *node) {
     node -> Then->Accept(this);
     printf("\t jmp .L.end_%d\n",n);
     if (node -> Else){
-        printf("\t.L.else_%d:\n",n);
+        printf(".L.else_%d:\n",n);
         node ->Else->Accept(this);
         printf("\t jmp .L.end_%d\n",n);
     }
-    printf("\t.L.end_%d:\n",n);
+    printf(".L.end_%d:\n",n);
 }
 
 void CodeGenerate::Visitor(BlockStmtNode *node) {
@@ -155,7 +155,7 @@ void CodeGenerate::Visitor(DoWhileStmtNode *node) {
     printf("\t  cmp $0, %%rax\n");
     printf("\t  je .L.end_%d\n",n);
     printf("\t  jmp .L.begin_%d\n",n);
-    printf("\t.L.end_%d:\n",n);
+    printf(".L.end_%d:\n",n);
 
 }
 
@@ -178,16 +178,15 @@ void CodeGenerate::Visitor(ForStmtNode *node) {
 }
 
 void CodeGenerate::Visitor(FunctionNode *node) {
-    printf("\t.text\n");
-
-    std::string name(node -> FuncName);
+    printf(".text\n");
+    CurrentFuncName = node -> FuncName;
 #ifdef __linux__
     printf(".globl %s\n",name.data());
     printf("%s:\n",name.data());
 #else
     ///macos
-    printf("\t.globl _%s1\n",name.data());
-    printf("_%s1:\n",name.data());
+    printf(".globl _%s\n",CurrentFuncName.data());
+    printf("_%s:\n",CurrentFuncName.data());
 #endif
     int stackSize = 0;
     for (auto &v: node -> Locals) {
@@ -201,14 +200,15 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     if (stackSize > 0 ){
         printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
     }
-    const char *reg[] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8d","%r9d"};
+
     for (int i = 0;i < node -> Params.size(); i++){
-        printf("\t mov %s, %d(%%rbp)\n",reg[i],node -> Params[i] -> Offset);
+        printf("\t  mov %s, %d(%%rbp)\n",Regx64[i],node -> Params[i] -> Offset);
     }
     for (auto &s:node->Stmts) {
         s ->Accept(this);
         assert(StackLevel == 0);
     }
+    printf(".LReturn_%s:\n",CurrentFuncName.data());
     printf("\t  mov %%rbp,%%rsp\n");
     printf("\t  pop %%rbp\n");
     printf("\t  ret \n");
@@ -216,5 +216,26 @@ void CodeGenerate::Visitor(FunctionNode *node) {
 
 int CodeGenerate::AlignTo(int size, int align) {
     return (size + align - 1) / align * align;
+}
+
+void CodeGenerate::Visitor(FuncCallNode *node) {
+    for(auto &arg:node -> Args){
+        arg ->Accept(this);
+        Push();
+    }
+    for (int i = node-> Args.size() -1; i >= 0; --i) {
+        Pop(Regx64[i]);
+    }
+    std::string FuncName(node->FuncName);
+#ifdef __linux__
+    printf("\t  call %s\n",FuncName.data());
+#else
+    printf("\t  call _%s\n",FuncName.data());
+#endif
+}
+
+void CodeGenerate::Visitor(ReturnStmtNode *node) {
+    node -> Lhs -> Accept(this);
+    printf("\t  jmp .LReturn_%s\n",CurrentFuncName.data());
 }
 
