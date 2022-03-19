@@ -30,4 +30,4 @@ a toy c compailer
         - `make program code="func main(c) {a = 0;b = 0; for(a = 1;a <= 10; a = a + 1) {b= b +1;}b;}"`
 - 2022-03-19
     - Support Recursion Fcuntion and  Function call
-        - `make program code="func main(c) {a = 0;b = 0; for(a = 1;a <= 10; a = a + 1) {b= b +1;}b;}"`
+        - `make program code="func fib(n) { if(n <=1){return 1;}else{ return fib(n -1)  + fib(n-2);}} func prog(){ fib(8);}"`
