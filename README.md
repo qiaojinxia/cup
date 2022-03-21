@@ -32,5 +32,5 @@ a toy c compailer
     - Support Recursion Fcuntion and  Function call
         - `make program code="func fib(n) { if(n <=1){return 1;}else{ return fib(n -1)  + fib(n-2);}} func prog(){ fib(8);}"`
 - 2022-03-20 ～ 2022-03-21
-    - Support Recursion Type int  
+    - Support  Type Define int  
         - `"int sum(int x,int m,int j){return x + m + j;}int fib(int n) { if(n <=1){return 1;}else{ return fib(n -1) + fib(n-2);}} int prog(){int a,b,c = 1;int d = sum(a,b,c);  int m = fib(5); return d + m;}"`  
