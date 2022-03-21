@@ -59,3 +59,7 @@ void FuncCallNode::Accept(AstVisitor *visitor) {
 void ReturnStmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void DeclarationStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

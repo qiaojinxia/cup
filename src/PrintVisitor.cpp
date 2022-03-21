@@ -137,12 +137,14 @@ void PrintVisitor::Visitor(ForStmtNode *node) {
 void PrintVisitor::Visitor(FunctionNode *node) {
     printf("func %s", std::string(node->FuncName).c_str());
     printf("(");
-    for(int i = 0;i <node->Params.size();i++) {
-        printf("%s", std::string(node->Params[i]->Name).c_str());
-        if (i != node->Params.size() - 1) {
+    for(auto &var:node -> Params) {
+        int sz = node -> Params.size();
+        int i = 0;
+        printf("%s", std::string(var->Name).c_str());
+        if (i != sz - 1) {
             printf(",");
         }
-
+        ++i;
     }
     printf(")");
     printf("{");
@@ -168,6 +170,12 @@ void PrintVisitor::Visitor(ReturnStmtNode *node) {
     printf("return ");
     node -> Lhs ->Accept(this);
     printf(";");
+}
+
+void PrintVisitor::Visitor(DeclarationStmtNode *node) {
+    for (auto  &n:node ->AssignNodes) {
+        n ->Accept(this);
+    }
 }
 
 

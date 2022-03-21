@@ -15,6 +15,7 @@ namespace BDD{
         int StackLevel{0};
         int Sequence{0};
         const char *Regx64[6] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8d","%r9d"};
+        int RegCursor{0};
         std::string CurrentFuncName;
     public:
         CodeGenerate(){}
@@ -32,7 +33,11 @@ namespace BDD{
         void Visitor(FunctionNode *node) override;
         void Visitor(FuncCallNode *node) override;
         void Visitor(ReturnStmtNode *node) override;
+        void Visitor(DeclarationStmtNode *node) override;
         void Push();
+        void PushReg(int value);
+        void PopReg(int value);
+        void ResetReg();
         int  AlignTo(int size,int  align) ;
         void Pop(const char *reg);
     };

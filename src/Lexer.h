@@ -16,10 +16,10 @@ namespace BDD{
         GreaterEqual,
         Lesser,
         LesserEqual,
-        Add,
-        Sub,
-        Mul,
-        Div,
+        Plus,
+        Minus,
+        Start,
+        Slash,
         Mod,
         Num,
         Eof,
@@ -33,7 +33,7 @@ namespace BDD{
         While,
         Do,
         For,
-        FunctionDefine,
+        Int,
         Return,
         Comma,
         Identifier,
@@ -55,7 +55,7 @@ namespace BDD{
     class Lexer {
     private:
         char CurChar{' '};
-        char Cursor{0};
+        int Cursor{0};
         int Line{0};
         int LineHead{0};
 

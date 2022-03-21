@@ -9,17 +9,20 @@
 #include <list>
 #include <string_view>
 #include <vector>
+#include "Type.h"
 
 namespace BDD{
     class AstVisitor;
+    class Type;
     class AstNode {
     public:
         virtual ~AstNode(){};
         virtual void Accept(AstVisitor *visitor) {};
-
+        std::shared_ptr<Type> Type;
     };
     class Var{
     public:
+        std::shared_ptr<Type> Type;
         std::string_view Name;
         int Offset;
     };
@@ -32,7 +35,7 @@ namespace BDD{
     class FunctionNode: public AstNode{
     public:
         std::string_view FuncName;
-        std::vector<std::shared_ptr<Var>> Params;
+        std::list<std::shared_ptr<Var>> Params;
         std::list<std::shared_ptr<Var>> Locals;
         std::list<std::shared_ptr<AstNode>> Stmts;
 
@@ -131,6 +134,13 @@ namespace BDD{
         std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
     };
+
+    class DeclarationStmtNode: public AstNode{
+    public:
+        std::list<std::shared_ptr<BinaryNode>> AssignNodes;
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -147,6 +157,7 @@ namespace BDD{
         virtual void Visitor(FunctionNode *node){};
         virtual void Visitor(FuncCallNode *node){};
         virtual void Visitor(ReturnStmtNode *node){};
+        virtual void Visitor(DeclarationStmtNode *node){};
     };
 
 }

@@ -34,19 +34,19 @@ void BDD::Lexer::GetNextToken() {
     if (CurChar == '\0'){
         kind = TokenKind::Eof;
     }else if(CurChar == '+'){
-        kind = TokenKind::Add;
+        kind = TokenKind::Plus;
         GetNextChar();
     }else if(CurChar == '-'){
-        kind = TokenKind::Sub;
+        kind = TokenKind::Minus;
         GetNextChar();
     }else if (CurChar == ','){
         kind = TokenKind::Comma;
         GetNextChar();
     }else if(CurChar == '*'){
-        kind = TokenKind::Mul;
+        kind = TokenKind::Start;
         GetNextChar();
     }else if(CurChar == '/'){
-        kind = TokenKind::Div;
+        kind = TokenKind::Slash;
         GetNextChar();
     }else if(CurChar == '%'){
         kind = TokenKind::Mod;
@@ -123,8 +123,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Do;
             }else if (content == "for"){
                 kind = TokenKind::For;
-            }else if (content == "func"){
-                kind = TokenKind::FunctionDefine;
+            }else if (content == "int"){
+                kind = TokenKind::Int;
             }else if (content == "return"){
                 kind = TokenKind::Return;
             }
@@ -161,13 +161,13 @@ void Lexer::ExceptToken(TokenKind kind) {
 
 const char *Lexer::GetTokenName(TokenKind kind) {
     switch (kind) {
-        case TokenKind::Add:
+        case TokenKind::Plus:
             return "+";
-        case TokenKind::Sub:
+        case TokenKind::Minus:
             return "-";
-        case TokenKind::Mul:
+        case TokenKind::Start:
             return "*";
-        case TokenKind::Div:
+        case TokenKind::Slash:
             return "/";
         case TokenKind::Semicolon:
             return ";";
@@ -177,9 +177,6 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return ")";
         case TokenKind::Assign:
             return "=";
-
-        case TokenKind::FunctionDefine:
-            return "func ";
         case TokenKind::Eof:
             return "eof ";
         default:

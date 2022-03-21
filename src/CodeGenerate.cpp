@@ -200,9 +200,9 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     if (stackSize > 0 ){
         printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
     }
-
-    for (int i = 0;i < node -> Params.size(); i++){
-        printf("\t  mov %s, %d(%%rbp)\n",Regx64[i],node -> Params[i] -> Offset);
+    auto index = 0;
+    for (auto &var: node->Params){
+        printf("\t  mov %s, %d(%%rbp)\n",Regx64[index++],var  -> Offset );
     }
     for (auto &s:node->Stmts) {
         s ->Accept(this);
@@ -237,5 +237,23 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 void CodeGenerate::Visitor(ReturnStmtNode *node) {
     node -> Lhs -> Accept(this);
     printf("\t  jmp .LReturn_%s\n",CurrentFuncName.data());
+}
+
+void CodeGenerate::Visitor(DeclarationStmtNode *node) {
+    for (auto &n:node->AssignNodes) {
+        n ->Accept(this);
+    }
+}
+
+void CodeGenerate::ResetReg() {
+    RegCursor = 0;
+}
+
+void CodeGenerate::PushReg(int value) {
+    printf("\t  mov %d,%s\n",value,Regx64[RegCursor]);
+    RegCursor += 1;
+    if (RegCursor > 5){
+
+    }
 }
 

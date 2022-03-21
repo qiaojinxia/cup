@@ -27,12 +27,20 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseFuncCallNode();
 
+        std::shared_ptr<Type> ParseDeclarationSpec();
+        std::shared_ptr<Type> ParseDeclarator(std::shared_ptr<Type> baseType,std::shared_ptr<Token> &nameToken);
+
+        std::shared_ptr<Type> ParseTypeSuffix(std::shared_ptr<Type> baseType);
+
 
         std::shared_ptr<AstNode> ParseBinaryExpr(std::shared_ptr<AstNode> left);
         std::shared_ptr<AstNode> ParsePrimaryExpr();
 
         std::shared_ptr<Var> FindLocalVar(std::string_view varName);
-        std::shared_ptr<Var> NewLocalVar(std::string_view varName);
+        std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type);
+
+    private:
+        bool IsTypeName();
     };
 
 }
