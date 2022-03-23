@@ -33,19 +33,24 @@ int main(int argc,char *argv[]) {
         exit(0);
     }
     char * code_file = argv[1];
-
-    if (std::string(code_file) == "path"){
+    auto fileType  = std::string(code_file);
+    if (fileType == "path"){
+        if (strlen(argv[2]) == 0){
+            printf("please input file path \n");
+            return 0;
+        }
         FILE *fp = fopen(argv[2],"r");
         if (fp == nullptr){
-            printf("file open failed :%s\n",argv[1]);
+            printf("file open failed :%s\n",argv[2]);
             return 0;
         }
         char buffer[1024 * 10];
         size_t len = fread(buffer,1,sizeof(buffer),fp);
         buffer[len] = '\0';
         source = buffer;
+    }else{
+        source = argv[2];
     }
-    source = argv[2];
 
     Lexer lex(source);
     lex.GetNextToken();

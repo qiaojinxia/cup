@@ -61,7 +61,6 @@ namespace BDD{
         std::shared_ptr<Type> Type;
         std::shared_ptr<Token> TToken;
     };
-
     class FunctionType : public Type{
     private:
         std::shared_ptr<Type> ReturnType;
@@ -69,8 +68,6 @@ namespace BDD{
         std::list<std::shared_ptr<Param>> Params;
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FunctionType,8,8),ReturnType(returnType) {}
     };
-
-
 }
 
 #endif //BODDY_TYPE_H

@@ -64,9 +64,23 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
     switch (Lex.CurrentToken -> Kind){
         case TokenKind::LParent:
         {
+            Lex.BeginPeekToken();
+            Lex.GetNextToken();
+            if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
+                Lex.EndPeekToken();
+                Lex.ExceptToken(TokenKind::LParent);
+                Lex.ExceptToken(TokenKind::LBrace);
+                auto node = std::make_shared<StmtExprNode>();
+                while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
+                    node -> Stmts.push_back(ParseStatement());
+                }
+                Lex.GetNextToken();
+                Lex.ExceptToken(TokenKind::RParent);
+                return node;
+            }
             Lex.GetNextToken();
             node = ParseExpr();
-            Lex.ExceptToken(TokenKind::RParent);
+            Lex.ExceptToken(TokenKind::RBrace);
             break;
         }
         case TokenKind::Identifier:

@@ -141,6 +141,13 @@ namespace BDD{
         void Accept(AstVisitor *visitor) override;
     };
 
+
+    class StmtExprNode : public AstNode{
+    public:
+        std::list<std::shared_ptr<AstNode>> Stmts;
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -158,6 +165,7 @@ namespace BDD{
         virtual void Visitor(FuncCallNode *node){};
         virtual void Visitor(ReturnStmtNode *node){};
         virtual void Visitor(DeclarationStmtNode *node){};
+        virtual void Visitor(StmtExprNode *node){};
     };
 
 }

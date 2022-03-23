@@ -34,6 +34,7 @@ namespace BDD{
         void Visitor(FuncCallNode *node) override;
         void Visitor(ReturnStmtNode *node) override;
         void Visitor(DeclarationStmtNode *node) override;
+        void Visitor(StmtExprNode *node) override;
         void Push();
         void PushReg(int value);
         void PopReg(int value);

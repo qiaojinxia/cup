@@ -257,3 +257,9 @@ void CodeGenerate::PushReg(int value) {
     }
 }
 
+void CodeGenerate::Visitor(StmtExprNode *node) {
+    for (auto &s : node ->Stmts) {
+        s ->Accept(this);
+    }
+}
+
