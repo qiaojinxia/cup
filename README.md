@@ -37,3 +37,7 @@ a toy c compailer
 - 2022-03-21～ 2022-03-23
   - Support test case and StmtExprNode funcA({statement*}) 
     - `prog({int i = 1;}) int funca(int n){ return n + 1;}`
+- 2022-03-23～ 2022-03-27
+    - Support test case and annotation  pointer type int a = 1; int b = &a;
+    - Support Arithmetic expression priority 
+        - `make testCode`

@@ -2,11 +2,11 @@
 // Created by qiaojinxia on 2022/3/20.
 //
 
+#ifndef BODDY_TYPE_H
+#define BODDY_TYPE_H
 #include <memory>
 #include "Lexer.h"
 #include <list>
-#ifndef BODDY_TYPE_H
-#define BODDY_TYPE_H
 
 
 namespace BDD{
@@ -50,9 +50,8 @@ namespace BDD{
     };
 
     class  PointerType : public Type{
-    private:
-        std::shared_ptr<Type> Base;
     public:
+        std::shared_ptr<Type> Base;
         PointerType(std::shared_ptr<Type> base)  : Type(TypeClass::PointerType,8,8),Base(base) {}
     };
 
@@ -68,6 +67,9 @@ namespace BDD{
         std::list<std::shared_ptr<Param>> Params;
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FunctionType,8,8),ReturnType(returnType) {}
     };
+
+
+
 }
 
 #endif //BODDY_TYPE_H

@@ -10,10 +10,10 @@
 #include <string_view>
 #include <vector>
 #include "Type.h"
+#include <map>
 
 namespace BDD{
     class AstVisitor;
-    class Type;
     class AstNode {
     public:
         virtual ~AstNode(){};
@@ -42,6 +42,19 @@ namespace BDD{
         void Accept(AstVisitor *visitor) override;
     };
 
+    enum class UnaryOperator {
+        Plus,
+        Minus,
+        Deref,
+        Amp,
+    };
+
+    class UnaryNode : public AstNode{
+    public:
+        UnaryOperator Uop;
+        std::shared_ptr<AstNode> Lhs;
+        void Accept(AstVisitor *visitor) override;
+    };
     enum class BinaryOperator{
         Add,
         Sub,
@@ -55,9 +68,24 @@ namespace BDD{
         GreaterEqual,
         Lesser,
         LesserEqual,
+        Eof,
+    };
+    static std::map<BinaryOperator,int> OpPrecedence = {
+        {BinaryOperator::Equal, 7},
+        {BinaryOperator::NotEqual, 7},
+        {BinaryOperator::Greater, 6},
+        {BinaryOperator::GreaterEqual, 6},
+        {BinaryOperator::Lesser, 6},
+        {BinaryOperator::LesserEqual, 6},
+        {BinaryOperator::Add, 4},
+        {BinaryOperator::Sub, 4},
+        {BinaryOperator::Mul, 3},
+        {BinaryOperator::Div, 3},
+        {BinaryOperator::Mod, 3},
+        {BinaryOperator::Eof, 15},
     };
 
-    class BinaryNode :public  AstNode{
+class BinaryNode :public  AstNode{
     public:
         BinaryOperator BinOp;
         std::shared_ptr<AstNode> Lhs;
@@ -166,6 +194,7 @@ namespace BDD{
         virtual void Visitor(ReturnStmtNode *node){};
         virtual void Visitor(DeclarationStmtNode *node){};
         virtual void Visitor(StmtExprNode *node){};
+        virtual void Visitor(UnaryNode *node){};
     };
 
 }

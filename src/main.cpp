@@ -7,7 +7,7 @@
 
 using namespace BDD;
 
-const char *source = "int sum(int x,int m,int j){return x + m + j;}int fib(int n) { if(n <=1){return 1;}else{ return fib(n -1) + fib(n-2);}} int prog(){int a,b,c = 1; return sum(a,b,c); + fib(5);}";
+const char *source = "int prog(){return 3 + 2 - 3  * 4  + 5 ;}";
 
 void testLexer(){
     Lexer lexer(source);

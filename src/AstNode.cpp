@@ -67,3 +67,7 @@ void DeclarationStmtNode::Accept(AstVisitor *visitor) {
 void StmtExprNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void UnaryNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

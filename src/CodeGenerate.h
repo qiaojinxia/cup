@@ -35,10 +35,13 @@ namespace BDD{
         void Visitor(ReturnStmtNode *node) override;
         void Visitor(DeclarationStmtNode *node) override;
         void Visitor(StmtExprNode *node) override;
+        void Visitor(UnaryNode *node) override;
         void Push();
         void PushReg(int value);
         void PopReg(int value);
         void ResetReg();
+
+        void GenerateAddress(AstNode *node);
         int  AlignTo(int size,int  align) ;
         void Pop(const char *reg);
     };

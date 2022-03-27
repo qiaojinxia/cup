@@ -15,6 +15,7 @@ namespace BDD{
         Lexer &Lex;
         std::list<std::shared_ptr<Var>> *LocalVars{nullptr};
         std::unordered_map<std::string_view,std::shared_ptr<Var>> LocalsMap;
+        BinaryOperator LastOperation{BinaryOperator::Eof};
     public:
         Parser(Lexer &Lex):Lex(Lex){}
         std::shared_ptr<ProgramNode> Parse();
@@ -35,6 +36,9 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseBinaryExpr(std::shared_ptr<AstNode> left);
         std::shared_ptr<AstNode> ParsePrimaryExpr();
+
+        std::shared_ptr<AstNode> ParseUnaryExpr();
+
 
         std::shared_ptr<Var> FindLocalVar(std::string_view varName);
         std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type);

@@ -14,7 +14,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
     if (node->BinOp == BinaryOperator::Assign){
         auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node->Lhs);
         assert(varNode != nullptr);
-        printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj->Offset);
+        GenerateAddress(node ->Lhs.get());
         Push();
         node -> Rhs -> Accept(this);
         Pop("%rdi");
@@ -36,6 +36,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  imul %%rdi,%%rax\n");
             break;
         case BinaryOperator::Div:
+            printf("\t  xor %%rdx,%%rdx\n");
             printf("\t  idiv %%rdi\n");
             break;
         case BinaryOperator::Mod:
@@ -260,6 +261,41 @@ void CodeGenerate::PushReg(int value) {
 void CodeGenerate::Visitor(StmtExprNode *node) {
     for (auto &s : node ->Stmts) {
         s ->Accept(this);
+    }
+}
+
+void CodeGenerate::Visitor(UnaryNode *node) {
+    switch (node ->Uop) {
+        case UnaryOperator::Plus:
+            node -> Lhs ->Accept(this);
+            break;
+        case UnaryOperator::Minus:
+            node -> Lhs ->Accept(this);
+            printf("\tneg %%rax\n");
+            break;
+        case UnaryOperator::Deref:
+            GenerateAddress(node);
+            printf("\tmov (%%rax),%%rax\n");
+            break;
+        case UnaryOperator::Amp:
+            GenerateAddress(node -> Lhs.get());
+            break;
+    }
+}
+
+void CodeGenerate::GenerateAddress(AstNode *node) {
+    if (auto varNode = dynamic_cast<ExprVarNode *>(node)){
+        printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj ->Offset);
+    }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
+        if (unaryNode -> Uop == UnaryOperator::Deref){
+            unaryNode -> Lhs ->Accept(this);
+        }else {
+            printf("unaryNode must be defer!\n");
+            assert(0);
+        }
+    } else{
+        printf("not a value\n");
+        assert(0);
     }
 }
 

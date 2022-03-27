@@ -10,4 +10,5 @@ add_executable(boddy
         src/CodeGenerate.cpp src/CodeGenerate.h
         src/AstNode.cpp src/AstNode.h
         src/PrintVisitor.cpp src/PrintVisitor.h
-        src/Diag.cpp src/Diag.h src/Type.cpp src/Type.h )
+        src/Diag.cpp src/Diag.h
+        src/Type.cpp src/Type.h src/TypeVisitor.cpp src/TypeVisitor.h)

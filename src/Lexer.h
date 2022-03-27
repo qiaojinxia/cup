@@ -8,6 +8,7 @@
 #include <string_view>
 #include <memory>
 
+
 namespace BDD{
     enum class TokenKind{
         Equal,
@@ -38,12 +39,16 @@ namespace BDD{
         Comma,
         Identifier,
         Assign,
+        Amp,
 
     };
     class SourceLocation{
     public:
         int Line;
         int Col;
+        int LineHead;
+        int FilePath;
+        int Code;
     };
     class Token{
     public:
@@ -84,6 +89,11 @@ namespace BDD{
         char PeekChar(int n);
         const char* GetTokenName(TokenKind kind);
 
+        void SkipWhiteSpace();
+        void SkipComment();
+
+
+        SourceLocation GetLocation();
     };
 
 }

@@ -18,18 +18,9 @@ void BDD::Lexer::GetNextChar() {
 }
 
 void BDD::Lexer::GetNextToken() {
-    while(isspace(CurChar)){
-        if (CurChar == '\n'){
-            Line ++;
-            LineHead = Cursor;
-        }
-        GetNextChar();
-    }
-    SourceLocation Location;
-    TokenKind kind;
-    Location.Line = Line;
-    Location.Col = Cursor - 1 -LineHead;
+    SkipWhiteSpace();
     int value = 0;
+    TokenKind kind;
     int startPos = Cursor -1;
     if (CurChar == '\0'){
         kind = TokenKind::Eof;
@@ -53,6 +44,9 @@ void BDD::Lexer::GetNextToken() {
         GetNextChar();
     }else if(CurChar == '('){
         kind = TokenKind::LParent;
+        GetNextChar();
+    }else if(CurChar == '&'){
+        kind = TokenKind::Amp;
         GetNextChar();
     }else if(CurChar == ')'){
         kind = TokenKind::RParent;
@@ -135,7 +129,7 @@ void BDD::Lexer::GetNextToken() {
     CurrentToken = std::make_shared<Token>();
     CurrentToken->Kind = kind;
     CurrentToken->Value = value;
-    CurrentToken -> Location = Location;
+    CurrentToken -> Location = GetLocation();
     CurrentToken->Content = SourceCode.substr(startPos,Cursor - 1 -startPos);
 }
 
@@ -209,6 +203,40 @@ void Lexer::BeginPeekToken() {
     PeekPointCurrentToken = CurrentToken;
 }
 
+void Lexer::SkipWhiteSpace() {
+    while (isspace(CurChar) || (CurChar == '/' && PeekChar(1) ==   '/')
+    || (CurChar == '/' && PeekChar(1) == '*')){
+        if(CurChar == '/'){
+            SkipComment();
+            continue;
+        }else if (CurChar== '\n'){
+            Line ++;
+            LineHead = Cursor;
+        }
+        GetNextChar();
+    }
+}
 
+void Lexer::SkipComment() {
+    if(CurChar == '/' && PeekChar(1) == '/'){
+        while (CurChar != '\n')
+            GetNextChar();
+    }else{
+        auto pos = SourceCode.find("*/",Cursor + 1);
+        if (pos == std::string_view::npos){
+            printf("unclosed \"*/\"");
+            assert(0);
+        }else{
+            CurChar= PeekChar((pos + 2) - (Cursor - 1));
+            Cursor = pos + 3;
+        }
+    }
+}
 
+SourceLocation Lexer::GetLocation(){
+    SourceLocation Location;
+    Location.Line = Line;
+    Location.Col = Cursor - 1 -LineHead;
+    return Location;
+}
 

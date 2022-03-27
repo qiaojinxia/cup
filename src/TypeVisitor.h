@@ -1,33 +1,32 @@
 //
-// Created by a on 2022/3/9.
+// Created by qiaojinxia on 2022/3/24.
 //
 
-#ifndef BODDY_PRINTVISITOR_H
-#define BODDY_PRINTVISITOR_H
-
-#include "AstNode.h"
+#ifndef BODDY_TYPEVISITOR_H
+#define BODDY_TYPEVISITOR_H
+# include "AstNode.h"
 
 namespace BDD{
-    class PrintVisitor: public AstVisitor{
-    public:
-        PrintVisitor(){}
-        void Visitor(ProgramNode *node) override;
-    private:
-        void Visitor(FunctionNode *node) override;
+    class TypeVisitor : public AstVisitor{
         void Visitor(ExprStmtNode *node) override;
-        void Visitor(ExprVarNode *node) override;
         void Visitor(BinaryNode *node) override;
         void Visitor(ConstantNode *node) override;
+        void Visitor(ExprVarNode *node) override;
+        void Visitor(ProgramNode *node) override;
         void Visitor(IfStmtNode *node) override;
         void Visitor(BlockStmtNode *node) override;
         void Visitor(WhileStmtNode *node) override;
         void Visitor(DoWhileStmtNode *node) override;
         void Visitor(ForStmtNode *node) override;
+        void Visitor(FunctionNode *node) override;
         void Visitor(FuncCallNode *node) override;
         void Visitor(ReturnStmtNode *node) override;
         void Visitor(DeclarationStmtNode *node) override;
+        void Visitor(StmtExprNode *node) override;
+        void Visitor(UnaryNode *node) override;
     };
 
-
 }
-#endif //BODDY_PRINTVISITOR_H
+
+
+#endif //BODDY_TYPEVISITOR_H

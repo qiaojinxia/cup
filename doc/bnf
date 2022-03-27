@@ -8,8 +8,9 @@ Stmt           := BinaryExpr*
                :=  do '{' Stmt '}' while  '(' Stmt ')'
                :=  for '(' Init ; Cond ; Incr ')' '{' Stmt '}'
 BinaryExpr     := AddExpr  | EqualityExpr | EqualityExpr | AssignExpr | RelationalExpr
-AddExpr        := PrimaryExpr | AddExpr + AddExpr | AddExpr - AddExpr |
+AddExpr        :=  UnaryExpr | AddExpr + AddExpr | AddExpr - AddExpr |
                   AddExpr * AddExpr | AddExpr /  AddExpr
+UnaryExpr      := UnaryOperation  UnaryExpr| PrimaryExpr
 AssignExpr     := AddExpr = AddExpr
 EqualityExpr   := EqualityExpr == EqualityExpr
                := EqualityExpr != EqualityExpr
