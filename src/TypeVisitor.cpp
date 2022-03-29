@@ -3,6 +3,7 @@
 //
 
 #include "TypeVisitor.h"
+#include "Diag.h"
 
 using namespace BDD;
 
@@ -16,6 +17,41 @@ void TypeVisitor::Visitor(ExprStmtNode *node) {
 void TypeVisitor::Visitor(BinaryNode *node) {
     node ->Lhs->Accept(this);
     node ->Rhs ->Accept(this);
+    node -> Type =  node -> Rhs -> Type;
+    switch (node ->BinOp) {
+        case BinaryOperator::Add:
+            if (node -> Lhs -> Type ->IsPointerType() && node -> Rhs -> Type ->IsIntegerType()){
+                node -> BinOp = BinaryOperator::PointerAdd;
+                node ->Type = Type::Pointer;
+            }else if (node -> Lhs -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsPointerType()){
+                node -> BinOp = BinaryOperator::PointerAdd;
+                node ->Type = Type::Pointer;
+            }else if (node -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsIntegerType()){
+            }else{
+                printf("invalid add operation");
+                assert(0);
+            }
+            break;
+        case BinaryOperator::Sub:
+            if (node -> Lhs -> Type ->IsPointerType() && node -> Rhs -> Type ->IsIntegerType()){
+                node -> BinOp = BinaryOperator::PointerSub;
+                node ->Type = Type::Pointer;
+            }else if (node -> Lhs -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsIntegerType()){
+            }else if(node -> Lhs -> Type -> IsPointerType() && node -> Rhs -> Type -> IsPointerType()){
+                node -> BinOp = BinaryOperator::PointerDiff;
+                node ->Type = Type::Pointer;
+            }else{
+                printf("invalid sub operation");
+                assert(0);
+            }
+            break;
+        case BinaryOperator::PointerAdd:
+            node ->Type = Type::Pointer;
+        case BinaryOperator::PointerSub:
+            node ->Type = Type::Pointer;
+        default:
+            break;
+    }
 }
 
 void TypeVisitor::Visitor(ConstantNode *node) {
@@ -23,7 +59,7 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 }
 
 void TypeVisitor::Visitor(ExprVarNode *node) {
-    node ->Accept( this);
+    node -> Type = node ->VarObj ->Type;
 }
 
 void TypeVisitor::Visitor(ProgramNode *node) {
@@ -98,15 +134,19 @@ void TypeVisitor::Visitor(UnaryNode *node) {
             node -> Type = node -> Lhs -> Type;
             break;
         case UnaryOperator::Deref:
-            if (node -> Lhs->Type->IsPointerType()){
+            if (node -> Lhs -> Type->IsPointerType()){
                 node -> Type = std::dynamic_pointer_cast<PointerType>(node -> Lhs->Type)->Base;
             }else{
                 printf("invalid defer operation");
-                assert(0);
             }
             break;
         case UnaryOperator::Amp:
             node -> Type = std::make_shared<PointerType>(node -> Lhs ->Type);
             break;
     }
+}
+
+void TypeVisitor::Visitor(SizeOfExprNode *node) {
+        node -> Lhs ->Accept(this);
+        node -> Type = node -> Lhs ->Type;
 }

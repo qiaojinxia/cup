@@ -24,6 +24,7 @@ namespace BDD{
         void Visitor(DeclarationStmtNode *node) override;
         void Visitor(StmtExprNode *node) override;
         void Visitor(UnaryNode *node) override;
+        void Visitor(SizeOfExprNode *node) override;
     };
 
 }

@@ -41,3 +41,6 @@ a toy c compailer
     - Support test case and annotation  pointer type int a = 1; int b = &a;
     - Support Arithmetic expression priority 
         - `make testCode`
+- 2022-03-28 ~ 2022-03-29
+    - Support pointr add *(y+2) pointer sub *(y-2)  Pointerdiff  calc  (a  - b)  and support sizeof express can get the 
+    -  size of VarNode

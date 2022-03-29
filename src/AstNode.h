@@ -57,7 +57,10 @@ namespace BDD{
     };
     enum class BinaryOperator{
         Add,
+        PointerAdd,
         Sub,
+        PointerSub,
+        PointerDiff,
         Mul,
         Div,
         Mod,
@@ -176,6 +179,12 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class SizeOfExprNode : public  AstNode{
+    public:
+        std::shared_ptr<AstNode> Lhs {nullptr};
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -195,6 +204,7 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(DeclarationStmtNode *node){};
         virtual void Visitor(StmtExprNode *node){};
         virtual void Visitor(UnaryNode *node){};
+        virtual void Visitor(SizeOfExprNode *node){};
     };
 
 }

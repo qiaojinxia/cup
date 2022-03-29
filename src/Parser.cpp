@@ -6,6 +6,7 @@
 #include "Lexer.h"
 #include "AstNode.h"
 #include "Diag.h"
+#include "TypeVisitor.h"
 
 using namespace BDD;
 
@@ -64,7 +65,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) 
         node -> Lhs = left;
     if (prevNode) {
         auto preOpt = OpPrecedence[prevNode->BinOp];
-        auto noeOpt =OpPrecedence[anOperator];
+        auto noeOpt = OpPrecedence[anOperator];
         if (preOpt < noeOpt){
             LastOperation = anOperator;
             return leftNode;
@@ -95,7 +96,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) 
 
 }
 
-std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
+std::shared_ptr<AstNode> Parser::ParsePrimaryExpr(std::shared_ptr<Type> varType) {
     auto node = std::make_shared<AstNode>();
     switch (Lex.CurrentToken -> Kind){
         case TokenKind::LParent:
@@ -114,9 +115,10 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                 Lex.ExceptToken(TokenKind::RParent);
                 return node;
             }
+            Lex.EndPeekToken();
             Lex.GetNextToken();
             node = ParseExpr();
-            Lex.ExceptToken(TokenKind::RBrace);
+            Lex.ExceptToken(TokenKind::RParent);
             break;
         }
         case TokenKind::Identifier:
@@ -133,7 +135,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             exprVarNode -> Name = Lex.CurrentToken->Content;
             auto obj = FindLocalVar(Lex.CurrentToken -> Content);
             if (!obj){
-                obj = NewLocalVar(Lex.CurrentToken -> Content,Type::IntType);
+                obj = NewLocalVar(Lex.CurrentToken -> Content,varType);
             }
             exprVarNode ->VarObj = obj;
             node = exprVarNode;
@@ -148,6 +150,14 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
            node =  constNode;
            break;
        }
+        case TokenKind::SizeOf:
+        {
+            Lex.GetNextToken();
+            auto sizeOfNode = std::make_shared<SizeOfExprNode>();
+            sizeOfNode -> Lhs = ParseUnaryExpr();
+            node =  sizeOfNode;
+            break;
+        }
        default:
            DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"not support type");
     }
@@ -160,6 +170,8 @@ std::shared_ptr<AstNode> Parser::ParseExpr() {
     && Lex.CurrentToken -> Kind != TokenKind::Comma ) {
         left = ParseBinaryExpr(left);
     }
+    TypeVisitor typeVisitor;
+    left -> Accept( &typeVisitor);
     return left;
 }
 
@@ -234,11 +246,12 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         return node;
     }else if (IsTypeName()){
         auto node = std::make_shared<DeclarationStmtNode>();
-        auto type = ParseDeclarationSpec();
         std::list<std::shared_ptr<BinaryNode>> assignNodes;
-        while (Lex.CurrentToken -> Kind == TokenKind::Identifier){
-            auto varIdObj = ParseUnaryExpr();
+        auto type = ParseDeclarationSpec();
+        while (Lex.CurrentToken -> Kind != TokenKind::Assign){
             auto assignNode = std::make_shared<BinaryNode>();
+            auto varIdObj = ParsePrimaryExpr(type);
+            varIdObj -> Type = type;
             assignNode ->Lhs = varIdObj;
             assignNode ->BinOp = BinaryOperator::Assign;
             assignNodes.push_back(assignNode);
@@ -329,6 +342,10 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
 std::shared_ptr<Type> Parser::ParseDeclarationSpec() {
     if (Lex.CurrentToken -> Kind == TokenKind::Int){
         Lex.GetNextToken();
+        if (Lex.CurrentToken -> Kind == TokenKind::Start){
+            Lex.GetNextToken();
+            return Type::Pointer;
+        }
         return Type::IntType;
     }
     DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"type not support current!");
@@ -405,8 +422,7 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
         node -> Lhs = ParseUnaryExpr();
         return node;
     }
-    return ParsePrimaryExpr();
-
+    return ParsePrimaryExpr(Type::IntType);
 }
 
 

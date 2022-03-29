@@ -12,8 +12,6 @@ using namespace BDD;
 
 void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
     if (node->BinOp == BinaryOperator::Assign){
-        auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node->Lhs);
-        assert(varNode != nullptr);
         GenerateAddress(node ->Lhs.get());
         Push();
         node -> Rhs -> Accept(this);
@@ -77,6 +75,29 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  setne %%al\n");
             printf("\t  movzb %%al,%%rax\n");
             break;
+        case BinaryOperator::PointerAdd:
+        {
+            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
+            printf("\t  imul $%d,%%rdi\n",pType -> GetSize());
+            printf("\t  add %%rdi,%%rax\n");
+            break;
+        }
+        case BinaryOperator::PointerSub:
+        {
+            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
+            printf("\t  imul $%d,%%rdi\n",pType -> GetSize());
+            printf("\t  sub %%rdi,%%rax\n");
+            break;
+        }
+        case BinaryOperator::PointerDiff:
+        {
+            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
+            printf("\t  sub %%rdi,%%rax\n");
+            printf("\t  mov $%d, %%rdi\n",pType->GetSize());
+            printf("\t  cqo\n");
+            printf("\t  idiv %%rdi\n");
+            break;
+        }
         default:
             assert(0);
     }
@@ -297,5 +318,9 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         printf("not a value\n");
         assert(0);
     }
+}
+
+void CodeGenerate::Visitor(SizeOfExprNode *node) {
+    printf("\t mov $%d,%%rax\n",node ->Type ->GetSize());
 }
 

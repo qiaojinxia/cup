@@ -12,6 +12,14 @@ int testCode(){
     assert(-8,({ -+10 + 2;}));
     assert(12,({ --10 + 2;})); //support annotation
     assert(3,({ int x = 3;*&x;}));
-
+    assert(2,({ int x = 3;int *y = &x;x = 2;*y;}));
+    assert(3,({ int x = 3;int y = x;x = 2;y;}));
+    assert(5,({ int x = 3;int y = x;int *z = &x;*(z+1) = 5;y;}));
+    assert(3,({ int x = 3;int y = x;int *z = &x;*(z-1) = 5;y;}));
+    assert(1,({ int x = 3;int y = 4;int *z = &y;int *k = &x;z-k;}));
+    assert(-1,({ int x = 3;int y = 4;int *z = &x;int *k = &y;z-k;}));
+    assert(8,({ int x = 2; int *y = &x ; sizeof(x);}));
+    assert(8,({ int x = 2; int *y = &x ; sizeof y;}));
+    assert(8,({ sizeof(7);}));
     return 0;
 }

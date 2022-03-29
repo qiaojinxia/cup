@@ -4,6 +4,7 @@
 #include "Parser.h"
 #include "PrintVisitor.h"
 #include "CodeGenerate.h"
+#include "TypeVisitor.h"
 
 using namespace BDD;
 
@@ -57,8 +58,9 @@ int main(int argc,char *argv[]) {
 
     Parser parser(lex);
     CodeGenerate codeGen;
-
+    TypeVisitor typeVisitor;
     auto root = parser.Parse();
     root -> Accept(&codeGen);
+//    root ->Accept(&typeVisitor);
     return 0;
 }

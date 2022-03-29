@@ -17,10 +17,11 @@ namespace BDD{
     class Type {
     public:
         static std::shared_ptr<BuildInType> IntType;
+        static std::shared_ptr<PointerType> Pointer;
         enum class TypeClass{
-            BuildInType,
-            PointerType,
-            FunctionType,
+            BInType,
+            PtrType,
+            FuncType,
         };
     private:
         int Size;
@@ -33,6 +34,8 @@ namespace BDD{
         bool IsIntegerType() const;
         bool IsFunctionType() const;
         bool IsPointerType() const;
+        int GetSize() const;
+        int GetAlign() const;
     };
 
 
@@ -40,10 +43,11 @@ namespace BDD{
     public:
         enum class Kind{
             Int,
+            Pointer,
         };
         Kind Knd;
     public:
-        BuildInType(Kind knd,int size,int align) : Type(TypeClass::BuildInType,size,align),Knd(knd) {}
+        BuildInType(Kind knd,int size,int align) : Type(TypeClass::BInType, size, align), Knd(knd) {}
         Kind GetKind() const{
             return Knd;
         }
@@ -52,7 +56,7 @@ namespace BDD{
     class  PointerType : public Type{
     public:
         std::shared_ptr<Type> Base;
-        PointerType(std::shared_ptr<Type> base)  : Type(TypeClass::PointerType,8,8),Base(base) {}
+        PointerType(std::shared_ptr<Type> base)  : Type(TypeClass::PtrType, 8, 8), Base(base) {}
     };
 
 
@@ -65,7 +69,7 @@ namespace BDD{
         std::shared_ptr<Type> ReturnType;
     public:
         std::list<std::shared_ptr<Param>> Params;
-        FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FunctionType,8,8),ReturnType(returnType) {}
+        FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8), ReturnType(returnType) {}
     };
 
 

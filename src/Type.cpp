@@ -4,14 +4,18 @@
 
 #include "Type.h"
 #include <memory>
-#include "Type.h"
+
 
 using namespace BDD;
 
 std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,8,8 );
 
+std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(nullptr);
+
+
+
 bool Type::IsIntegerType() const {
-    if (TypeC == TypeClass::BuildInType){
+    if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Int;
     }
@@ -19,11 +23,19 @@ bool Type::IsIntegerType() const {
 }
 
 bool Type::IsFunctionType() const {
-    return TypeC == TypeClass::FunctionType;
+    return TypeC == TypeClass::FuncType;
 }
 
 bool Type::IsPointerType() const {
-    return TypeC == TypeClass::PointerType;
+    return TypeC == TypeClass::PtrType;
+}
+
+int Type::GetSize() const {
+    return Size;
+}
+
+int Type::GetAlign() const {
+    return Align;
 }
 
 

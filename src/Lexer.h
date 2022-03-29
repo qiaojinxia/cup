@@ -40,6 +40,7 @@ namespace BDD{
         Identifier,
         Assign,
         Amp,
+        SizeOf,
 
     };
     class SourceLocation{

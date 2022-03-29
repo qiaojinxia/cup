@@ -35,7 +35,8 @@ namespace BDD{
 
 
         std::shared_ptr<AstNode> ParseBinaryExpr(std::shared_ptr<AstNode> left);
-        std::shared_ptr<AstNode> ParsePrimaryExpr();
+
+        std::shared_ptr<AstNode> ParsePrimaryExpr(std::shared_ptr<Type> varType);
 
         std::shared_ptr<AstNode> ParseUnaryExpr();
 
