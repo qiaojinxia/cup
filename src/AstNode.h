@@ -168,10 +168,15 @@ class BinaryNode :public  AstNode{
 
     class DeclarationStmtNode: public AstNode{
     public:
-        std::list<std::shared_ptr<BinaryNode>> AssignNodes;
+        std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
         void Accept(AstVisitor *visitor) override;
     };
 
+    class DeclarationAssignmentStmtNode: public AstNode{
+    public:
+        std::list<std::shared_ptr<BinaryNode>> AssignNodes;
+        void Accept(AstVisitor *visitor) override;
+    };
 
     class StmtExprNode : public AstNode{
     public:
@@ -202,6 +207,7 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(FuncCallNode *node){};
         virtual void Visitor(ReturnStmtNode *node){};
         virtual void Visitor(DeclarationStmtNode *node){};
+        virtual void Visitor(DeclarationAssignmentStmtNode *node){};
         virtual void Visitor(StmtExprNode *node){};
         virtual void Visitor(UnaryNode *node){};
         virtual void Visitor(SizeOfExprNode *node){};

@@ -22,6 +22,7 @@ namespace BDD{
         void Visitor(FuncCallNode *node) override;
         void Visitor(ReturnStmtNode *node) override;
         void Visitor(DeclarationStmtNode *node) override;
+        void Visitor(DeclarationAssignmentStmtNode *node) override;
         void Visitor(StmtExprNode *node) override;
         void Visitor(UnaryNode *node) override;
         void Visitor(SizeOfExprNode *node) override;

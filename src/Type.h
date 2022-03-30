@@ -13,7 +13,7 @@ namespace BDD{
     class BuildInType;
     class FunctionType;
     class PointerType;
-
+    class ArrayType;
     class Type {
     public:
         static std::shared_ptr<BuildInType> IntType;
@@ -22,10 +22,11 @@ namespace BDD{
             BInType,
             PtrType,
             FuncType,
+            AryType,
         };
-    private:
         int Size;
         int Align;
+    private:
         TypeClass TypeC;
 
     public:
@@ -34,8 +35,7 @@ namespace BDD{
         bool IsIntegerType() const;
         bool IsFunctionType() const;
         bool IsPointerType() const;
-        int GetSize() const;
-        int GetAlign() const;
+        bool IsArrayType() const;
     };
 
 
@@ -72,7 +72,13 @@ namespace BDD{
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8), ReturnType(returnType) {}
     };
 
-
+    struct ArrayType : public Type{
+    public:
+        std::shared_ptr<Type> ElementType;
+        int ArrayLen;
+        ArrayType(std::shared_ptr<Type> elementType,int len) :
+        Type(TypeClass::AryType,len * elementType->Size,elementType ->Align),ElementType(elementType),ArrayLen(len){}
+    };
 
 }
 

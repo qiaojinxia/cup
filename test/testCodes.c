@@ -9,9 +9,11 @@ int testCode(){
     assert(1,({7 % 2;}));
     assert(7,({i = 7;i;}));
     assert(7,({int i = 7;if(i == 7){i;}else{0;}}));
+//    assert(7,({int x = 7;for(int i = 0;i<10;i=i+1){x = x + 1;}})); needfix
     assert(-8,({ -+10 + 2;}));
     assert(12,({ --10 + 2;})); //support annotation
     assert(3,({ int x = 3;*&x;}));
+    assert(9,({ int x,y,z = 3;x + y + z;}));
     assert(2,({ int x = 3;int *y = &x;x = 2;*y;}));
     assert(3,({ int x = 3;int y = x;x = 2;y;}));
     assert(5,({ int x = 3;int y = x;int *z = &x;*(z+1) = 5;y;}));
@@ -21,5 +23,6 @@ int testCode(){
     assert(8,({ int x = 2; int *y = &x ; sizeof(x);}));
     assert(8,({ int x = 2; int *y = &x ; sizeof y;}));
     assert(8,({ sizeof(7);}));
+    assert(7,({ int a[3];int *a = 7;  }));
     return 0;
 }

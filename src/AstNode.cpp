@@ -75,3 +75,7 @@ void UnaryNode::Accept(AstVisitor *visitor) {
 void SizeOfExprNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void DeclarationAssignmentStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

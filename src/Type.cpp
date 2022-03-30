@@ -30,13 +30,11 @@ bool Type::IsPointerType() const {
     return TypeC == TypeClass::PtrType;
 }
 
-int Type::GetSize() const {
-    return Size;
+bool Type::IsArrayType() const {
+    return TypeC == TypeClass::AryType;
 }
 
-int Type::GetAlign() const {
-    return Align;
-}
+
 
 
 

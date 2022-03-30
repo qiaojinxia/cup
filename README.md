@@ -43,4 +43,6 @@ a toy c compailer
         - `make testCode`
 - 2022-03-28 ~ 2022-03-29
     - Support pointr add *(y+2) pointer sub *(y-2)  Pointerdiff  calc  (a  - b)  and support sizeof express can get the 
-    -  size of VarNode
+    - size of VarNode
+- 2022-03-30
+    - Support pointr array int a[3];

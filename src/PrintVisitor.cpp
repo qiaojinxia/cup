@@ -173,7 +173,7 @@ void PrintVisitor::Visitor(ReturnStmtNode *node) {
 }
 
 void PrintVisitor::Visitor(DeclarationStmtNode *node) {
-    for (auto  &n:node ->AssignNodes) {
+    for (auto  &n:node ->declarationNodes) {
         n ->Accept(this);
     }
 }

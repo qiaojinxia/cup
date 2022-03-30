@@ -34,6 +34,7 @@ namespace BDD{
         void Visitor(FuncCallNode *node) override;
         void Visitor(ReturnStmtNode *node) override;
         void Visitor(DeclarationStmtNode *node) override;
+        void Visitor(DeclarationAssignmentStmtNode *node) override;
         void Visitor(StmtExprNode *node) override;
         void Visitor(UnaryNode *node) override;
         void Visitor(SizeOfExprNode *node) override;
@@ -41,6 +42,9 @@ namespace BDD{
         void PushReg(int value);
         void PopReg(int value);
         void ResetReg();
+
+        void Load(std::shared_ptr<Type> ty);
+        void Store(std::shared_ptr<Type> ty);
 
         void GenerateAddress(AstNode *node);
 

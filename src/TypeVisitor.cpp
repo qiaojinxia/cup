@@ -60,6 +60,7 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 
 void TypeVisitor::Visitor(ExprVarNode *node) {
     node -> Type = node ->VarObj ->Type;
+    node ->Offset = node ->VarObj ->Offset;
 }
 
 void TypeVisitor::Visitor(ProgramNode *node) {
@@ -115,7 +116,7 @@ void TypeVisitor::Visitor(ReturnStmtNode *node) {
 }
 
 void TypeVisitor::Visitor(DeclarationStmtNode *node) {
-    for(auto &n:node ->AssignNodes){
+    for(auto &n:node ->declarationNodes){
         n ->Accept(this);
     }
 }
@@ -149,4 +150,10 @@ void TypeVisitor::Visitor(UnaryNode *node) {
 void TypeVisitor::Visitor(SizeOfExprNode *node) {
         node -> Lhs ->Accept(this);
         node -> Type = node -> Lhs ->Type;
+}
+
+void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
+    for(auto &n:node ->AssignNodes){
+        n ->Accept(this);
+    }
 }

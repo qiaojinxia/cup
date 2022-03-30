@@ -28,6 +28,8 @@ namespace BDD{
         RParent,
         LBrace,
         RBrace,
+        LBracket,
+        RBracket,
         Semicolon,
         If,
         Else,
@@ -80,6 +82,7 @@ namespace BDD{
         }
         void GetNextToken();
         void GetNextChar();
+        void SkipToken(TokenKind  kind);
         void ExceptToken(TokenKind  kind);
         void BeginPeekToken();
         void EndPeekToken();

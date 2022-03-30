@@ -15,8 +15,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         GenerateAddress(node ->Lhs.get());
         Push();
         node -> Rhs -> Accept(this);
-        Pop("%rdi");
-        printf("\t  mov %%rax,(%%rdi)\n");
+        Store(node -> Type);
         return;
     }
     node -> Rhs ->Accept(this);
@@ -78,14 +77,14 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         case BinaryOperator::PointerAdd:
         {
             auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
-            printf("\t  imul $%d,%%rdi\n",pType -> GetSize());
+            printf("\t  imul $%d,%%rdi\n",pType -> Size);
             printf("\t  add %%rdi,%%rax\n");
             break;
         }
         case BinaryOperator::PointerSub:
         {
             auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
-            printf("\t  imul $%d,%%rdi\n",pType -> GetSize());
+            printf("\t  imul $%d,%%rdi\n",pType -> Size);
             printf("\t  sub %%rdi,%%rax\n");
             break;
         }
@@ -93,7 +92,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         {
             auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
             printf("\t  sub %%rdi,%%rax\n");
-            printf("\t  mov $%d, %%rdi\n",pType->GetSize());
+            printf("\t  mov $%d, %%rdi\n",pType->Size);
             printf("\t  cqo\n");
             printf("\t  idiv %%rdi\n");
             break;
@@ -124,8 +123,8 @@ void CodeGenerate::Pop(const char *reg) {
 }
 
 void CodeGenerate::Visitor(ExprVarNode *node) {
-    printf("\t  lea %d(%%rbp),%%rax\n",node->VarObj->Offset); //the stack grows toward the lower address, so the address is offset negatively
-    printf("\t  mov (%%rax),%%rax\n"); //load rax mem address value to rax
+    GenerateAddress(node);
+    Load(node -> Type);
 }
 
 void CodeGenerate::Visitor(ProgramNode *node) {
@@ -210,17 +209,18 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     printf(".globl _%s\n",CurrentFuncName.data());
     printf("_%s:\n",CurrentFuncName.data());
 #endif
-    int stackSize = 0;
+    int offset = 0;
     for (auto &v: node -> Locals) {
-        stackSize += 8;
-        v ->Offset = stackSize * -1;
+        offset += v ->Type ->Size;
+        offset = AlignTo(offset,v -> Type->Align);
+        v ->Offset -= offset;
     }
-    stackSize = AlignTo(stackSize,16);
+    offset = AlignTo(offset,16);
 
     printf("\t  push %%rbp\n");
     printf("\t  mov %%rsp, %%rbp\n");
-    if (stackSize > 0 ){
-        printf("\t  sub $%d, %%rsp\n",stackSize); //set stack top
+    if (offset > 0 ){
+        printf("\t  sub $%d, %%rsp\n",offset); //set stack top
     }
     auto index = 0;
     for (auto &var: node->Params){
@@ -262,7 +262,7 @@ void CodeGenerate::Visitor(ReturnStmtNode *node) {
 }
 
 void CodeGenerate::Visitor(DeclarationStmtNode *node) {
-    for (auto &n:node->AssignNodes) {
+    for (auto &n:node->declarationNodes) {
         n ->Accept(this);
     }
 }
@@ -296,7 +296,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             break;
         case UnaryOperator::Deref:
             GenerateAddress(node);
-            printf("\tmov (%%rax),%%rax\n");
+            Load(node -> Type);
             break;
         case UnaryOperator::Amp:
             GenerateAddress(node -> Lhs.get());
@@ -321,6 +321,26 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
 }
 
 void CodeGenerate::Visitor(SizeOfExprNode *node) {
-    printf("\t mov $%d,%%rax\n",node ->Type ->GetSize());
+    printf("\t mov $%d,%%rax\n",node ->Type -> Size);
+}
+
+void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
+    for (auto &n:node ->AssignNodes) {
+        n ->Accept(this);
+    }
+}
+
+void CodeGenerate::Load(std::shared_ptr<Type> type) {
+    if (type -> IsArrayType()){
+        return;
+    }
+    if (type -> Size == 8)
+        printf("\t  mov (%%rax),%%rax\n");
+}
+
+void CodeGenerate::Store(std::shared_ptr<Type> type) {
+    Pop("%rdi");
+    if (type -> Size == 8)
+        printf("\t  mov %%rax,(%%rdi)\n");
 }
 

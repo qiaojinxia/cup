@@ -51,6 +51,12 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == ')'){
         kind = TokenKind::RParent;
         GetNextChar();
+    }else if(CurChar == '['){
+        kind = TokenKind::LBracket;
+        GetNextChar();
+    }else if(CurChar == ']'){
+        kind = TokenKind::RBracket;
+        GetNextChar();
     }else if(CurChar == '{'){
         kind = TokenKind::LBrace;
         GetNextChar();
@@ -171,6 +177,10 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "(";
         case TokenKind::RParent:
             return ")";
+        case TokenKind::LBracket:
+            return "[";
+        case TokenKind::RBracket:
+            return "]";
         case TokenKind::Assign:
             return "=";
         case TokenKind::Eof:
@@ -242,5 +252,12 @@ SourceLocation Lexer::GetLocation(){
     Location.Line = Line;
     Location.Col = Cursor - 1 -LineHead;
     return Location;
+}
+
+void Lexer::SkipToken(TokenKind kind) {
+    GetNextToken();
+    if (CurrentToken->Kind == kind){
+        GetNextToken();
+    }
 }
 
