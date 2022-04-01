@@ -60,7 +60,7 @@ int main(int argc,char *argv[]) {
     CodeGenerate codeGen;
     TypeVisitor typeVisitor;
     auto root = parser.Parse();
+    root ->Accept(&typeVisitor);
     root -> Accept(&codeGen);
-//    root ->Accept(&typeVisitor);
     return 0;
 }

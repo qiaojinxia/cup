@@ -65,11 +65,11 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) 
         node -> Lhs = left;
     if (prevNode) {
         auto preOpt = OpPrecedence[prevNode->BinOp];
-        auto noeOpt = OpPrecedence[anOperator];
-        if (preOpt < noeOpt){
+        auto curOpt = OpPrecedence[anOperator];
+        if (preOpt < curOpt && preOpt != 0){
             LastOperation = anOperator;
             return leftNode;
-        }else if (preOpt == noeOpt){
+        }else if (preOpt == curOpt){
             Lex.GetNextToken();
             node -> Lhs = prevNode -> Lhs;
             node -> Rhs = leftNode;
@@ -158,6 +158,44 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             node =  sizeOfNode;
             break;
         }
+        case TokenKind::Int:
+        {
+            std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
+            auto tokens = std::list<std::shared_ptr<Token>>();
+            auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
+            for (auto &tk:tokens) {
+                auto newVarNode = std::make_shared<ExprVarNode>();
+                newVarNode -> Name = tk -> Content;
+                auto varNode = FindLocalVar(newVarNode ->Name);
+                if (!varNode){
+                    newVarNode -> VarObj =  NewLocalVar(newVarNode ->Name, type);
+                }else{
+                    newVarNode -> VarObj = varNode;
+                }
+                declarationNodes.push_back(newVarNode);
+            }
+            if (Lex.CurrentToken -> Kind == TokenKind::Semicolon){
+                auto multiDeclarationStmtNode = std::make_shared<DeclarationStmtNode>();
+                multiDeclarationStmtNode -> declarationNodes = declarationNodes;
+                multiDeclarationStmtNode ->Type = type;
+                return multiDeclarationStmtNode;
+            }
+            auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>();
+            std::list<std::shared_ptr<BinaryNode>> assignNodes;
+            for (auto &dn:declarationNodes) {
+                auto assignNode = std::make_shared<BinaryNode>();
+                assignNode -> Lhs = dn;
+                assignNode -> BinOp = BinaryOperator::Assign;
+                assignNodes.push_back(assignNode);
+            }
+            Lex.ExceptToken( TokenKind::Assign);
+            auto valueNode = ParseUnaryExpr();
+            for (auto &n:assignNodes) {
+                n ->Rhs = valueNode;
+            }
+            multiAssignNode ->AssignNodes = assignNodes;
+            return multiAssignNode;
+        }
        default:
            DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"not support type");
     }
@@ -167,11 +205,9 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
 std::shared_ptr<AstNode> Parser::ParseExpr() {
     std::shared_ptr<AstNode> left = ParseUnaryExpr();;
     while (Lex.CurrentToken -> Kind != TokenKind::Semicolon && Lex.CurrentToken -> Kind != TokenKind::RParent
-    && Lex.CurrentToken -> Kind != TokenKind::Comma ) {
+    && Lex.CurrentToken -> Kind != TokenKind::Comma && Lex.CurrentToken -> Kind != TokenKind::RBracket) {
         left = ParseBinaryExpr(left);
     }
-    TypeVisitor typeVisitor;
-    left -> Accept( &typeVisitor);
     return left;
 }
 
@@ -244,38 +280,6 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         node -> Lhs = ParseExpr();
         Lex.ExceptToken(TokenKind::Semicolon);
         return node;
-    }else if (IsTypeName()){
-        std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
-        auto tokens = std::list<std::shared_ptr<Token>>();
-        auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
-        for (auto &tk:tokens) {
-            auto newVarNode = std::make_shared<ExprVarNode>();
-            newVarNode -> Name = tk -> Content;
-            newVarNode -> VarObj =  NewLocalVar(newVarNode ->Name, type);
-            declarationNodes.push_back(newVarNode);
-        }
-        if (Lex.CurrentToken -> Kind == TokenKind::Semicolon){
-            auto multiDeclarationStmtNode = std::make_shared<DeclarationStmtNode>();
-            multiDeclarationStmtNode -> declarationNodes = declarationNodes;
-            multiDeclarationStmtNode ->Type = type;
-            return multiDeclarationStmtNode;
-        }
-        auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>();
-        std::list<std::shared_ptr<BinaryNode>> assignNodes;
-        for (auto &dn:declarationNodes) {
-            auto assignNode = std::make_shared<BinaryNode>();
-            assignNode -> Lhs = dn;
-            assignNode -> BinOp = BinaryOperator::Assign;
-            assignNodes.push_back(assignNode);
-        }
-        Lex.ExceptToken( TokenKind::Assign);
-        auto valueNode = ParseUnaryExpr();
-        for (auto &n:assignNodes) {
-           n ->Rhs = valueNode;
-        }
-        Lex.ExceptToken(TokenKind::Semicolon);
-        multiAssignNode ->AssignNodes = assignNodes;
-        return multiAssignNode;
     }
     auto node = std::make_shared<ExprStmtNode>();
         if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
@@ -434,7 +438,30 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
         node -> Lhs = ParseUnaryExpr();
         return node;
     }
-    return ParsePrimaryExpr();
+    return ParsePostFixExpr();
+}
+
+std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
+    auto left = ParsePrimaryExpr();
+    while (true){
+        if (Lex.CurrentToken -> Kind == TokenKind::LParent){
+            return ParseFuncCallNode();
+        }else if (Lex.CurrentToken -> Kind == TokenKind::LBracket){
+            Lex.GetNextToken();
+            auto addNode = std::make_shared<BinaryNode>();
+            addNode -> Lhs = left;
+            addNode -> Rhs = ParseExpr();
+            auto starNode = std::make_shared<UnaryNode>();
+            starNode -> Lhs = addNode;
+            starNode -> Uop = UnaryOperator::Deref;
+            Lex.ExceptToken(TokenKind::RBracket);
+            left = starNode;
+            continue;
+        }else{
+            break;
+        }
+    }
+    return left;
 }
 
 

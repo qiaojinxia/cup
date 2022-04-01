@@ -58,6 +58,8 @@ namespace BDD{
     enum class BinaryOperator{
         Add,
         PointerAdd,
+        ArrayPointerAdd,
+        ArrayPointerSub,
         Sub,
         PointerSub,
         PointerDiff,

@@ -17,7 +17,7 @@ void TypeVisitor::Visitor(ExprStmtNode *node) {
 void TypeVisitor::Visitor(BinaryNode *node) {
     node ->Lhs->Accept(this);
     node ->Rhs ->Accept(this);
-    node -> Type =  node -> Rhs -> Type;
+    node -> Type =  node -> Lhs -> Type;
     switch (node ->BinOp) {
         case BinaryOperator::Add:
             if (node -> Lhs -> Type ->IsPointerType() && node -> Rhs -> Type ->IsIntegerType()){
@@ -27,6 +27,14 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node -> BinOp = BinaryOperator::PointerAdd;
                 node ->Type = Type::Pointer;
             }else if (node -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsIntegerType()){
+            }else if (node -> Lhs -> Type -> IsArrayType() && node -> Rhs -> Type -> IsIntegerType()){
+                node -> BinOp = BinaryOperator::ArrayPointerAdd;
+            }else if (node -> Lhs -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsArrayType()) {
+                auto temp = node->Lhs;
+                node->Lhs = node->Rhs;
+                node->Rhs = temp;
+                node->BinOp = BinaryOperator::ArrayPointerAdd;
+                node ->Type = Type::Pointer;
             }else{
                 printf("invalid add operation");
                 assert(0);
@@ -39,6 +47,12 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             }else if (node -> Lhs -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsIntegerType()){
             }else if(node -> Lhs -> Type -> IsPointerType() && node -> Rhs -> Type -> IsPointerType()){
                 node -> BinOp = BinaryOperator::PointerDiff;
+                node ->Type = Type::Pointer;
+            }else if (node -> Lhs -> Type -> IsIntegerType() && node -> Rhs -> Type -> IsArrayType()) {
+                auto temp = node->Lhs;
+                node->Lhs = node->Rhs;
+                node->Rhs = temp;
+                node->BinOp = BinaryOperator::ArrayPointerSub;
                 node ->Type = Type::Pointer;
             }else{
                 printf("invalid sub operation");
@@ -137,7 +151,9 @@ void TypeVisitor::Visitor(UnaryNode *node) {
         case UnaryOperator::Deref:
             if (node -> Lhs -> Type->IsPointerType()){
                 node -> Type = std::dynamic_pointer_cast<PointerType>(node -> Lhs->Type)->Base;
-            }else{
+            }else if (node -> Lhs -> Type->IsArrayType()){
+                node -> Type = std::dynamic_pointer_cast<ArrayType>(node -> Lhs->Type) ->ElementType;
+            }else {
                 printf("invalid defer operation");
             }
             break;

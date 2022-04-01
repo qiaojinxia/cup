@@ -77,7 +77,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         case BinaryOperator::PointerAdd:
         {
             auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
-            printf("\t  imul $%d,%%rdi\n",pType -> Size);
+            printf("\t  imul $%d,%%rdi\n",pType-> Size);
             printf("\t  add %%rdi,%%rax\n");
             break;
         }
@@ -95,6 +95,21 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  mov $%d, %%rdi\n",pType->Size);
             printf("\t  cqo\n");
             printf("\t  idiv %%rdi\n");
+            break;
+        }
+
+        case BinaryOperator::ArrayPointerAdd:
+        {
+            auto pType = std::dynamic_pointer_cast<ArrayType>(node -> Lhs ->Type);
+            printf("\t  imul $%d,%%rdi\n",pType -> ElementType-> Size);
+            printf("\t  add %%rdi,%%rax\n");
+            break;
+        }
+        case BinaryOperator::ArrayPointerSub:
+        {
+            auto pType = std::dynamic_pointer_cast<ArrayType>(node -> Lhs ->Type);
+            printf("\t  imul $%d,%%rdi\n",pType -> ElementType-> Size);
+            printf("\t  sub %%rdi,%%rax\n");
             break;
         }
         default:
@@ -262,9 +277,9 @@ void CodeGenerate::Visitor(ReturnStmtNode *node) {
 }
 
 void CodeGenerate::Visitor(DeclarationStmtNode *node) {
-    for (auto &n:node->declarationNodes) {
-        n ->Accept(this);
-    }
+//    for (auto &n:node->declarationNodes) {
+//        n ->Accept(this);
+//    }
 }
 
 void CodeGenerate::ResetReg() {

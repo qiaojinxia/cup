@@ -10,7 +10,7 @@ using namespace BDD;
 
 std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,8,8 );
 
-std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(nullptr);
+std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(IntType);
 
 
 

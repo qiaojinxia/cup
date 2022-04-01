@@ -46,3 +46,5 @@ a toy c compailer
     - size of VarNode
 - 2022-03-30
     - Support pointr array int a[3];
+- 2022-03-31 
+    - Support array index a[3] ,3[a];  

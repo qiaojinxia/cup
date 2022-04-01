@@ -22,6 +22,7 @@ namespace BDD{
 
     private:
         std::shared_ptr<AstNode> ParseStatement();
+
         std::shared_ptr<AstNode> ParseExpr();
 
         std::shared_ptr<AstNode> ParseFunc();
@@ -34,6 +35,7 @@ namespace BDD{
 
         std::shared_ptr<Type> ParseTypeSuffix(std::shared_ptr<Type> baseType);
 
+        std::shared_ptr<AstNode> ParsePostFixExpr();
 
         std::shared_ptr<AstNode> ParseBinaryExpr(std::shared_ptr<AstNode> left);
 
@@ -41,8 +43,8 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseUnaryExpr();
 
-
         std::shared_ptr<Var> FindLocalVar(std::string_view varName);
+
         std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type);
 
     private:
