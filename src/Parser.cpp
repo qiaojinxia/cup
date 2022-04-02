@@ -146,6 +146,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
        {
            auto constNode = std::make_shared<ConstantNode>();
            constNode -> Value = Lex.CurrentToken -> Value;
+           constNode -> Type = Type::IntType;
            Lex.GetNextToken();
            node =  constNode;
            break;
@@ -158,45 +159,45 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             node =  sizeOfNode;
             break;
         }
-        case TokenKind::Int:
-        {
-            std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
-            auto tokens = std::list<std::shared_ptr<Token>>();
-            auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
-            for (auto &tk:tokens) {
-                auto newVarNode = std::make_shared<ExprVarNode>();
-                newVarNode -> Name = tk -> Content;
-                auto varNode = FindLocalVar(newVarNode ->Name);
-                if (!varNode){
-                    newVarNode -> VarObj =  NewLocalVar(newVarNode ->Name, type);
-                }else{
-                    newVarNode -> VarObj = varNode;
-                }
-                declarationNodes.push_back(newVarNode);
-            }
-            if (Lex.CurrentToken -> Kind == TokenKind::Semicolon){
-                auto multiDeclarationStmtNode = std::make_shared<DeclarationStmtNode>();
-                multiDeclarationStmtNode -> declarationNodes = declarationNodes;
-                multiDeclarationStmtNode ->Type = type;
-                return multiDeclarationStmtNode;
-            }
-            auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>();
-            std::list<std::shared_ptr<BinaryNode>> assignNodes;
-            for (auto &dn:declarationNodes) {
-                auto assignNode = std::make_shared<BinaryNode>();
-                assignNode -> Lhs = dn;
-                assignNode -> BinOp = BinaryOperator::Assign;
-                assignNodes.push_back(assignNode);
-            }
-            Lex.ExceptToken( TokenKind::Assign);
-            auto valueNode = ParseUnaryExpr();
-            for (auto &n:assignNodes) {
-                n ->Rhs = valueNode;
-            }
-            multiAssignNode ->AssignNodes = assignNodes;
-            return multiAssignNode;
-        }
        default:
+           if (Lex.CurrentToken -> Kind == TokenKind::Int || Lex.CurrentToken -> Kind == TokenKind::Char
+           || Lex.CurrentToken -> Kind == TokenKind::Short || Lex.CurrentToken -> Kind == TokenKind::Long ){
+               std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
+               auto tokens = std::list<std::shared_ptr<Token>>();
+               auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
+               for (auto &tk:tokens) {
+                   auto newVarNode = std::make_shared<ExprVarNode>();
+                   newVarNode -> Name = tk -> Content;
+                   auto varNode = FindLocalVar(newVarNode ->Name);
+                   if (!varNode){
+                       newVarNode -> VarObj =  NewLocalVar(newVarNode ->Name, type);
+                   }else{
+                       newVarNode -> VarObj = varNode;
+                   }
+                   declarationNodes.push_back(newVarNode);
+               }
+               if (Lex.CurrentToken -> Kind == TokenKind::Semicolon){
+                   auto multiDeclarationStmtNode = std::make_shared<DeclarationStmtNode>();
+                   multiDeclarationStmtNode -> declarationNodes = declarationNodes;
+                   multiDeclarationStmtNode ->Type = type;
+                   return multiDeclarationStmtNode;
+               }
+               auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>();
+               std::list<std::shared_ptr<BinaryNode>> assignNodes;
+               for (auto &dn:declarationNodes) {
+                   auto assignNode = std::make_shared<BinaryNode>();
+                   assignNode -> Lhs = dn;
+                   assignNode -> BinOp = BinaryOperator::Assign;
+                   assignNodes.push_back(assignNode);
+               }
+               Lex.ExceptToken( TokenKind::Assign);
+               auto valueNode = ParseUnaryExpr();
+               for (auto &n:assignNodes) {
+                   n ->Rhs = valueNode;
+               }
+               multiAssignNode ->AssignNodes = assignNodes;
+               return multiAssignNode;
+           }
            DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"not support type");
     }
     return node;
@@ -354,6 +355,15 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec() {
     if (Lex.CurrentToken -> Kind == TokenKind::Int){
         Lex.GetNextToken();
         return Type::IntType;
+    }else if(Lex.CurrentToken -> Kind == TokenKind::Char){
+        Lex.GetNextToken();
+        return Type::CharType;
+    }else if(Lex.CurrentToken -> Kind == TokenKind::Short){
+        Lex.GetNextToken();
+        return Type::ShortType;
+    }else if(Lex.CurrentToken -> Kind == TokenKind::Long){
+        Lex.GetNextToken();
+        return Type::LongType;
     }
     DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"type not support current!");
     return nullptr;
@@ -368,14 +378,13 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
             auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
             auto param = std::make_shared<Param>();
             param ->Type = type;
-            param -> TToken = tokens.front();
+            param -> TToken = tokens.back();
             funcType -> Params.push_back(param);
             while (Lex.CurrentToken -> Kind != TokenKind::RParent){
-                Lex.ExceptToken(TokenKind::Comma);
                 auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
                 auto param = std::make_shared<Param>();
                 param ->Type = type;
-                param ->TToken = tokens.front();
+                param ->TToken = tokens.back();
                 funcType ->  Params.push_back(param);
             }
         }

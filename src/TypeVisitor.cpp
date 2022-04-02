@@ -69,7 +69,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
 }
 
 void TypeVisitor::Visitor(ConstantNode *node) {
-    node ->Type =  Type::IntType;
+
 }
 
 void TypeVisitor::Visitor(ExprVarNode *node) {
@@ -122,7 +122,6 @@ void TypeVisitor::Visitor(FuncCallNode *node) {
     for(auto &arg:node ->Args){
         arg ->Accept(this);
     }
-    node ->Type = Type::IntType;
 }
 
 void TypeVisitor::Visitor(ReturnStmtNode *node) {

@@ -128,7 +128,13 @@ void BDD::Lexer::GetNextToken() {
             }else if (content == "return"){
                 kind = TokenKind::Return;
             }else if (content == "sizeof"){
-                kind =TokenKind::SizeOf;
+                kind = TokenKind::SizeOf;
+            }else if(content == "char"){
+                kind = TokenKind::Char;
+            }else if(content == "short"){
+                kind = TokenKind::Short;
+            }else if (content == "long"){
+                kind = TokenKind::Long;
             }
         }else{
             DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
@@ -187,6 +193,8 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "eof ";
         case TokenKind::SizeOf:
             return "sizeof";
+        case TokenKind::Comma:
+            return ",";
         default:
             break;
     }

@@ -76,21 +76,21 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             break;
         case BinaryOperator::PointerAdd:
         {
-            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
+            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type) -> Base;
             printf("\t  imul $%d,%%rdi\n",pType-> Size);
             printf("\t  add %%rdi,%%rax\n");
             break;
         }
         case BinaryOperator::PointerSub:
         {
-            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
+            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type) -> Base;
             printf("\t  imul $%d,%%rdi\n",pType -> Size);
             printf("\t  sub %%rdi,%%rax\n");
             break;
         }
         case BinaryOperator::PointerDiff:
         {
-            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type);
+            auto pType = std::dynamic_pointer_cast<PointerType>(node -> Lhs ->Type) -> Base;
             printf("\t  sub %%rdi,%%rax\n");
             printf("\t  mov $%d, %%rdi\n",pType->Size);
             printf("\t  cqo\n");
@@ -100,7 +100,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
 
         case BinaryOperator::ArrayPointerAdd:
         {
-            auto pType = std::dynamic_pointer_cast<ArrayType>(node -> Lhs ->Type);
+            auto pType = std::dynamic_pointer_cast<ArrayType>(node -> Lhs ->Type) ;
             printf("\t  imul $%d,%%rdi\n",pType -> ElementType-> Size);
             printf("\t  add %%rdi,%%rax\n");
             break;
@@ -239,7 +239,17 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     }
     auto index = 0;
     for (auto &var: node->Params){
-        printf("\t  mov %s, %d(%%rbp)\n",Regx64[index++],var  -> Offset );
+        if (var -> Type -> Size == 1){
+            printf("\t  mov %s, %d(%%rbp)\n",Regx8[index++],var -> Offset );
+        }else if(var -> Type -> Size == 2){
+            printf("\t  mov %s, %d(%%rbp)\n",Regx16[index++],var -> Offset );
+        }else if(var -> Type -> Size == 4){
+            printf("\t  mov %s, %d(%%rbp)\n",Regx32[index++],var -> Offset );
+        }else if(var -> Type -> Size == 8){
+            printf("\t  mov %s, %d(%%rbp)\n",Regx64[index++],var -> Offset );
+        }else{
+            assert(0);
+        }
     }
     for (auto &s:node->Stmts) {
         s ->Accept(this);
@@ -262,6 +272,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
     }
     for (int i = node-> Args.size() -1; i >= 0; --i) {
         Pop(Regx64[i]);
+
     }
     std::string FuncName(node->FuncName);
 #ifdef __linux__
@@ -336,7 +347,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
 }
 
 void CodeGenerate::Visitor(SizeOfExprNode *node) {
-    printf("\t mov $%d,%%rax\n",node ->Type -> Size);
+    printf("\t  mov $%d,%%rax\n",node ->Type -> Size);
 }
 
 void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
@@ -349,13 +360,27 @@ void CodeGenerate::Load(std::shared_ptr<Type> type) {
     if (type -> IsArrayType()){
         return;
     }
-    if (type -> Size == 8)
+    if (type -> Size == 1){
+        printf("\t  movsb (%%rax),%%rax\n");
+    }else if (type -> Size == 2){
+        printf("\t  movsw (%%rax),%%rax\n");
+    }else if (type -> Size == 4){
+        printf("\t  movsl (%%rax),%%rax\n");
+    }else if (type -> Size == 8){
         printf("\t  mov (%%rax),%%rax\n");
+    }
 }
 
 void CodeGenerate::Store(std::shared_ptr<Type> type) {
     Pop("%rdi");
-    if (type -> Size == 8)
+    if (type -> Size == 1){
+        printf("\t  mov %%al,(%%rdi)\n");
+    }else if (type -> Size == 2){
+        printf("\t  mov %%ax,(%%rdi)\n");
+    }else if (type -> Size == 4){
+        printf("\t  mov %%eax,(%%rdi)\n");
+    }else if (type -> Size == 8){
         printf("\t  mov %%rax,(%%rdi)\n");
+    }
 }
 

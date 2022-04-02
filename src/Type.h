@@ -18,6 +18,9 @@ namespace BDD{
     public:
         static std::shared_ptr<BuildInType> IntType;
         static std::shared_ptr<PointerType> Pointer;
+        static std::shared_ptr<BuildInType> CharType;
+        static std::shared_ptr<BuildInType> ShortType;
+        static std::shared_ptr<BuildInType> LongType;
         enum class TypeClass{
             BInType,
             PtrType,
@@ -42,8 +45,10 @@ namespace BDD{
     class BuildInType: public Type{
     public:
         enum class Kind{
+            Char,
+            Short,
             Int,
-            Pointer,
+            Long,
         };
         Kind Knd;
     public:

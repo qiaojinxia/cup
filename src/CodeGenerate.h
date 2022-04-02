@@ -14,7 +14,10 @@ namespace BDD{
     private:
         int StackLevel{0};
         int Sequence{0};
-        const char *Regx64[6] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8d","%r9d"};
+        const char *Regx64[6] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8","%r9"};
+        const char *Regx32[6] = {"%edi","%esi","%edx","%ecx" ,"%r8d","%r9d"};
+        const char *Regx16[6] = {"%di","%si","%dx","%cx" ,"%r8w","%r9w"};
+        const char *Regx8[6] = {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"};
         int RegCursor{0};
         std::string CurrentFuncName;
     public:

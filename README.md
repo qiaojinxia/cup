@@ -48,3 +48,5 @@ a toy c compailer
     - Support pointr array int a[3];
 - 2022-03-31 
     - Support array index a[3] ,3[a];  
+- 2022-04-01 ~ 2022-04-02
+      - Support char short long  type case : `int a = 0 ;char a = 0; short a = 0; long a = 0; ` 

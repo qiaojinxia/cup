@@ -20,10 +20,20 @@ int testCode(){
 //    assert(3,({ int x = 3;int y = x;int *z = &x;*(z-1) = 5;y;}));
 //    assert(1,({ int x = 3;int y = 4;int *z = &y;int *k = &x;z-k;}));
 //    assert(-1,({ int x = 3;int y = 4;int *z = &x;int *k = &y;z-k;}));
-//    assert(8,({ int x = 2; int *y = &x ; sizeof(x);}));
-//    assert(8,({ int x = 2; int *y = &x ; sizeof y;}));
-//    assert(8,({ sizeof(7);}));
+//    assert(4,({ int x = 2; int *y = &x ; sizeof(x);}));
+//    assert(4,({ int x = 2; int *y = &x ; sizeof y;}));
+//    assert(4,({ sizeof(7);}));
 //    assert(5,({ int a[3]; int  *x = a ;*x = 7; *(x+1) = 5;*(x+2) = 3; *(a+1); }));
-    assert(7,({ int a[3];a[0] = 1;1[a] = 7;a[2] = 1; a[1];}));
-    return 0;
+//    assert(7,({ int a[3];a[0] = 1;1[a] = 7;a[2] = 1; a[1];}));
+      assert(7,({ char a[3];a[0] = 1;a[1] = 7;a[2] = 1; a[1];}));
+//    assert(1,({char x; sizeof(x);}));
+//    assert(2,({short y; sizeof(y);}));
+//    assert(8,({long z; sizeof(z);}));
+    assert(17,({ int x = 1;char y = 2;short z = 5; long m = 9;testFuncAdd(x,y,z,m);}));
+
+    return a;
+}
+
+int testFuncAdd(int a,char b,short c,long d) {
+    return  a + b + c + d ;
 }
