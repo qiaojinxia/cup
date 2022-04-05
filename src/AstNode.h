@@ -13,7 +13,9 @@
 #include <map>
 
 namespace BDD{
+    int AlignTo(int size,int align);
     class AstVisitor;
+    class Field;
     class AstNode {
     public:
         virtual ~AstNode(){};
@@ -139,6 +141,7 @@ class BinaryNode :public  AstNode{
         std::list<std::shared_ptr<AstNode>> Stmts;
         void Accept(AstVisitor *visitor) override;
     };
+
     class DoWhileStmtNode :public AstNode{
     public:
         std::shared_ptr<AstNode> Stmt{nullptr};
@@ -192,6 +195,13 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class MemberAccessNode : public AstNode{
+    public:
+        std::shared_ptr<AstNode> Lhs;
+        std::string_view fieldName;
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -213,8 +223,8 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(StmtExprNode *node){};
         virtual void Visitor(UnaryNode *node){};
         virtual void Visitor(SizeOfExprNode *node){};
+        virtual void Visitor(MemberAccessNode *node){};
     };
-
 }
 
 #endif //BODDY_ASTNODE_H

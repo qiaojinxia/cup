@@ -40,7 +40,28 @@ bool Type::IsArrayType() const {
     return TypeC == TypeClass::AryType;
 }
 
+bool Type::IsStructType() const {
+    if (TypeC == TypeClass::RecordType){
+        auto ry = dynamic_cast<const RecordType *>(this);
+        return ry -> Kind  == RecordType::TagKind::Struct;
+    }
+    return false;
+}
+
+bool Type::IsUnionType() const {
+    if (TypeC == TypeClass::RecordType){
+        auto ry = dynamic_cast<const RecordType *>(this);
+        return ry -> Kind  == RecordType::TagKind::Union;
+    }
+    return false;
+}
 
 
-
-
+std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
+    for(auto &field:fields){
+        if (field->token->Content == fieldName){
+            return field;
+        }
+    }
+    return nullptr;
+}

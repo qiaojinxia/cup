@@ -261,9 +261,6 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     printf("\t  ret \n");
 }
 
-int CodeGenerate::AlignTo(int size, int align) {
-    return (size + align - 1) / align * align;
-}
 
 void CodeGenerate::Visitor(FuncCallNode *node) {
     for(auto &arg:node -> Args){
@@ -318,7 +315,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             break;
         case UnaryOperator::Minus:
             node -> Lhs ->Accept(this);
-            printf("\tneg %%rax\n");
+            printf("\t  neg %%rax\n");
             break;
         case UnaryOperator::Deref:
             GenerateAddress(node);
@@ -340,6 +337,11 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
             printf("unaryNode must be defer!\n");
             assert(0);
         }
+    }else if (auto memberAccessNode = dynamic_cast<MemberAccessNode *>(node)){
+        auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(memberAccessNode ->Lhs);
+        auto record = std::dynamic_pointer_cast<RecordType>(exprNode ->Type);
+        auto field = record ->GetField(memberAccessNode -> fieldName);
+        printf("\t  lea  %d(%%rbp),%%rax\n", exprNode -> Offset -  field ->Offset);
     } else{
         printf("not a value\n");
         assert(0);
@@ -382,5 +384,13 @@ void CodeGenerate::Store(std::shared_ptr<Type> type) {
     }else if (type -> Size == 8){
         printf("\t  mov %%rax,(%%rdi)\n");
     }
+}
+
+void CodeGenerate::Visitor(MemberAccessNode *node) {
+    auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
+    auto record = std::dynamic_pointer_cast<RecordType>(exprNode ->Type);
+    auto field = record ->GetField(node ->fieldName);
+    printf("\t  lea  %d(%%rbp),%%rax\n", exprNode -> Offset -  field ->Offset);
+    Load(node ->Type);
 }
 

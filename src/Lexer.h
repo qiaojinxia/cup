@@ -40,12 +40,15 @@ namespace BDD{
         Char,
         Short,
         Long,
+        Struct,
+        Union,
         Return,
         Comma,
         Identifier,
         Assign,
         Amp,
         SizeOf,
+        Period,
 
     };
     class SourceLocation{

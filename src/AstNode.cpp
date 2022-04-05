@@ -7,6 +7,10 @@
 using namespace BDD;
 
 
+int BDD::AlignTo(int size, int align) {
+    return (size + align - 1) / align * align;
+}
+
 void ConstantNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
@@ -77,5 +81,9 @@ void SizeOfExprNode::Accept(AstVisitor *visitor) {
 }
 
 void DeclarationAssignmentStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void MemberAccessNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }

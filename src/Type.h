@@ -14,6 +14,7 @@ namespace BDD{
     class FunctionType;
     class PointerType;
     class ArrayType;
+    class RecordType;
     class Type {
     public:
         static std::shared_ptr<BuildInType> IntType;
@@ -26,6 +27,7 @@ namespace BDD{
             PtrType,
             FuncType,
             AryType,
+            RecordType,
         };
         int Size;
         int Align;
@@ -39,6 +41,8 @@ namespace BDD{
         bool IsFunctionType() const;
         bool IsPointerType() const;
         bool IsArrayType() const;
+        bool IsStructType() const;
+        bool IsUnionType() const;
     };
 
 
@@ -85,6 +89,25 @@ namespace BDD{
         Type(TypeClass::AryType,len * elementType->Size,elementType ->Align),ElementType(elementType),ArrayLen(len){}
     };
 
+    struct Field {
+    public:
+        std::shared_ptr<Type> type;
+        std::shared_ptr<Token> token;
+        int Offset;
+        Field(std::shared_ptr<Type> ty, std::shared_ptr<Token> tok,int offset) : type(ty),token(tok),Offset(offset){}
+    };
+
+    struct RecordType : public Type{
+    public:
+        enum class TagKind{
+            Struct,
+            Union,
+        };
+        std::shared_ptr<Field> GetField(std::string_view fieldName);
+        TagKind Kind;
+        std::list<std::shared_ptr<Field>> fields;
+        RecordType() : Type(TypeClass::RecordType,1,1){}
+    };
 }
 
 #endif //BODDY_TYPE_H

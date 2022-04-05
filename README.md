@@ -50,3 +50,5 @@ a toy c compailer
     - Support array index a[3] ,3[a];  
 - 2022-04-01 ~ 2022-04-02
       - Support char short long  type case : `int a = 0 ;char a = 0; short a = 0; long a = 0; ` 
+- 2022-04-03 ~ 2022-04-05
+    - Support char struct ,scope  case : `struct{int a = 0 ;char a = 0; short a = 0; long a = 0;}a; a[0] = 1;a[1] = 2;a[2] =3;a[0]; ` 

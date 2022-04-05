@@ -11,4 +11,4 @@ add_executable(boddy
         src/AstNode.cpp src/AstNode.h
         src/PrintVisitor.cpp src/PrintVisitor.h
         src/Diag.cpp src/Diag.h
-        src/Type.cpp src/Type.h src/TypeVisitor.cpp src/TypeVisitor.h test/testFunc.c)
+        src/Type.cpp src/Type.h src/TypeVisitor.cpp src/TypeVisitor.h test/testFunc.c src/Scope.cpp src/Scope.h)

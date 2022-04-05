@@ -66,6 +66,9 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == ';'){
         kind = TokenKind::Semicolon;
         GetNextChar();
+    }else if(CurChar == '.'){
+        kind = TokenKind::Period;
+        GetNextChar();
     }else if(CurChar == '='){
         if (PeekChar(1)=='='){
             GetNextChar();
@@ -135,6 +138,10 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Short;
             }else if (content == "long"){
                 kind = TokenKind::Long;
+            }else if(content == "struct"){
+                kind = TokenKind::Struct;
+            }else if(content == "union"){
+                kind = TokenKind::Union;
             }
         }else{
             DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
