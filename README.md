@@ -52,3 +52,5 @@ a toy c compailer
       - Support char short long  type case : `int a = 0 ;char a = 0; short a = 0; long a = 0; ` 
 - 2022-04-03 ~ 2022-04-05
     - Support char struct ,scope  case : `struct{int a = 0 ;char a = 0; short a = 0; long a = 0;}a; a[0] = 1;a[1] = 2;a[2] =3;a[0]; ` 
+- 2022-04-06 ~ 2022-04-07
+    - Support char struct member ->   case : `assert(5,({struct Stu {char *name;char group;int num;int age;} stu; struct Stu *s = &stu;s->name = 5;s->group = 5;s->name=&s->group;s->age=8;*s->name;}));` 

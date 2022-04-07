@@ -489,6 +489,17 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             left = memberNode;
             Lex.ExceptToken(TokenKind::Identifier);
             continue;
+        }else if(Lex.CurrentToken -> Kind == TokenKind::PointerTo){
+            Lex.GetNextToken();
+            auto deferNode = std::make_shared<UnaryNode>();
+            deferNode -> Uop = UnaryOperator::Deref;
+            deferNode -> Lhs = left;
+            auto memberNode = std::make_shared<MemberAccessNode>();
+            memberNode -> Lhs = deferNode;
+            memberNode -> fieldName = Lex.CurrentToken->Content;
+            Lex.ExceptToken(TokenKind::Identifier);
+            left = memberNode;
+            break;
         }else{
             break;
         }
@@ -525,19 +536,35 @@ std::shared_ptr<Type> Parser::ParseStructDeclaration() {
 }
 
 std::shared_ptr<RecordType> Parser::ParseRecord(RecordType::TagKind recordeType) {
+    std::shared_ptr<std::string_view> recordName;
+    if (Lex.CurrentToken -> Kind == TokenKind::Identifier){
+        recordName = std::make_shared<std::string_view>(Lex.CurrentToken->Content);
+        Lex.GetNextToken();
+    }
     auto record = std::make_shared<RecordType>();
     record->Kind = recordeType;
-    Lex.ExceptToken(TokenKind::LBrace);
-    while(Lex.CurrentToken  -> Kind != TokenKind::RBrace){
-        auto type = ParseDeclarationSpec();
-        std::list<std::shared_ptr<Token>> nameTokens;
-        type = ParseDeclarator(type,&nameTokens);
-        for(auto &tk:nameTokens){
-            record ->fields.push_back(std::make_shared<Field>(type,tk,0));
+    if (Lex.CurrentToken -> Kind ==  TokenKind::LBrace){
+        Lex.GetNextToken();
+        while(Lex.CurrentToken  -> Kind != TokenKind::RBrace){
+            auto type = ParseDeclarationSpec();
+            std::list<std::shared_ptr<Token>> nameTokens;
+            type = ParseDeclarator(type,&nameTokens);
+            for(auto &tk:nameTokens){
+                record ->fields.push_back(std::make_shared<Field>(type,tk,0));
+            }
+            Lex.ExceptToken(TokenKind::Semicolon);
         }
-        Lex.ExceptToken(TokenKind::Semicolon);
+        Lex.ExceptToken(TokenKind::RBrace);
+    }else {
+        if (!recordName){
+            DiagE(Lex.SourceCode,Lex.CurrentToken->Location.Line,Lex.CurrentToken->Location.Col,"except declaration struct/union name!");
+        }
+       auto type = scope.FindTag(*recordName);
+       return std::dynamic_pointer_cast<RecordType>(type);
     }
-    Lex.ExceptToken(TokenKind::RBrace);
+    if (recordName){
+        scope.PushTag(*recordName,record);
+    }
     return record;
 }
 

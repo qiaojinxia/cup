@@ -227,7 +227,7 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     int offset = 0;
     for (auto &v: node -> Locals) {
         offset += v ->Type ->Size;
-        offset = AlignTo(offset,v -> Type->Align);
+        offset = AlignTo(offset,v -> Type -> Align);
         v ->Offset -= offset;
     }
     offset = AlignTo(offset,16);
@@ -338,10 +338,10 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
             assert(0);
         }
     }else if (auto memberAccessNode = dynamic_cast<MemberAccessNode *>(node)){
-        auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(memberAccessNode ->Lhs);
-        auto record = std::dynamic_pointer_cast<RecordType>(exprNode ->Type);
-        auto field = record ->GetField(memberAccessNode -> fieldName);
-        printf("\t  lea  %d(%%rbp),%%rax\n", exprNode -> Offset -  field ->Offset);
+        auto record = std::dynamic_pointer_cast<RecordType>(memberAccessNode ->Lhs -> Type);
+        memberAccessNode -> Lhs ->Accept(this);
+        auto field = record -> GetField(memberAccessNode -> fieldName);
+        printf("\t  sub  $%d,%%rax\n", field ->Offset);
     } else{
         printf("not a value\n");
         assert(0);
@@ -387,10 +387,10 @@ void CodeGenerate::Store(std::shared_ptr<Type> type) {
 }
 
 void CodeGenerate::Visitor(MemberAccessNode *node) {
-    auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
-    auto record = std::dynamic_pointer_cast<RecordType>(exprNode ->Type);
-    auto field = record ->GetField(node ->fieldName);
-    printf("\t  lea  %d(%%rbp),%%rax\n", exprNode -> Offset -  field ->Offset);
+    auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs ->Type);
+    node -> Lhs-> Accept(this);
+    auto field = record -> GetField(node -> fieldName);
+    printf("\t  sub  $%d,%%rax\n", field ->Offset);
     Load(node ->Type);
 }
 

@@ -49,6 +49,7 @@ namespace BDD{
         Amp,
         SizeOf,
         Period,
+        PointerTo,
 
     };
     class SourceLocation{

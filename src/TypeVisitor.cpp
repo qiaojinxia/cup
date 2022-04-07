@@ -175,8 +175,7 @@ void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
 
 void TypeVisitor::Visitor(MemberAccessNode *node) {
     node ->Lhs -> Accept(this);
-    auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
-    auto record = std::dynamic_pointer_cast<RecordType>(exprNode ->Type);
+    auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs  ->Type);
     auto field = record ->GetField(node ->fieldName);
     node ->Type = field ->type;
 }
