@@ -87,3 +87,11 @@ void DeclarationAssignmentStmtNode::Accept(AstVisitor *visitor) {
 void MemberAccessNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void BreakStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void ContinueStmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

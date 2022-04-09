@@ -7,6 +7,8 @@
 #include "CodeGenerate.h"
 #include "AstNode.h"
 #include <string>
+#include "Common.h"
+
 using namespace BDD;
 
 
@@ -174,6 +176,10 @@ void CodeGenerate::Visitor(BlockStmtNode *node) {
 
 void CodeGenerate::Visitor(WhileStmtNode *node) {
     int n = Sequence++;
+    std::string EndLabel= string_format(".L.end_%d",n);
+    std::string BeginLabel = string_format(".L.begin_%d",n);
+    PushBreak(EndLabel);
+    PushContinue(BeginLabel);
     printf("\t.L.begin_%d:\n",n);
     node -> Cond ->Accept(this);
     printf("\t  cmp $0,%%rax\n");
@@ -181,22 +187,34 @@ void CodeGenerate::Visitor(WhileStmtNode *node) {
     node -> Then ->Accept(this);
     printf("\t  jmp .L.begin_%d\n",n);
     printf("\t.L.end_%d:\n",n);
+    PopContinue();
+    PopBreak();
 }
 
 void CodeGenerate::Visitor(DoWhileStmtNode *node) {
     int n = Sequence ++;
+    std::string EndLabel= string_format(".L.end_%d",n);
+    std::string CondLabel = string_format(".L.cond_%d",n);
+    PushBreak(EndLabel);
+    PushContinue(CondLabel);
     printf(".L.begin_%d:\n",n);
     node -> Stmt -> Accept(this);
+    printf(".L.cond_%d:\n",n);
     node -> Cond ->Accept(this);
     printf("\t  cmp $0, %%rax\n");
     printf("\t  je .L.end_%d\n",n);
     printf("\t  jmp .L.begin_%d\n",n);
     printf(".L.end_%d:\n",n);
-
+    PopContinue();
+    PopBreak();
 }
 
 void CodeGenerate::Visitor(ForStmtNode *node) {
     int n  = Sequence++;
+    std::string EndLabel = string_format(".L.end_%d",n);
+    std::string IncrLabel = string_format(".L.incr_%d",n);
+    PushBreak(EndLabel);
+    PushContinue(IncrLabel);
     if (node -> Init)
         node -> Init ->Accept(this);
     printf(".L.begin_%d:\n",n);
@@ -205,12 +223,16 @@ void CodeGenerate::Visitor(ForStmtNode *node) {
         printf("\t  cmp $0,%%rax\n");
         printf("\t  je .L.end_%d\n", n);
     }
+
     node -> Stmt ->Accept(this);
+    printf(".L.incr_%d:\n",n);
     if (node -> Inc){
         node -> Inc ->Accept(this);
     }
     printf("\t  jmp .L.begin_%d\n",n);
     printf(".L.end_%d:\n",n);
+    PopContinue();
+    PopBreak();
 }
 
 void CodeGenerate::Visitor(FunctionNode *node) {
@@ -285,22 +307,9 @@ void CodeGenerate::Visitor(ReturnStmtNode *node) {
 }
 
 void CodeGenerate::Visitor(DeclarationStmtNode *node) {
-//    for (auto &n:node->declarationNodes) {
-//        n ->Accept(this);
-//    }
 }
 
-void CodeGenerate::ResetReg() {
-    RegCursor = 0;
-}
 
-void CodeGenerate::PushReg(int value) {
-    printf("\t  mov %d,%s\n",value,Regx64[RegCursor]);
-    RegCursor += 1;
-    if (RegCursor > 5){
-
-    }
-}
 
 void CodeGenerate::Visitor(StmtExprNode *node) {
     for (auto &s : node ->Stmts) {
@@ -392,5 +401,40 @@ void CodeGenerate::Visitor(MemberAccessNode *node) {
     auto field = record -> GetField(node -> fieldName);
     printf("\t  sub  $%d,%%rax\n", field ->Offset);
     Load(node ->Type);
+}
+
+void CodeGenerate::Visitor(BreakStmtNode *node) {
+    std::string BreakLabel = std::string(currentBreakTarget());
+    printf("\t  jmp %s \n",BreakLabel.data());
+}
+
+void CodeGenerate::Visitor(ContinueStmtNode *node) {
+    std::string ContinueLabel = std::string(currentContinueTarget());
+    printf("\t  jmp %s \n",ContinueLabel.data());
+}
+
+
+void CodeGenerate::PushBreak(std::string_view label) {
+    BreakStack.push_back(label);
+}
+
+void CodeGenerate::PopBreak() {
+    BreakStack.pop_back();
+}
+
+std::string_view CodeGenerate::currentBreakTarget() {
+    return BreakStack.back();
+}
+
+void CodeGenerate::PushContinue(std::string_view label) {
+    ContinueStack.push_back(label);
+}
+
+void CodeGenerate::PopContinue() {
+    ContinueStack.pop_back();
+}
+
+std::string_view CodeGenerate::currentContinueTarget() {
+    return ContinueStack.back();
 }
 

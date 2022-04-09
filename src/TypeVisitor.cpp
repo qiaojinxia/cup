@@ -86,7 +86,9 @@ void TypeVisitor::Visitor(ProgramNode *node) {
 void TypeVisitor::Visitor(IfStmtNode *node) {
     node ->Cond ->Accept(this);
     node ->Then ->Accept(this);
-    node ->Else->Accept(this);
+    if (node -> Else){
+        node ->Else->Accept(this);
+    }
 }
 
 void TypeVisitor::Visitor(BlockStmtNode *node) {
@@ -179,4 +181,8 @@ void TypeVisitor::Visitor(MemberAccessNode *node) {
     auto field = record ->GetField(node ->fieldName);
     node ->Type = field ->type;
 }
+
+void TypeVisitor::Visitor(BreakStmtNode *node) {}
+
+void TypeVisitor::Visitor(ContinueStmtNode *node) {}
 

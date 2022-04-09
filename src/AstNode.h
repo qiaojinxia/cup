@@ -202,6 +202,15 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class BreakStmtNode : public AstNode{
+        std::shared_ptr<AstNode> Lhs;
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class ContinueStmtNode : public AstNode{
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -224,6 +233,8 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(UnaryNode *node){};
         virtual void Visitor(SizeOfExprNode *node){};
         virtual void Visitor(MemberAccessNode *node){};
+        virtual void Visitor(BreakStmtNode *node){};
+        virtual void Visitor(ContinueStmtNode *node){};
     };
 }
 

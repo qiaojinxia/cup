@@ -20,6 +20,8 @@ namespace BDD{
         const char *Regx8[6] = {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"};
         int RegCursor{0};
         std::string CurrentFuncName;
+        std::list<std::string_view> BreakStack;
+        std::list<std::string_view> ContinueStack;
     public:
         CodeGenerate(){}
     private:
@@ -42,11 +44,19 @@ namespace BDD{
         void Visitor(UnaryNode *node) override;
         void Visitor(SizeOfExprNode *node) override;
         void Visitor(MemberAccessNode *node) override;
+        void Visitor(BreakStmtNode *node) override;
+        void Visitor(ContinueStmtNode *node) override;
 
         void Push();
-        void PushReg(int value);
-        void PopReg(int value);
-        void ResetReg();
+
+        void PushBreak(std::string_view label);
+        void PopBreak();
+        std::string_view currentBreakTarget();
+
+        void PushContinue(std::string_view label);
+        void PopContinue();
+        std::string_view currentContinueTarget();
+
 
         void Load(std::shared_ptr<Type> ty);
         void Store(std::shared_ptr<Type> ty);

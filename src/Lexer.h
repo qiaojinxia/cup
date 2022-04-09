@@ -50,6 +50,8 @@ namespace BDD{
         SizeOf,
         Period,
         PointerTo,
+        Break,
+        Continue,
 
     };
     class SourceLocation{
@@ -57,6 +59,7 @@ namespace BDD{
         int Line;
         int Col;
         int LineHead;
+        int LineEnd;
         int FilePath;
         int Code;
     };
@@ -83,6 +86,9 @@ namespace BDD{
     public:
         std::shared_ptr<Token> CurrentToken;
         std::string_view SourceCode;
+
+        SourceLocation GetLocation();
+
     public:
         Lexer(const char *code){
             SourceCode = code;
@@ -104,7 +110,6 @@ namespace BDD{
         void SkipComment();
 
 
-        SourceLocation GetLocation();
     };
 
 }

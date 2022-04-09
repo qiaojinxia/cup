@@ -20,8 +20,8 @@ namespace BDD{
     void DiagLoc(std::string_view code,SourceLocation location,const char *fmt,...){
         va_list ap;
         va_start(ap,fmt);
-        std::cerr << code << std::endl;
-        fprintf(stderr,"%*s^",location.Col ,"");
+        std::cerr << code.substr(location.LineHead, location.Col + location.LineEnd ) << std::endl;
+        fprintf(stderr,"%*s^",location.Col -1,"");
         vfprintf(stderr,fmt,ap);
         fprintf(stderr,"\n");
         va_end(ap);

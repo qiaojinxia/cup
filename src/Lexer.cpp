@@ -87,7 +87,7 @@ void BDD::Lexer::GetNextToken() {
             GetNextChar();
             kind = TokenKind::NotEqual;
         }else{
-            DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
+            DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);
         }
         GetNextChar();
     }else if(isdigit(CurChar)){
@@ -147,9 +147,13 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Struct;
             }else if(content == "union"){
                 kind = TokenKind::Union;
+            }else if(content == "break"){
+                kind = TokenKind::Break;
+            }else if(content == "continue"){
+                kind = TokenKind::Continue;
             }
         }else{
-            DiagE(SourceCode,CurrentToken->Location.Line,CurrentToken->Location.Col+1,"token '%c' is illegal",CurChar);
+            DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);
         }
     }
     CurrentToken = std::make_shared<Token>();
@@ -175,7 +179,7 @@ void Lexer::ExceptToken(TokenKind kind) {
     if (CurrentToken->Kind == kind){
         GetNextToken();
     }else{
-        DiagE(SourceCode,Line,CurrentToken->Location.Col,"'%s' excepted",GetTokenName(kind));
+        DiagLoc(SourceCode,CurrentToken->Location,"'%s' excepted",GetTokenName(kind));
     }
 }
 
@@ -207,8 +211,10 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "sizeof";
         case TokenKind::Comma:
             return ",";
+        case TokenKind::Continue:
+            return "continue";
         default:
-            break;
+            assert(0);
     }
     return "";
 }
@@ -253,8 +259,10 @@ void Lexer::SkipWhiteSpace() {
 
 void Lexer::SkipComment() {
     if(CurChar == '/' && PeekChar(1) == '/'){
-        while (CurChar != '\n')
+        while (CurChar != '\n'){
+            LineHead = Cursor -1;
             GetNextChar();
+        }
     }else{
         auto pos = SourceCode.find("*/",Cursor + 1);
         if (pos == std::string_view::npos){
@@ -271,6 +279,13 @@ SourceLocation Lexer::GetLocation(){
     SourceLocation Location;
     Location.Line = Line;
     Location.Col = Cursor - 1 -LineHead;
+    Location.LineHead = LineHead;
+    int offset = 0;
+    int cur = Cursor;
+    while(SourceCode[cur + offset] != '\n'){
+       offset += 1;
+    }
+    Location.LineEnd = offset;
     return Location;
 }
 

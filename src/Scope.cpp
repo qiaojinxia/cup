@@ -5,60 +5,76 @@
 #include "Scope.h"
 
 using namespace BDD;
-void Scope::EnterScope() {
-    scopes.push_back(std::make_shared<ScopeItem>());
+void Scope::PushScope() {
+    auto newScope = std::make_shared<ScopeItem>();
+    newScope -> parent = CurScope;
+    CurScope = newScope;
 }
 
-void Scope::LeaveScope() {
-    scopes.pop_back();
+void Scope::PopScope() {
+    CurScope = CurScope -> parent;
 }
 
 std::shared_ptr<Var> Scope::FindVar(std::string_view varName) {
-    for (auto &scope: scopes) {
-        auto var = scope -> VarScope.find(varName);
-        if (var != scope ->VarScope.end()){
-            return var->second;
+    std::shared_ptr<ScopeItem> curScope = CurScope;
+    auto varNode= curScope -> VarScope.find(varName);
+    if (varNode != curScope ->VarScope.end()){
+        return varNode -> second;
+    }
+    while(curScope -> parent){
+        curScope = curScope->parent;
+        varNode= curScope -> VarScope.find(varName);
+        if (varNode != curScope ->VarScope.end()){
+            return varNode -> second;
         }
     }
     return nullptr;
 }
 
-std::shared_ptr<Type> Scope::FindTag(std::string_view typeName) {
-    for (auto &scope: scopes) {
-        auto type = scope -> TypeScope.find(typeName);
-        if (type != scope -> TypeScope.end()){
-            return type -> second;
+std::shared_ptr<Type> Scope::FindTag(std::string_view tagName) {
+    std::shared_ptr<ScopeItem> curScope = CurScope;
+    auto tagNode= curScope -> TypeScope.find(tagName);
+    if (tagNode != curScope ->TypeScope.end()){
+        return tagNode -> second;
+    }
+    while(curScope -> parent){
+        curScope = curScope->parent;
+        tagNode= curScope -> TypeScope.find(tagName);
+        if (tagNode != curScope ->TypeScope.end()){
+            return tagNode -> second;
         }
     }
+    printf("undefined variable %s",tagName.data());
     return nullptr;
 }
 
 void Scope::PushVar(std::shared_ptr<Var> var) {
-    auto curScope = scopes.back();
-    curScope->VarScope[var->Name] = var;
+    CurScope->VarScope[var->Name] = var;
 }
 
 void Scope::PushTag(std::string_view tagName, std::shared_ptr<Type> tag) {
-    auto curScope = scopes.back();
-    curScope->TypeScope[tagName] = tag;
+    CurScope->TypeScope[tagName] = tag;
 }
 
-std::shared_ptr<Var> Scope::FindVarInCurrentScope(std::string_view name) {
-    auto curScope = scopes.back();
-    auto var = curScope ->VarScope.find(name);
-    if (var !=  curScope ->VarScope.end()){
-            return var->second;
+std::shared_ptr<Var> Scope::FindVarInCurrentScope(std::string_view varName) {
+    std::shared_ptr<ScopeItem> curScope = CurScope;
+    auto varNode= curScope -> VarScope.find(varName);
+    if (varNode != curScope ->VarScope.end()){
+        return varNode -> second;
     }
     return nullptr;
 }
 
-std::shared_ptr<Type> Scope::FindTagInCurrentScope(std::string_view tag) {
-    auto curScope = scopes.back();
-    auto type = curScope ->TypeScope.find(tag);
-    if (type !=  curScope -> TypeScope.end()){
-        return type->second;
+std::shared_ptr<Type> Scope::FindTagInCurrentScope(std::string_view tagName) {
+    std::shared_ptr<ScopeItem> curScope = CurScope;
+    auto tagNode= curScope -> TypeScope.find(tagName);
+    if (tagNode != curScope ->TypeScope.end()){
+        return tagNode -> second;
     }
     return nullptr;
 }
 
+bool Scope::CheckScopeDepthZero() {
+    return false;
+}
 
