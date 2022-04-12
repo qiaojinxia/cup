@@ -7,6 +7,7 @@
 
 #include <string_view>
 #include <memory>
+#include <unordered_map>
 
 
 namespace BDD{
@@ -23,6 +24,7 @@ namespace BDD{
         Slash,
         Mod,
         Num,
+        FloatNum,
         Eof,
         LParent,
         RParent,
@@ -40,6 +42,8 @@ namespace BDD{
         Char,
         Short,
         Long,
+        Float,
+        Double,
         Struct,
         Union,
         Return,
@@ -111,6 +115,7 @@ namespace BDD{
 
 
     };
+
 
 }
 #endif //BODDY_LEXER_H

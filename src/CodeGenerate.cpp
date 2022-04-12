@@ -8,9 +8,9 @@
 #include "AstNode.h"
 #include <string>
 #include "Common.h"
+#include "Scope.h"
 
 using namespace BDD;
-
 
 void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
     if (node->BinOp == BinaryOperator::Assign){
@@ -19,7 +19,72 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         node -> Rhs -> Accept(this);
         Store(node -> Type);
         return;
+    }else if (node -> BinOp == BinaryOperator::FloatAdd){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  addss %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::FloatSub){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  subss %s,%s\n",Xmm[nextXmm-2],Xmm[nextXmm-1]);
+        printf("\t  movss %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::FloatMul){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  mulss %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::FloatDiv){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  divss %s,%s\n",Xmm[nextXmm-2],Xmm[nextXmm-1]);
+        printf("\t  movss %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::DoubleAdd){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  addsd %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::DoubleSub){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  subsd %s,%s\n",Xmm[nextXmm-2],Xmm[nextXmm-1]);
+        printf("\t  movsd %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::DoubleMul){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  mulsd %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::DoubleDiv){
+        node -> Rhs -> Accept(this);
+        node -> Lhs -> Accept(this);
+        printf("\t  divsd %s,%s\n",Xmm[nextXmm-2],Xmm[nextXmm-1]);
+        printf("\t  movsd %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
+        nextXmm -=1;
+        return;
+    }else if (node -> BinOp == BinaryOperator::FloatAssign){
+        auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
+        auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
+        printf("\t  movss %s(%%rip),%s\n",constNode -> Name.c_str(), Xmm[nextXmm]);
+        printf("\t  movss %s,%d(%%rbp)\n", Xmm[nextXmm],varNode ->VarObj ->Offset);
+        return;
+    }else if (node -> BinOp == BinaryOperator::DoubleAssign){
+        auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
+        auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
+        printf("\t  movsd %s(%%rip),%s\n",constNode -> Name.c_str(), Xmm[nextXmm]);
+        printf("\t  movsd %s,%d(%%rbp)\n", Xmm[nextXmm],varNode ->VarObj ->Offset);
+        return;
     }
+
     node -> Rhs ->Accept(this);
     Push();
     node -> Lhs -> Accept(this);
@@ -120,7 +185,12 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
+    if (node ->Type ->IsFloatType()){
+        printf("\t  %s %s(%%rip), %s\n", GetMoveCode(node->Type).data(),node->Name.data(),Xmm[nextXmm++]);
+        return;
+    }
     printf("\t  mov $%d, %%rax\n",node->Value);
+
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ExprStmtNode *node) {
@@ -141,10 +211,24 @@ void CodeGenerate::Pop(const char *reg) {
 
 void CodeGenerate::Visitor(ExprVarNode *node) {
     GenerateAddress(node);
-    Load(node -> Type);
+    if (node ->Type ->IsIntegerType()){
+        Load(node -> Type);
+    }
 }
 
 void CodeGenerate::Visitor(ProgramNode *node) {
+    for(auto& v : scope -> Scope::GetInstance() -> GetConstantTable()){
+        printf("%s:\n",v.first.data());
+        if (v.second ->Type ->IsFloatType()){
+            if (v .second->Type ->Size == 4 ){
+                printf("\t.long  %d\n",v.second->Value);
+            }else if (v .second->Type ->Size == 8){
+                printf("\t.quad  %d\n",v.second->Value);
+            }else{
+                assert(0);
+            }
+        }
+    }
     for (auto &s: node -> Funcs)
         s->Accept(this);
 }
@@ -236,8 +320,8 @@ void CodeGenerate::Visitor(ForStmtNode *node) {
 }
 
 void CodeGenerate::Visitor(FunctionNode *node) {
-    printf(".text\n");
     CurrentFuncName = node -> FuncName;
+    printf(".text\n");
 #ifdef __linux__
     printf(".globl %s\n",name.data());
     printf("%s:\n",name.data());
@@ -250,7 +334,7 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     for (auto &v: node -> Locals) {
         offset += v ->Type ->Size;
         offset = AlignTo(offset,v -> Type -> Align);
-        v ->Offset -= offset;
+        v -> Offset -= offset;
     }
     offset = AlignTo(offset,16);
 
@@ -261,14 +345,20 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     }
     auto index = 0;
     for (auto &var: node->Params){
-        if (var -> Type -> Size == 1){
-            printf("\t  mov %s, %d(%%rbp)\n",Regx8[index++],var -> Offset );
-        }else if(var -> Type -> Size == 2){
-            printf("\t  mov %s, %d(%%rbp)\n",Regx16[index++],var -> Offset );
-        }else if(var -> Type -> Size == 4){
-            printf("\t  mov %s, %d(%%rbp)\n",Regx32[index++],var -> Offset );
-        }else if(var -> Type -> Size == 8){
-            printf("\t  mov %s, %d(%%rbp)\n",Regx64[index++],var -> Offset );
+        if (var -> Type ->IsFloatType()){
+            printf("\t %s %s, %d(%%rbp)\n", GetMoveCode(var->Type).data(),Xmm[nextXmm++],var -> Offset);
+        }else if (var -> Type -> IsIntegerType()){
+            if (var -> Type -> Size == 1){
+                printf("\t  mov %s, %d(%%rbp)\n",Regx8[index++],var -> Offset );
+            }else if(var -> Type -> Size == 2){
+                printf("\t  mov %s, %d(%%rbp)\n",Regx16[index++],var -> Offset );
+            }else if(var -> Type -> Size == 4){
+                printf("\t  mov %s, %d(%%rbp)\n",Regx32[index++],var -> Offset );
+            }else if(var -> Type -> Size == 8){
+                printf("\t  mov %s, %d(%%rbp)\n",Regx64[index++],var -> Offset );
+            }else{
+                assert(0);
+            }
         }else{
             assert(0);
         }
@@ -287,12 +377,18 @@ void CodeGenerate::Visitor(FunctionNode *node) {
 void CodeGenerate::Visitor(FuncCallNode *node) {
     for(auto &arg:node -> Args){
         arg ->Accept(this);
-        Push();
+        if (arg ->Type->IsIntegerType()){
+            Push();
+        }
     }
     for (int i = node-> Args.size() -1; i >= 0; --i) {
-        Pop(Regx64[i]);
+        if (node->Args[i] ->Type->IsIntegerType()){
+            Pop(Regx64[i]);
+            //todo push float to stack
+        }else if (node->Args[i] ->Type->IsFloatType()){}
 
     }
+    nextXmm = 0;
     std::string FuncName(node->FuncName);
 #ifdef __linux__
     printf("\t  call %s\n",FuncName.data());
@@ -306,8 +402,7 @@ void CodeGenerate::Visitor(ReturnStmtNode *node) {
     printf("\t  jmp .LReturn_%s\n",CurrentFuncName.data());
 }
 
-void CodeGenerate::Visitor(DeclarationStmtNode *node) {
-}
+void CodeGenerate::Visitor(DeclarationStmtNode *node) {}
 
 
 
@@ -338,7 +433,15 @@ void CodeGenerate::Visitor(UnaryNode *node) {
 
 void CodeGenerate::GenerateAddress(AstNode *node) {
     if (auto varNode = dynamic_cast<ExprVarNode *>(node)){
-        printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj ->Offset);
+        if (varNode -> Type ->IsFloatType()){
+            printf("\t  %s %d(%%rbp),%s\n",GetMoveCode(varNode ->Type).data(),varNode->VarObj->Offset,Xmm[nextXmm]);
+            if (varNode ->Type ->Size == 8){
+                printf("\t  cvtss2sd  %s, %s\n",Xmm[nextXmm],Xmm[nextXmm]);
+            }
+            nextXmm ++;
+        }else{
+            printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj ->Offset);
+        }
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         if (unaryNode -> Uop == UnaryOperator::Deref){
             unaryNode -> Lhs ->Accept(this);
@@ -437,4 +540,19 @@ void CodeGenerate::PopContinue() {
 std::string_view CodeGenerate::currentContinueTarget() {
     return ContinueStack.back();
 }
+
+const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
+    if (type -> IsFloatType()){
+        if (type -> Size == 4){
+            return "movss";
+        }else if (type -> Size == 8){
+            return "movsd";
+        }
+    }else if (type->IsIntegerType()){
+
+    }
+    assert(0);
+}
+
+
 

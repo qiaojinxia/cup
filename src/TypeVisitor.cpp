@@ -18,6 +18,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     node ->Lhs->Accept(this);
     node ->Rhs ->Accept(this);
     node -> Type =  node -> Lhs -> Type;
+    node -> Rhs -> Type =  node -> Lhs -> Type;
     switch (node ->BinOp) {
         case BinaryOperator::Add:
             if (node -> Lhs -> Type ->IsPointerType() && node -> Rhs -> Type ->IsIntegerType()){
@@ -35,6 +36,16 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node->Rhs = temp;
                 node->BinOp = BinaryOperator::ArrayPointerAdd;
                 node ->Type = Type::Pointer;
+            }else if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
+                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                    node ->BinOp = BinaryOperator::DoubleAdd;
+                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                    node ->BinOp = BinaryOperator::FloatAdd;
+                }else{
+                    assert(0);
+                }
+            }else if (node -> Type -> IsFloatType() && node -> Rhs -> Type -> IsFloatType()){
+                node -> BinOp = BinaryOperator::FloatAdd;
             }else{
                 printf("invalid add operation");
                 assert(0);
@@ -54,6 +65,14 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node->Rhs = temp;
                 node->BinOp = BinaryOperator::ArrayPointerSub;
                 node ->Type = Type::Pointer;
+            }else if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
+                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                    node ->BinOp = BinaryOperator::DoubleSub;
+                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                    node ->BinOp = BinaryOperator::FloatSub;
+                }else{
+                    assert(0);
+                }
             }else{
                 printf("invalid sub operation");
                 assert(0);
@@ -63,6 +82,39 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             node ->Type = Type::Pointer;
         case BinaryOperator::PointerSub:
             node ->Type = Type::Pointer;
+        case BinaryOperator::Assign:
+            if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
+                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                    node ->BinOp = BinaryOperator::DoubleAssign;
+                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                    node ->BinOp = BinaryOperator::FloatAssign;
+                }else{
+                    assert(0);
+                }
+            }
+            break;
+        case BinaryOperator::Mul:
+            if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
+                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                    node ->BinOp = BinaryOperator::DoubleMul;
+                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                    node ->BinOp = BinaryOperator::FloatMul;
+                }else{
+                    assert(0);
+                }
+            }
+            break;
+        case BinaryOperator::Div:
+            if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
+                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                    node ->BinOp = BinaryOperator::DoubleDiv;
+                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                    node ->BinOp = BinaryOperator::FloatDiv;
+                }else{
+                    assert(0);
+                }
+            }
+            break;
         default:
             break;
     }
@@ -140,6 +192,7 @@ void TypeVisitor::Visitor(StmtExprNode *node) {
     for(auto &stmt:node ->Stmts){
         stmt ->Accept(this);
     }
+    node ->Type = node ->Stmts .back()->Type;
 }
 
 void TypeVisitor::Visitor(UnaryNode *node) {
@@ -173,6 +226,7 @@ void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
     for(auto &n:node ->AssignNodes){
         n ->Accept(this);
     }
+    node ->Type = node -> AssignNodes.back()->Type;
 }
 
 void TypeVisitor::Visitor(MemberAccessNode *node) {

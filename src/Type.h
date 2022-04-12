@@ -22,6 +22,8 @@ namespace BDD{
         static std::shared_ptr<BuildInType> CharType;
         static std::shared_ptr<BuildInType> ShortType;
         static std::shared_ptr<BuildInType> LongType;
+        static std::shared_ptr<BuildInType> FloatType;
+        static std::shared_ptr<BuildInType> DoubleType;
         enum class TypeClass{
             BInType,
             PtrType,
@@ -41,6 +43,9 @@ namespace BDD{
         bool IsFunctionType() const;
         bool IsPointerType() const;
         bool IsArrayType() const;
+
+        bool IsFloatType() const;
+
         bool IsStructType() const;
         bool IsUnionType() const;
     };
@@ -53,6 +58,8 @@ namespace BDD{
             Short,
             Int,
             Long,
+            Float,
+            Double,
         };
         Kind Knd;
     public:

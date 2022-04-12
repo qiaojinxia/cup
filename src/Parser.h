@@ -15,12 +15,12 @@ namespace BDD{
     private:
         Lexer &Lex;
         std::list<std::shared_ptr<Var>> *LocalVars{nullptr};
-        Scope scope;
         BinaryOperator LastOperation{BinaryOperator::Eof};
+        std::shared_ptr<AstNode> VarStack;
+        std::shared_ptr<Token> SymbolStack;
     public:
         Parser(Lexer &Lex):Lex(Lex){}
         std::shared_ptr<ProgramNode> Parse();
-
     private:
         std::shared_ptr<AstNode> ParseStatement();
 
@@ -38,7 +38,7 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParsePostFixExpr();
 
-        std::shared_ptr<AstNode> ParseBinaryExpr(std::shared_ptr<AstNode> left);
+
 
         std::shared_ptr<AstNode> ParsePrimaryExpr();
 
@@ -54,10 +54,11 @@ namespace BDD{
 
         std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type);
 
-
+        std::shared_ptr<AstNode> ParseBinaryExpr(int priority);
+        std::shared_ptr<AstNode> ParseBinaryOperationExpr(std::shared_ptr<AstNode> left,BinaryOperator op);
 
     private:
-        bool IsTypeName();
+
     };
 
 }

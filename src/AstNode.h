@@ -11,6 +11,7 @@
 #include <vector>
 #include "Type.h"
 #include <map>
+#include <string>
 
 namespace BDD{
     int AlignTo(int size,int align);
@@ -62,6 +63,15 @@ namespace BDD{
         PointerAdd,
         ArrayPointerAdd,
         ArrayPointerSub,
+        FloatAdd,
+        FloatSub,
+        FloatMul,
+        FloatDiv,
+        DoubleAdd,
+        DoubleSub,
+        DoubleMul,
+        DoubleDiv,
+        DoubleAssign,
         Sub,
         PointerSub,
         PointerDiff,
@@ -69,6 +79,7 @@ namespace BDD{
         Div,
         Mod,
         Assign,
+        FloatAssign,
         Equal,
         NotEqual,
         Greater,
@@ -91,6 +102,19 @@ namespace BDD{
         {BinaryOperator::Mod, 3},
         {BinaryOperator::Eof, 15},
     };
+    static std::map<TokenKind,int> TOpPrecedence = {
+//            {TokenKind::Equal, 7},
+//            {BinaryOperator::NotEqual, 7},
+//            {BinaryOperator::Greater, 6},
+//            {BinaryOperator::GreaterEqual, 6},
+//            {BinaryOperator::Lesser, 6},
+//            {BinaryOperator::LesserEqual, 6},
+            {TokenKind::Plus, 4},
+            {TokenKind::Minus, 4},
+            {TokenKind::Slash, 3},
+            {TokenKind::Start, 3},
+            {TokenKind::Eof, 13},
+    };
 
 class BinaryNode :public  AstNode{
     public:
@@ -102,9 +126,12 @@ class BinaryNode :public  AstNode{
 
     class ConstantNode : public AstNode{
     public:
+        std::string Name;
+        int Offset;
         int Value;
         void Accept(AstVisitor *visitor) override;
     };
+
 
     class ExprStmtNode: public AstNode{
     public:
@@ -206,7 +233,7 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
     };
-
+    
     class ContinueStmtNode : public AstNode{
         void Accept(AstVisitor *visitor) override;
     };

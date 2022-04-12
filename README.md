@@ -56,3 +56,5 @@ a toy c compailer
     - Support char struct member ->   case : `assert(5,({struct Stu {char *name;char group;int num;int age;} stu; struct Stu *s = &stu;s->name = 5;s->group = 5;s->name=&s->group;s->age=8;*s->name;}));` 
 - 2022-04-06 ~ 2022-04-07
   - Support  break 、 continue  to  for  、 do while 、 while statement
+- 2022-04-08 ~ 2022-04-12
+    - Support  float double fix arithmetic expression periority case : `float a = 1.0; double b = 2.0;`

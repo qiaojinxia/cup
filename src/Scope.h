@@ -10,8 +10,12 @@
 #include <unordered_map>
 
 namespace BDD{
+    class Scope;
+    static std::shared_ptr<Scope> m_scopeInstance;
     class Scope {
     private:
+        std::unordered_map<std::string,std::shared_ptr<ConstantNode>> ConstTable = {};
+        int countConstant;
         class ScopeItem{
         public:
             std::unordered_map<std::string_view,std::shared_ptr<Var>> VarScope = {};
@@ -19,8 +23,10 @@ namespace BDD{
             std::shared_ptr<ScopeItem> parent;
         };
     private:
-        std::shared_ptr<ScopeItem> CurScope;
+        std::shared_ptr<ScopeItem> CurScope = {};
     public:
+        void PutToConstantTable(std::shared_ptr<ConstantNode> constantNode);
+        std::unordered_map<std::string,std::shared_ptr<ConstantNode>> GetConstantTable();
 
         void PushScope();
         void PopScope();
@@ -36,6 +42,12 @@ namespace BDD{
 
         bool CheckScopeDepthZero();
 
+        static std::shared_ptr<Scope> GetInstance(){
+            if (m_scopeInstance == nullptr){
+                m_scopeInstance = std::shared_ptr<Scope>(new Scope);
+            }
+            return m_scopeInstance;
+        }
     };
 
 }

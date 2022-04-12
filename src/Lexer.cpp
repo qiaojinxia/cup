@@ -7,6 +7,7 @@
 #include "Lexer.h"
 #include "Diag.h"
 #include <string>
+#include <cmath>
 
 using namespace BDD;
 void BDD::Lexer::GetNextChar() {
@@ -93,10 +94,23 @@ void BDD::Lexer::GetNextToken() {
     }else if(isdigit(CurChar)){
         kind = TokenKind::Num;
         value = 0;
+        int n = 0;
         do {
+            if (kind == TokenKind::FloatNum){
+                n+= 1;
+            }
             value = value * 10 + CurChar - '0';
             GetNextChar();
+            if (CurChar == '.'){
+                kind = TokenKind::FloatNum;
+                GetNextChar();
+            }
         }while (isdigit(CurChar));
+        if (kind == TokenKind::FloatNum){
+            float a = value / pow(10,n);
+            int *m = (int*)&a;
+            value = *m;
+        }
     }else if (CurChar == '>'){
         if (PeekChar(1) == '='){
             GetNextChar();
@@ -151,6 +165,10 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Break;
             }else if(content == "continue"){
                 kind = TokenKind::Continue;
+            }else if(content == "float"){
+                kind = TokenKind::Float;
+            }else if(content == "double"){
+                kind = TokenKind::Double;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);

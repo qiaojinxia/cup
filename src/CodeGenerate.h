@@ -7,6 +7,7 @@
 
 #include <string>
 #include "AstNode.h"
+#include "Scope.h"
 
 
 namespace BDD{
@@ -18,12 +19,19 @@ namespace BDD{
         const char *Regx32[6] = {"%edi","%esi","%edx","%ecx" ,"%r8d","%r9d"};
         const char *Regx16[6] = {"%di","%si","%dx","%cx" ,"%r8w","%r9w"};
         const char *Regx8[6] = {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"};
+
+        const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
+
+        int nextXmm{0};
+        Scope * scope;
         int RegCursor{0};
         std::string CurrentFuncName;
         std::list<std::string_view> BreakStack;
         std::list<std::string_view> ContinueStack;
     public:
-        CodeGenerate(){}
+        CodeGenerate(){
+            Scope:Scope::GetInstance();
+        }
     private:
         void Visitor(ExprStmtNode *node) override;
         void Visitor(BinaryNode *node) override;
@@ -62,6 +70,8 @@ namespace BDD{
         void Store(std::shared_ptr<Type> ty);
 
         void GenerateAddress(AstNode *node);
+
+        const std::string GetMoveCode(std::shared_ptr<Type> type);
 
         void Pop(const char *reg);
     };

@@ -3,6 +3,7 @@
 //
 
 #include "Scope.h"
+#include "Common.h"
 
 using namespace BDD;
 void Scope::PushScope() {
@@ -76,5 +77,16 @@ std::shared_ptr<Type> Scope::FindTagInCurrentScope(std::string_view tagName) {
 
 bool Scope::CheckScopeDepthZero() {
     return false;
+}
+
+std::unordered_map<std::string, std::shared_ptr<ConstantNode>> Scope::GetConstantTable() {
+    return ConstTable;
+}
+
+void Scope::PutToConstantTable(std::shared_ptr<ConstantNode> constantNode) {
+    auto labelName = string_format("caomao_%d",countConstant ++);
+    auto name = labelName.data();
+    constantNode -> Name = name;
+    ConstTable[name] = constantNode;
 }
 

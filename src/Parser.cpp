@@ -10,94 +10,6 @@
 
 using namespace BDD;
 
-std::shared_ptr<AstNode> Parser::ParseBinaryExpr(std::shared_ptr<AstNode> left) {
-    auto node = std::make_shared<BinaryNode>();
-    BinaryOperator anOperator ;
-    std::shared_ptr<BinaryNode> prevNode = std::dynamic_pointer_cast<BinaryNode >(left);
-    std::shared_ptr<AstNode> leftNode ;
-    if (prevNode){
-        leftNode = ParseUnaryExpr();
-    }
-    switch (Lex.CurrentToken -> Kind) {
-        case TokenKind::Plus:
-            anOperator = BinaryOperator::Add;
-            break;
-        case TokenKind::Minus:
-            anOperator = BinaryOperator::Sub;
-            break;
-        case TokenKind::Start:
-            anOperator = BinaryOperator::Mul;
-            break;
-        case TokenKind::Slash:
-            anOperator = BinaryOperator::Div;
-            break;
-        case TokenKind::Assign:
-            anOperator = BinaryOperator::Assign;
-            break;
-        case TokenKind::Mod:
-            anOperator = BinaryOperator::Mod;
-            break;
-        case TokenKind::Greater:
-            anOperator = BinaryOperator::Greater;
-            break;
-        case TokenKind::GreaterEqual:
-            anOperator = BinaryOperator::GreaterEqual;
-            break;
-        case TokenKind::Lesser:
-            anOperator = BinaryOperator::Lesser;
-            break;
-        case TokenKind::LesserEqual:
-            anOperator = BinaryOperator::LesserEqual;
-            break;
-        case TokenKind::Equal:
-            anOperator = BinaryOperator::Equal;
-            break;
-        case TokenKind::NotEqual:
-            anOperator = BinaryOperator::NotEqual;
-            break;
-        default:
-            LastOperation = BinaryOperator::Eof;
-            return leftNode;
-    }
-    if (leftNode)
-        node -> Lhs = leftNode;
-    else
-        node -> Lhs = left;
-    if (prevNode && leftNode) {
-        auto preOpt = OpPrecedence[prevNode->BinOp];
-        auto curOpt = OpPrecedence[anOperator];
-        if (preOpt < curOpt && preOpt != 0){
-            LastOperation = anOperator;
-            node -> BinOp = anOperator;
-            return leftNode;
-        }else if (preOpt == curOpt){
-            Lex.GetNextToken();
-            node -> Lhs = prevNode -> Lhs;
-            node -> Rhs = leftNode;
-            node -> BinOp = prevNode -> BinOp;
-            prevNode -> BinOp = anOperator;
-            prevNode -> Lhs = node;
-            auto subNode =  ParseBinaryExpr(prevNode);
-            return subNode;
-        }
-    }
-    node -> BinOp = anOperator;
-    Lex.GetNextToken();
-    node  -> Rhs = ParseBinaryExpr(node);
-    while (OpPrecedence[node -> BinOp] >= OpPrecedence[LastOperation] && LastOperation != BinaryOperator::Eof){
-        auto newNode = std::make_shared<BinaryNode>();
-        newNode -> BinOp = LastOperation;
-        newNode -> Lhs = node -> Lhs;
-        newNode -> BinOp = LastOperation;
-        Lex.GetNextToken();
-        newNode -> Rhs  =  ParseBinaryExpr(newNode);
-        node -> Lhs = newNode;
-    }
-    return node;
-
-}
-
-
 std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
     auto node = std::make_shared<AstNode>();
     switch (Lex.CurrentToken -> Kind){
@@ -106,7 +18,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             Lex.BeginPeekToken();
             Lex.GetNextToken();
             if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
-                scope.PushScope();
+                Scope::GetInstance() -> PushScope();
                 Lex.EndPeekToken();
                 Lex.ExceptToken(TokenKind::LParent);
                 Lex.ExceptToken(TokenKind::LBrace);
@@ -116,7 +28,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                 }
                 Lex.GetNextToken();
                 Lex.ExceptToken(TokenKind::RParent);
-                scope.PopScope();
+                Scope::GetInstance() -> PopScope();
                 return node;
             }
             Lex.EndPeekToken();
@@ -155,8 +67,19 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
            constNode -> Type = Type::IntType;
            Lex.GetNextToken();
            node =  constNode;
+           Scope::GetInstance() -> PutToConstantTable(constNode);
            break;
        }
+       case TokenKind::FloatNum:
+        {
+            auto constNode = std::make_shared<ConstantNode>();
+            constNode -> Value = Lex.CurrentToken -> Value;
+            constNode -> Type = Type::FloatType;
+            Lex.GetNextToken();
+            node =  constNode;
+            Scope::GetInstance() -> PutToConstantTable(constNode);
+            break;
+        }
         case TokenKind::SizeOf:
         {
             Lex.GetNextToken();
@@ -168,6 +91,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
        default:
            if (Lex.CurrentToken -> Kind == TokenKind::Int || Lex.CurrentToken -> Kind == TokenKind::Char
            || Lex.CurrentToken -> Kind == TokenKind::Short || Lex.CurrentToken -> Kind == TokenKind::Long
+           || Lex.CurrentToken -> Kind == TokenKind::Float || Lex.CurrentToken -> Kind == TokenKind::Double
            || Lex.CurrentToken -> Kind == TokenKind::Struct){
                std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
                auto tokens = std::list<std::shared_ptr<Token>>();
@@ -200,28 +124,23 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                multiAssignNode ->AssignNodes = assignNodes;
                return multiAssignNode;
            }
-           return nullptr;
+            DiagLoc(Lex.SourceCode,Lex.GetLocation(),"not support type",Lex.CurrentToken->Kind);
     }
     return node;
 }
 
 std::shared_ptr<AstNode> Parser::ParseExpr() {
-    std::shared_ptr<AstNode> left = ParseUnaryExpr();;
-    while (Lex.CurrentToken -> Kind != TokenKind::Semicolon && Lex.CurrentToken -> Kind != TokenKind::RParent
-    && Lex.CurrentToken -> Kind != TokenKind::Comma && Lex.CurrentToken -> Kind != TokenKind::RBracket) {
-        left = ParseBinaryExpr(left);
-    }
+    auto left = ParseBinaryExpr(13);
     return left;
 }
 
-
 std::shared_ptr<ProgramNode> Parser::Parse() {
-    scope.PushScope();
+    Scope::GetInstance() -> PushScope();
     auto node = std::make_shared<ProgramNode>();
     while (Lex.CurrentToken -> Kind != TokenKind::Eof){
         node ->Funcs.push_back(ParseFunc());
     }
-    scope.PopScope();
+    Scope::GetInstance() -> PopScope();
     return node;
 }
 
@@ -245,14 +164,14 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         }
         return node;
     }else if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
-        scope.PushScope();
+        Scope::GetInstance() -> PushScope();
         auto node = std::make_shared<BlockStmtNode>();
         Lex.GetNextToken();
         while (Lex.CurrentToken->Kind != TokenKind::RBrace){
             node -> Stmts.push_back(ParseStatement());
         }
         Lex.ExceptToken(TokenKind::RBrace);
-        scope.PopScope();
+        Scope::GetInstance() -> PopScope();
         return node;
     }else if (Lex.CurrentToken -> Kind == TokenKind::While){
         auto node = std::make_shared<WhileStmtNode>();
@@ -313,8 +232,9 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
 }
 
 std::shared_ptr<Var> Parser::FindLocalVar(std::string_view varName) {
-    return scope.FindVar(varName);
+    return Scope::GetInstance() -> FindVar(varName);
 }
+
 
 std::shared_ptr<Var> Parser::NewLocalVar(std::string_view varName,std::shared_ptr<Type> type) {
     auto obj = std::make_shared<Var>();
@@ -322,14 +242,14 @@ std::shared_ptr<Var> Parser::NewLocalVar(std::string_view varName,std::shared_pt
     obj ->Name = varName;
     obj -> Offset = 0;
     LocalVars -> push_front(obj);
-    scope.PushVar(obj);
+    Scope::GetInstance() -> PushVar(obj);
     return obj;
 }
 
 std::shared_ptr<AstNode> Parser::ParseFunc() {
     auto node =std::make_shared<FunctionNode>();
     LocalVars = &node -> Locals;
-    scope.PushScope();
+    Scope::GetInstance() -> PushScope();
     auto type = ParseDeclarationSpec();
     std::list<std::shared_ptr<Token>> nameTokens;
     node -> FuncName = Lex.CurrentToken->Content;
@@ -349,7 +269,7 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
         node -> Stmts.push_back(ParseStatement());
     }
-    scope.PopScope();
+    Scope::GetInstance() -> PopScope();
     Lex.ExceptToken(TokenKind::RBrace);
     return node;
 }
@@ -389,6 +309,12 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec() {
     }else if(Lex.CurrentToken -> Kind == TokenKind::Union){
         Lex.GetNextToken();
         return ParseUnionDeclaration();
+    }else if(Lex.CurrentToken -> Kind == TokenKind::Float){
+        Lex.GetNextToken();
+        return Type::FloatType;
+    }else if(Lex.CurrentToken -> Kind == TokenKind::Double){
+        Lex.GetNextToken();
+        return Type::DoubleType;
     }
     DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"type not support current!");
     return nullptr;
@@ -442,11 +368,6 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     return ParseTypeSuffix(type);
 }
 
-bool Parser::IsTypeName() {
-    if (Lex.CurrentToken -> Kind == TokenKind::Int)
-        return true;
-    return false;
-}
 
 std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     if (Lex.CurrentToken -> Kind == TokenKind::Plus || Lex.CurrentToken->Kind  == TokenKind::Minus
@@ -569,14 +490,76 @@ std::shared_ptr<RecordType> Parser::ParseRecord(RecordType::TagKind recordeType)
         if (!recordName){
             DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except declaration struct/union name!");
         }
-       auto type = scope.FindTag(*recordName);
+       auto type = Scope::GetInstance() -> FindTag(*recordName);
        return std::dynamic_pointer_cast<RecordType>(type);
     }
     if (recordName){
-        scope.PushTag(*recordName,record);
+        Scope::GetInstance() -> PushTag(*recordName,record);
     }
     return record;
 }
 
+std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
+    auto leftNode  = ParseUnaryExpr();
+    while(true){
+        if (Lex.CurrentToken -> Kind == TokenKind::Semicolon || Lex.CurrentToken -> Kind == TokenKind::Comma
+            || Lex.CurrentToken -> Kind == TokenKind::RParent){
+            return leftNode;
+        }
+        if (TOpPrecedence[Lex.CurrentToken->Kind] >= priority){
+            break;
+        }
+        switch (Lex.CurrentToken->Kind) {
+            case TokenKind::Plus:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Add);
+                break;
+            case TokenKind::Minus:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Sub);
+                break;
+            case TokenKind::Start:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mul);
+                break;
+            case TokenKind::Slash:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Div);
+                break;
+            case TokenKind::Assign:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Assign);
+                break;
+            case TokenKind::Mod:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mod);
+                break;
+            case TokenKind::Greater:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Greater);
+                break;
+            case TokenKind::GreaterEqual:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::GreaterEqual);
+                break;
+            case TokenKind::Lesser:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Lesser);
+                break;
+            case TokenKind::LesserEqual:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::LesserEqual);
+                break;
+            case TokenKind::Equal:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Equal);
+                break;
+            case TokenKind::NotEqual:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::NotEqual);
+                break;
+            default:
+                assert(0);
+        }
+    }
+    return leftNode;
+}
 
+std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNode> left, BinaryOperator op) {
+    auto curPriority =  TOpPrecedence[Lex.CurrentToken->Kind];
+    Lex.GetNextToken();
+    std::shared_ptr<BinaryNode> binaryNode = std::make_shared<BinaryNode>();
+    binaryNode ->BinOp = op;
+    binaryNode -> Lhs = left;
+    binaryNode -> Rhs = ParseBinaryExpr(curPriority);
+    return binaryNode;
+}
 

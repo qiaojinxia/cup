@@ -13,7 +13,11 @@ std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(Buil
 std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(BuildInType::Kind::Short ,2,2 );
 std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 );
 
+std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 );
+std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(BuildInType::Kind::Double,8,8 );
+
 std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(LongType);
+
 
 
 
@@ -52,6 +56,15 @@ bool Type::IsUnionType() const {
     if (TypeC == TypeClass::RecordType){
         auto ry = dynamic_cast<const RecordType *>(this);
         return ry -> Kind  == RecordType::TagKind::Union;
+    }
+    return false;
+}
+
+bool Type::IsFloatType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Float
+                ||  build_in_type -> GetKind() == BuildInType::Kind::Double;
     }
     return false;
 }
