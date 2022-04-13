@@ -70,7 +70,7 @@ namespace BDD{
     class Token{
     public:
         TokenKind Kind;
-        int Value;
+        long Value;
         std::string_view Content;
         SourceLocation Location;
     };

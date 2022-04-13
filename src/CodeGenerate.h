@@ -50,6 +50,7 @@ namespace BDD{
         void Visitor(DeclarationAssignmentStmtNode *node) override;
         void Visitor(StmtExprNode *node) override;
         void Visitor(UnaryNode *node) override;
+        void Visitor(CastNode *node) override;
         void Visitor(SizeOfExprNode *node) override;
         void Visitor(MemberAccessNode *node) override;
         void Visitor(BreakStmtNode *node) override;

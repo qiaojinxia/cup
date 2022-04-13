@@ -95,3 +95,7 @@ void BreakStmtNode::Accept(AstVisitor *visitor) {
 void ContinueStmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void CastNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

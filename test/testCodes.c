@@ -3,6 +3,7 @@ int testCode(){
 //    assert(14,({  2  +  3 * 5 - 3 ;}));
 //    assert(1,({ 10 - 3  * 4  + 5 - 4 / 3  + 3 - 4 ;}));
 //    assert(2,({ 10 + 3  - 4  + 5 - 4 / 3  + 3 % 2 - 4 * 3 ;}));
+//    assert(16,({ 10 + 3  / 4  + 5 * 4 / 3 ;}));
 //    assert(11,({2 + 9;}));
 //    assert(2,({4 / 2;}));
 //    assert(0,({4 < 2;}));
@@ -48,12 +49,14 @@ int testCode(){
 //    assert_f(3.234567,({float num = 1.234567;float num1 = 2.0;num + num1 + 1.0 + 3.0;}));
 //    assert_f(1.0,({float num = 2.0; float num1 = 1.0;num - num1;}));
 //    assert_f(2.469134,({float num = 1.234567;float num1 = 2.0;num * num1;}));
-//     assert_f( 1.117284,({float num = 1.234567;float num1 = 2.0;num / num1 + 0.5;}));
+//    assert_f( 1.117284,({float num = 1.234567;float num1 = 2.0;num / num1 + 0.5;}));
 //    assert_f(0.617284,({float num = 2.234567;float num1 = 2.0;num + num1;}));
-    print_float(({double num1 = 2.0;double num2 = 1.4; num1 + num2;}));
-    print_float(({double num1 = 2.0;double num2 = 1.4; num1 - num2;}));
-    print_float(({double num1 = 2.0;double num2 = 1.4; num1 * num2;}));
-    print_float(({double num1 = 2.0;double num2 = 1.4; num1 / num2;}));
+//    print_lfloat(({double num1 = 2.0;float num2 = 1.4; num1 + num2;}));
+//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 - num2;}));
+//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 * num2;}));
+//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 / num2;}));
+//    print_float(({1.344 + 2.0004 / 2.9393 + 2323.0 * 4.2 / 1.0;}));
+    print_lfloat(({float a = 1.0; double b = 2.0; a + b;}));
     return 0;
 }
 

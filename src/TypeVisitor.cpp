@@ -18,7 +18,6 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     node ->Lhs->Accept(this);
     node ->Rhs ->Accept(this);
     node -> Type =  node -> Lhs -> Type;
-    node -> Rhs -> Type =  node -> Lhs -> Type;
     switch (node ->BinOp) {
         case BinaryOperator::Add:
             if (node -> Lhs -> Type ->IsPointerType() && node -> Rhs -> Type ->IsIntegerType()){
@@ -37,8 +36,19 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node->BinOp = BinaryOperator::ArrayPointerAdd;
                 node ->Type = Type::Pointer;
             }else if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
-                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleAdd;
+                    if (node -> Lhs -> Type -> Size == 4 ){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Lhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Lhs = castNode;
+                    }else if (node -> Rhs -> Type -> Size == 4){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Rhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Rhs = castNode;
+                    }
                 }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
                     node ->BinOp = BinaryOperator::FloatAdd;
                 }else{
@@ -66,13 +76,22 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node->BinOp = BinaryOperator::ArrayPointerSub;
                 node ->Type = Type::Pointer;
             }else if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
-                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleSub;
-                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
-                    node ->BinOp = BinaryOperator::FloatSub;
-                }else{
-                    assert(0);
+                    if (node -> Lhs -> Type -> Size == 4 ){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Lhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Lhs = castNode;
+                    }else if (node -> Rhs -> Type -> Size == 4){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Rhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Rhs = castNode;
+                    }
                 }
+            }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                node ->BinOp = BinaryOperator::FloatSub;
             }else{
                 printf("invalid sub operation");
                 assert(0);
@@ -84,19 +103,40 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             node ->Type = Type::Pointer;
         case BinaryOperator::Assign:
             if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
-                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                if (node -> Lhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleAssign;
-                }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
+                    if (node -> Rhs -> Type -> Size == 4){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Rhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Rhs = castNode;
+                    }
+                }else if (node -> Lhs -> Type -> Size == 4){
                     node ->BinOp = BinaryOperator::FloatAssign;
-                }else{
-                    assert(0);
+                    if (node -> Rhs -> Type -> Size == 8){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Rhs;
+                        castNode ->Cop = CastOperator::Float;
+                        node -> Rhs = castNode;
+                    }
                 }
             }
             break;
         case BinaryOperator::Mul:
             if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
-                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleMul;
+                    if (node -> Lhs -> Type -> Size == 4 ){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Lhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Lhs = castNode;
+                    }else if (node -> Rhs -> Type -> Size == 4){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Rhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Rhs = castNode;
+                    }
                 }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
                     node ->BinOp = BinaryOperator::FloatMul;
                 }else{
@@ -106,8 +146,19 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             break;
         case BinaryOperator::Div:
             if (node -> Lhs -> Type ->IsFloatType() && node -> Rhs -> Type ->IsFloatType()){
-                if (node -> Lhs -> Type -> Size == 8 && node -> Lhs -> Type -> Size == 8){
+                if (node -> Lhs -> Type -> Size == 8 && node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleDiv;
+                    if (node -> Lhs -> Type -> Size == 4 ){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Lhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Lhs = castNode;
+                    }else if (node -> Rhs -> Type -> Size == 4){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> Node = node -> Rhs;
+                        castNode ->Cop = CastOperator::Double;
+                        node -> Rhs = castNode;
+                    }
                 }else if (node -> Lhs -> Type -> Size == 4 && node -> Lhs -> Type -> Size == 4){
                     node ->BinOp = BinaryOperator::FloatDiv;
                 }else{
@@ -239,4 +290,8 @@ void TypeVisitor::Visitor(MemberAccessNode *node) {
 void TypeVisitor::Visitor(BreakStmtNode *node) {}
 
 void TypeVisitor::Visitor(ContinueStmtNode *node) {}
+
+void TypeVisitor::Visitor(CastNode *node) {
+    node ->Accept(this);
+}
 

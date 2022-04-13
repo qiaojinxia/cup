@@ -32,6 +32,7 @@ namespace BDD{
             RecordType,
         };
         int Size;
+
         int Align;
     private:
         TypeClass TypeC;

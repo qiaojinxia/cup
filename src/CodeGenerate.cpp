@@ -21,7 +21,13 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         return;
     }else if (node -> BinOp == BinaryOperator::FloatAdd){
         node -> Rhs -> Accept(this);
+        if (node ->Rhs ->Type -> Size == 4 && node ->Rhs ->Type -> Size == 8){
+            printf("\t  cvtss2sd   %s, %s \n",Xmm[nextXmm-1],Xmm[nextXmm-1]);
+        }
         node -> Lhs -> Accept(this);
+        if (node ->Rhs ->Type -> Size == 4 && node ->Rhs ->Type -> Size == 8){
+            printf("\t  cvtss2sd   %s, %s \n",Xmm[nextXmm-1],Xmm[nextXmm-1]);
+        }
         printf("\t  addss %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
         nextXmm -=1;
         return;
@@ -189,7 +195,7 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
         printf("\t  %s %s(%%rip), %s\n", GetMoveCode(node->Type).data(),node->Name.data(),Xmm[nextXmm++]);
         return;
     }
-    printf("\t  mov $%d, %%rax\n",node->Value);
+    printf("\t  mov $%d, %%rax\n",node->valueLow);
 
 }
 
@@ -220,10 +226,16 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     for(auto& v : scope -> Scope::GetInstance() -> GetConstantTable()){
         printf("%s:\n",v.first.data());
         if (v.second ->Type ->IsFloatType()){
-            if (v .second->Type ->Size == 4 ){
-                printf("\t.long  %d\n",v.second->Value);
+            if (v.second->Type ->Size == 4 ){
+                auto s_num =  std::string(v.second->Token -> Content).c_str();
+                float d_num = atof(s_num);
+                int * lp_num = (int *)&d_num;
+                printf("\t.quad  %s\n", convert_to_hex(*lp_num).data());
             }else if (v .second->Type ->Size == 8){
-                printf("\t.quad  %d\n",v.second->Value);
+                auto s_num =  std::string(v.second->Token -> Content).c_str();
+                double d_num = atof(s_num);
+                long * lp_num = (long *)&d_num;
+                printf("\t.quad  %s\n", convert_to_hex(*lp_num).data());
             }else{
                 assert(0);
             }
@@ -435,9 +447,6 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
     if (auto varNode = dynamic_cast<ExprVarNode *>(node)){
         if (varNode -> Type ->IsFloatType()){
             printf("\t  %s %d(%%rbp),%s\n",GetMoveCode(varNode ->Type).data(),varNode->VarObj->Offset,Xmm[nextXmm]);
-            if (varNode ->Type ->Size == 8){
-                printf("\t  cvtss2sd  %s, %s\n",Xmm[nextXmm],Xmm[nextXmm]);
-            }
             nextXmm ++;
         }else{
             printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj ->Offset);
@@ -552,6 +561,18 @@ const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
 
     }
     assert(0);
+}
+
+void CodeGenerate::Visitor(CastNode *node) {
+    node -> Node ->Accept( this);
+    if (node -> Cop == CastOperator::Double){
+        printf("\t  cvtss2sd %s, %s\n",Xmm[nextXmm-1],Xmm[nextXmm-1]);
+    }else if  (node -> Cop == CastOperator::Float){
+        printf("\t  cvtsd2ss %s, %s\n",Xmm[nextXmm-1],Xmm[nextXmm-1]);
+    }else{
+        assert(0);
+    }
+
 }
 
 

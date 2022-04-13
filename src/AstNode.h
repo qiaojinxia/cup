@@ -125,10 +125,14 @@ class BinaryNode :public  AstNode{
     };
 
     class ConstantNode : public AstNode{
+    private:
     public:
+        ConstantNode(std::shared_ptr<Token> tk):Token(tk){};
         std::string Name;
         int Offset;
-        int Value;
+        std::shared_ptr<Token> Token;
+        int valueLow;
+        int valueHigh;
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -238,6 +242,21 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    enum class CastOperator {
+        Double,
+        Float,
+        Int,
+        Long,
+        Pointer,
+    };
+
+    class CastNode : public AstNode{
+    public:
+        CastOperator Cop;
+        std::shared_ptr<AstNode> Node;
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -258,10 +277,12 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(DeclarationAssignmentStmtNode *node){};
         virtual void Visitor(StmtExprNode *node){};
         virtual void Visitor(UnaryNode *node){};
+        virtual void Visitor(CastNode *node){};
         virtual void Visitor(SizeOfExprNode *node){};
         virtual void Visitor(MemberAccessNode *node){};
         virtual void Visitor(BreakStmtNode *node){};
         virtual void Visitor(ContinueStmtNode *node){};
+
     };
 }
 

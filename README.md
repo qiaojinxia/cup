@@ -58,3 +58,5 @@ a toy c compailer
   - Support  break 、 continue  to  for  、 do while 、 while statement
 - 2022-04-08 ~ 2022-04-12
     - Support  float double fix arithmetic expression periority case : `float a = 1.0; double b = 2.0;`
+- 2022-04-13 ~ 2022-04-14
+    - Support  float double case  : `float a = 1.0; double b = 2.0; double c = a + b;`

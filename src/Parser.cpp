@@ -62,8 +62,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         }
        case TokenKind::Num:
        {
-           auto constNode = std::make_shared<ConstantNode>();
-           constNode -> Value = Lex.CurrentToken -> Value;
+           auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
+           constNode -> valueLow = Lex.CurrentToken -> Value;
            constNode -> Type = Type::IntType;
            Lex.GetNextToken();
            node =  constNode;
@@ -72,8 +72,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
        }
        case TokenKind::FloatNum:
         {
-            auto constNode = std::make_shared<ConstantNode>();
-            constNode -> Value = Lex.CurrentToken -> Value;
+            auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
+            constNode -> valueLow = Lex.CurrentToken -> Value;
             constNode -> Type = Type::FloatType;
             Lex.GetNextToken();
             node =  constNode;
@@ -118,7 +118,9 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                }
                Lex.ExceptToken( TokenKind::Assign);
                auto valueNode = ParseUnaryExpr();
+               valueNode-> Type = type;
                for (auto &n:assignNodes) {
+
                    n ->Rhs = valueNode;
                }
                multiAssignNode ->AssignNodes = assignNodes;
@@ -131,6 +133,9 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
 
 std::shared_ptr<AstNode> Parser::ParseExpr() {
     auto left = ParseBinaryExpr(13);
+    if (Lex .CurrentToken ->Kind == TokenKind::Semicolon ){
+        return left;
+    }
     return left;
 }
 
@@ -547,7 +552,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::NotEqual);
                 break;
             default:
-                assert(0);
+                DiagLoc(Lex.SourceCode,Lex.GetLocation(),"unimpl binaryOperation %s ",TokenKind::Equal);
         }
     }
     return leftNode;
