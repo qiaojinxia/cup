@@ -55,8 +55,16 @@ int testCode(){
 //    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 - num2;}));
 //    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 * num2;}));
 //    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 / num2;}));
-//    print_float(({1.344 + 2.0004 / 2.9393 + 2323.0 * 4.2 / 1.0;}));
-    print_lfloat(({float a = 1.0; double b = 2.0; a + b;}));
+//    print_float(({float num1 = 2.0; 2.0 + 1.344 + 2.0004 / 2.9393 + 2323.0 * 4.2 / 1.0 * 3.0;}));
+//    print_lfloat(({float a = 1.0; double b = 2.0; a + b;}));
+//    assert(1,({long num = 4;long num1 = 2;(num + 3) % (1 + 1);}));
+//    assert(1,({long num = 4;long num1 = 2;(num + 3) & (1 + 1);}));
+    assert(111,({long num = 101;long num1 = 10;  num | num1;}));
+    assert(15,({7 + 8 | 10 * 3 / 2 & 1 | 3;}));
+    assert(2,({4 >> 1;}));
+    assert(8,({4 << 1;}));
+    assert(4,({8 >> 1 | 3 << 2 & 3  ;}));
+
     return 0;
 }
 

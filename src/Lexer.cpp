@@ -40,7 +40,7 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::Comma;
         GetNextChar();
     }else if(CurChar == '*'){
-        kind = TokenKind::Start;
+        kind = TokenKind::Asterisk;
         GetNextChar();
     }else if(CurChar == '/'){
         kind = TokenKind::Slash;
@@ -74,6 +74,9 @@ void BDD::Lexer::GetNextToken() {
         GetNextChar();
     }else if(CurChar == '.'){
         kind = TokenKind::Period;
+        GetNextChar();
+    }else if(CurChar == '|'){
+        kind = TokenKind::VerticalBar;
         GetNextChar();
     }else if(CurChar == '='){
         if (PeekChar(1)=='='){
@@ -112,19 +115,31 @@ void BDD::Lexer::GetNextToken() {
             value = *m;
         }
     }else if (CurChar == '>'){
-        if (PeekChar(1) == '='){
-            GetNextChar();
-            kind = TokenKind::GreaterEqual;
-        }else{
-            kind = TokenKind::Greater;
+        switch (PeekChar(1)) {
+            case '=':
+                GetNextChar();
+                kind = TokenKind::GreaterEqual;
+                break;
+            case '>':
+                GetNextChar();
+                kind = TokenKind::Sar;
+                break;
+            default:
+                kind = TokenKind::Greater;
         }
         GetNextChar();
     }else if (CurChar == '<'){
-        if (PeekChar(1) == '='){
-            GetNextChar();
-            kind = TokenKind::LesserEqual;
-        }else{
-            kind = TokenKind::Lesser;
+        switch (PeekChar(1)) {
+            case '=':
+                GetNextChar();
+                kind = TokenKind::LesserEqual;
+                break;
+            case '<':
+                GetNextChar();
+                kind = TokenKind::Sal;
+                break;
+            default:
+                kind = TokenKind::Lesser;
         }
         GetNextChar();
     }else{
@@ -207,7 +222,7 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "+";
         case TokenKind::Minus:
             return "-";
-        case TokenKind::Start:
+        case TokenKind::Asterisk:
             return "*";
         case TokenKind::Slash:
             return "/";

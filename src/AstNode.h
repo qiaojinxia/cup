@@ -78,6 +78,10 @@ namespace BDD{
         Mul,
         Div,
         Mod,
+        And,
+        Or,
+        Sal,
+        Sar,
         Assign,
         FloatAssign,
         Equal,
@@ -103,17 +107,15 @@ namespace BDD{
         {BinaryOperator::Eof, 15},
     };
     static std::map<TokenKind,int> TOpPrecedence = {
-//            {TokenKind::Equal, 7},
-//            {BinaryOperator::NotEqual, 7},
-//            {BinaryOperator::Greater, 6},
-//            {BinaryOperator::GreaterEqual, 6},
-//            {BinaryOperator::Lesser, 6},
-//            {BinaryOperator::LesserEqual, 6},
-            {TokenKind::Plus, 4},
-            {TokenKind::Minus, 4},
-            {TokenKind::Slash, 3},
-            {TokenKind::Start, 3},
-            {TokenKind::Eof, 13},
+            {TokenKind::Plus,     4},
+            {TokenKind::Minus,    4},
+            {TokenKind::Slash,    3},
+            {TokenKind::Asterisk, 3},
+            {TokenKind::VerticalBar, 10},
+            {TokenKind::Sal, 5},
+            {TokenKind::Sar, 5},
+            {TokenKind::Amp, 8},
+            {TokenKind::Eof,      13},
     };
 
 class BinaryNode :public  AstNode{

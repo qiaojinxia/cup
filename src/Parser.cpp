@@ -359,7 +359,7 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
 
 std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, std::list<std::shared_ptr<Token>> *nameTokens) {
     auto type = baseType;
-    while(Lex.CurrentToken->Kind == TokenKind::Start){
+    while(Lex.CurrentToken->Kind == TokenKind::Asterisk){
         type = std::make_shared<PointerType>(type);
         Lex.GetNextToken();
     }
@@ -376,7 +376,7 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
 
 std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     if (Lex.CurrentToken -> Kind == TokenKind::Plus || Lex.CurrentToken->Kind  == TokenKind::Minus
-    || Lex.CurrentToken->Kind  == TokenKind::Start || Lex.CurrentToken->Kind  == TokenKind::Amp){
+        || Lex.CurrentToken->Kind  == TokenKind::Asterisk || Lex.CurrentToken->Kind == TokenKind::Amp){
         auto node = std::make_shared<UnaryNode>();
         switch (Lex.CurrentToken -> Kind){
             case TokenKind::Plus:
@@ -385,7 +385,7 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
             case TokenKind::Minus:
                 node -> Uop = UnaryOperator::Minus;
                 break;
-            case TokenKind::Start:
+            case TokenKind::Asterisk:
                 node -> Uop = UnaryOperator::Deref;
                 break;
             case TokenKind::Amp:
@@ -521,7 +521,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::Minus:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Sub);
                 break;
-            case TokenKind::Start:
+            case TokenKind::Asterisk:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mul);
                 break;
             case TokenKind::Slash:
@@ -532,6 +532,18 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 break;
             case TokenKind::Mod:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mod);
+                break;
+            case TokenKind::VerticalBar:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
+                break;
+            case TokenKind::Sal:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Sal);
+                break;
+            case TokenKind::Sar:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Sar);
+                break;
+            case TokenKind::Amp:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::And);
                 break;
             case TokenKind::Greater:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Greater);
@@ -551,6 +563,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::NotEqual:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::NotEqual);
                 break;
+
             default:
                 DiagLoc(Lex.SourceCode,Lex.GetLocation(),"unimpl binaryOperation %s ",TokenKind::Equal);
         }

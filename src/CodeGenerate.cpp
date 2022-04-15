@@ -21,13 +21,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         return;
     }else if (node -> BinOp == BinaryOperator::FloatAdd){
         node -> Rhs -> Accept(this);
-        if (node ->Rhs ->Type -> Size == 4 && node ->Rhs ->Type -> Size == 8){
-            printf("\t  cvtss2sd   %s, %s \n",Xmm[nextXmm-1],Xmm[nextXmm-1]);
-        }
         node -> Lhs -> Accept(this);
-        if (node ->Rhs ->Type -> Size == 4 && node ->Rhs ->Type -> Size == 8){
-            printf("\t  cvtss2sd   %s, %s \n",Xmm[nextXmm-1],Xmm[nextXmm-1]);
-        }
         printf("\t  addss %s,%s\n",Xmm[nextXmm-1],Xmm[nextXmm-2]);
         nextXmm -=1;
         return;
@@ -89,6 +83,23 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         printf("\t  movsd %s(%%rip),%s\n",constNode -> Name.c_str(), Xmm[nextXmm]);
         printf("\t  movsd %s,%d(%%rbp)\n", Xmm[nextXmm],varNode ->VarObj ->Offset);
         return;
+    }else if (node -> BinOp == BinaryOperator::Mod){
+        auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
+        if (exprNode){
+            node -> Rhs -> Accept(this);
+            printf("\t  cdq\n");
+            printf("\t  %s %d(%%rbp)\n", GetIDivCode(exprNode->VarObj ->Type).data(), exprNode -> VarObj ->Offset);
+        }else{
+            node -> Lhs -> Accept(this);
+            Push(node ->Lhs ->Type);
+            node -> Rhs -> Accept(this);
+            printf("\t  mov %%rax,%%rdi\n");
+            Pop(node ->Lhs ->Type);
+            printf("\t  cdq\n");
+            printf("\t  idiv %%rdi\n");
+        }
+        printf("\t  mov %%edx,%%eax\n");
+        return;
     }
 
     node -> Rhs ->Accept(this);
@@ -109,14 +120,6 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  xor %%rdx,%%rdx\n");
             printf("\t  idiv %%rdi\n");
             break;
-        case BinaryOperator::Mod:
-            printf("\t  push %%rax\n");
-            printf("\t  movl +4(%%rsp),%%edx\n");
-            printf("\t  movl +0(%%rsp),%%eax\n");
-            printf("\t  add  $8,%%rsp \n");
-            printf("\t  idiv %%rdi\n");
-            printf("\t  mov %%edx,%%eax\n");
-            return;
         case BinaryOperator::Greater:
             printf("\t  cmp %%rdi,%%rax\n");
             printf("\t  setg %%al\n");
@@ -146,6 +149,20 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             printf("\t  cmp %%rdi,%%rax\n");
             printf("\t  setne %%al\n");
             printf("\t  movzb %%al,%%rax\n");
+            break;
+        case BinaryOperator::And:
+            printf("\t  and %%rdi,%%rax\n");
+            break;
+        case BinaryOperator::Or:
+            printf("\t  or %%rdi,%%rax\n");
+            break;
+        case BinaryOperator::Sar:
+            printf("\t  mov %%dil,%%cl\n");
+            printf("\t  sar %%cl,%%rax\n");
+            break;
+        case BinaryOperator::Sal:
+            printf("\t  mov %%dil,%%cl\n");
+            printf("\t  sal %%cl,%%rax\n");
             break;
         case BinaryOperator::PointerAdd:
         {
@@ -558,7 +575,15 @@ const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
             return "movsd";
         }
     }else if (type->IsIntegerType()){
-
+        if (type -> Size == 1){
+            return "movsb";
+        }else if (type -> Size == 2){
+            return "movsw";
+        }else if (type -> Size == 4){
+            return "movsl";
+        }else if (type -> Size == 8){
+            return "movsq";
+        }
     }
     assert(0);
 }
@@ -573,6 +598,46 @@ void CodeGenerate::Visitor(CastNode *node) {
         assert(0);
     }
 
+}
+
+const std::string CodeGenerate::GetIDivCode(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "idivb";
+    }else if (type -> Size == 2){
+        return "idivw";
+    }else if (type -> Size == 4){
+        return "idivw";
+    }else if (type -> Size == 8){
+        return "idivq";
+    } else{
+        assert(0);
+    }
+}
+
+void CodeGenerate::Push(std::shared_ptr<Type> ty) {
+    printf("\t  sub $%d, %%rsp\n",ty->Size);
+    printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
+
+}
+
+void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
+    printf("\t  mov(%%rsp),%s\n",GetRax(ty).data());
+    printf("\t  add $%d, %%rsp\n",ty->Size);
+
+}
+
+const std::string CodeGenerate::GetRax(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "%al";
+    }else if (type -> Size == 2){
+        return "%ax";
+    }else if (type -> Size == 4){
+        return "%eax";
+    }else if (type -> Size == 8){
+        return "%rax";
+    } else{
+        assert(0);
+    }
 }
 
 

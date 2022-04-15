@@ -21,7 +21,7 @@ namespace BDD{
         const char *Regx8[6] = {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"};
 
         const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
-
+        int XmmCount{0};
         int nextXmm{0};
         Scope * scope;
         int RegCursor{0};
@@ -67,13 +67,18 @@ namespace BDD{
         std::string_view currentContinueTarget();
 
 
+        void Push(std::shared_ptr<Type> ty);
+        void Pop(std::shared_ptr<Type> ty);
+
         void Load(std::shared_ptr<Type> ty);
         void Store(std::shared_ptr<Type> ty);
 
         void GenerateAddress(AstNode *node);
 
         const std::string GetMoveCode(std::shared_ptr<Type> type);
+        const std::string GetIDivCode(std::shared_ptr<Type> type);
 
+        const std::string GetRax(std::shared_ptr<Type> type);
         void Pop(const char *reg);
     };
 }
