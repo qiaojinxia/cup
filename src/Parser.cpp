@@ -63,7 +63,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
        case TokenKind::Num:
        {
            auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
-           constNode -> valueLow = Lex.CurrentToken -> Value;
+           constNode -> Value = Lex.CurrentToken -> Value;
            constNode -> Type = Type::IntType;
            Lex.GetNextToken();
            node =  constNode;
@@ -73,7 +73,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
        case TokenKind::FloatNum:
         {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
-            constNode -> valueLow = Lex.CurrentToken -> Value;
+            constNode -> Value = Lex.CurrentToken -> Value;
             constNode -> Type = Type::FloatType;
             Lex.GetNextToken();
             node =  constNode;
@@ -132,7 +132,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
 }
 
 std::shared_ptr<AstNode> Parser::ParseExpr() {
-    auto left = ParseBinaryExpr(13);
+    auto left = ParseBinaryExpr(16);
     if (Lex .CurrentToken ->Kind == TokenKind::Semicolon ){
         return left;
     }
@@ -436,6 +436,29 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             Lex.ExceptToken(TokenKind::Identifier);
             left = memberNode;
             break;
+        }else if(Lex.CurrentToken -> Kind == TokenKind::PPlus){
+            Lex.GetNextToken();
+            auto addNode = std::make_shared<BinaryNode>();
+            addNode -> Lhs = left;
+            auto constNode  =  std::make_shared<ConstantNode>(nullptr);
+            constNode -> Value = 1;
+            constNode ->Type = Type::IntType;
+            addNode -> Rhs = constNode;
+            addNode -> BinOp = BinaryOperator::Incr;
+            left = addNode;
+            break;
+        }else if(Lex.CurrentToken -> Kind == TokenKind::MMinus){
+            Lex.GetNextToken();
+            auto addNode = std::make_shared<BinaryNode>();
+            addNode -> Lhs = left;
+            auto constNode  =  std::make_shared<ConstantNode>(nullptr);
+            constNode -> Value = -1;
+            constNode ->Type = Type::IntType;
+            addNode -> Rhs = constNode;
+            addNode -> BinOp = BinaryOperator::Incr;
+            left = addNode;
+            break;
+
         }else{
             break;
         }
@@ -508,7 +531,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
     auto leftNode  = ParseUnaryExpr();
     while(true){
         if (Lex.CurrentToken -> Kind == TokenKind::Semicolon || Lex.CurrentToken -> Kind == TokenKind::Comma
-            || Lex.CurrentToken -> Kind == TokenKind::RParent){
+            || Lex.CurrentToken -> Kind == TokenKind::RParent || Lex.CurrentToken -> Kind == TokenKind::RBracket){
             return leftNode;
         }
         if (TOpPrecedence[Lex.CurrentToken->Kind] >= priority){
@@ -535,6 +558,9 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 break;
             case TokenKind::VerticalBar:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
+                break;
+            case TokenKind::Caret:
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Xor);
                 break;
             case TokenKind::Sal:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Sal);

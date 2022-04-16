@@ -15,7 +15,7 @@ namespace BDD{
     class Scope {
     private:
         std::unordered_map<std::string,std::shared_ptr<ConstantNode>> ConstTable = {};
-        int countConstant;
+        int countConstant{0};
         class ScopeItem{
         public:
             std::unordered_map<std::string_view,std::shared_ptr<Var>> VarScope = {};

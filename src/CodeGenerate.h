@@ -22,9 +22,9 @@ namespace BDD{
 
         const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
         int XmmCount{0};
-        int nextXmm{0};
+        int Depth{0};
         Scope * scope;
-        int RegCursor{0};
+
         std::string CurrentFuncName;
         std::list<std::string_view> BreakStack;
         std::list<std::string_view> ContinueStack;

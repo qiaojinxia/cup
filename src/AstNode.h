@@ -60,6 +60,8 @@ namespace BDD{
     };
     enum class BinaryOperator{
         Add,
+        Incr,
+        Decr,
         PointerAdd,
         ArrayPointerAdd,
         ArrayPointerSub,
@@ -80,6 +82,7 @@ namespace BDD{
         Mod,
         And,
         Or,
+        Xor,
         Sal,
         Sar,
         Assign,
@@ -107,13 +110,22 @@ namespace BDD{
         {BinaryOperator::Eof, 15},
     };
     static std::map<TokenKind,int> TOpPrecedence = {
+
+            {TokenKind::Assign, 14},
             {TokenKind::Plus,     4},
             {TokenKind::Minus,    4},
             {TokenKind::Slash,    3},
             {TokenKind::Asterisk, 3},
+            {TokenKind::Equal,     7},
+            {TokenKind::NotEqual,     7},
+            {TokenKind::LesserEqual,     6},
+            {TokenKind::Lesser,     6},
+            {TokenKind::GreaterEqual,     6},
+            {TokenKind::Greater,     6},
             {TokenKind::VerticalBar, 10},
             {TokenKind::Sal, 5},
             {TokenKind::Sar, 5},
+            {TokenKind::Caret, 9},
             {TokenKind::Amp, 8},
             {TokenKind::Eof,      13},
     };
@@ -133,8 +145,7 @@ class BinaryNode :public  AstNode{
         std::string Name;
         int Offset;
         std::shared_ptr<Token> Token;
-        int valueLow;
-        int valueHigh;
+        int Value;
         void Accept(AstVisitor *visitor) override;
     };
 

@@ -26,14 +26,27 @@ void BDD::Lexer::GetNextToken() {
     if (CurChar == '\0'){
         kind = TokenKind::Eof;
     }else if(CurChar == '+'){
-        kind = TokenKind::Plus;
+        switch (PeekChar(1)) {
+            case '+':
+                GetNextChar();
+                kind = TokenKind::PPlus;
+                break;
+            default:
+                kind = TokenKind::Plus;
+        }
         GetNextChar();
     }else if(CurChar == '-'){
-        if (PeekChar(1)=='>'){
-            GetNextChar();
-            kind = TokenKind::PointerTo;
-        }else{
-            kind = TokenKind::Minus;
+        switch (PeekChar(1)) {
+            case '-':
+                GetNextChar();
+                kind = TokenKind::MMinus;
+                break;
+            case '>':
+                GetNextChar();
+                kind = TokenKind::PointerTo;
+                break;
+            default:
+                kind = TokenKind::Minus;
         }
         GetNextChar();
     }else if (CurChar == ','){
@@ -77,6 +90,9 @@ void BDD::Lexer::GetNextToken() {
         GetNextChar();
     }else if(CurChar == '|'){
         kind = TokenKind::VerticalBar;
+        GetNextChar();
+    }else if(CurChar == '^'){
+        kind = TokenKind::Caret;
         GetNextChar();
     }else if(CurChar == '='){
         if (PeekChar(1)=='='){

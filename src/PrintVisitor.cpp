@@ -58,7 +58,7 @@ void PrintVisitor::Visitor(BinaryNode *node) {
 }
 
 void PrintVisitor::Visitor(ConstantNode *node) {
-    printf("%d",node->valueLow);
+    printf("%d",node->Value);
 }
 
 void PrintVisitor::Visitor(ProgramNode *node) {
