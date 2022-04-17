@@ -102,7 +102,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
         printf("\t  mov %%rax,%%rcx\n");
         printf("\t  add $%d,%%rcx\n",constNode->Value);
-        printf("\t  mov %%rcx,%d(%%rbp)\n",varNode->VarObj -> Offset);
+        printf("\t  mov %s,%d(%%rbp)\n", GetRcx(constNode ->Type).data(),varNode->VarObj -> Offset);
         return;
     }else if (node -> BinOp == BinaryOperator::Decr){
         node -> Lhs -> Accept(this);
@@ -113,7 +113,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         }
         printf("\t  mov %%rax,%%rcx\n");
         printf("\t  sub $%d,%%rcx\n",constNode->Value);
-        printf("\t  mov %%rcx,%d(%%rbp)\n",varNode-> VarObj -> Offset);//todo VarObj no offset
+        printf("\t  mov %s,%d(%%rbp)\n", GetRcx(constNode ->Type).data(),varNode-> VarObj -> Offset);
         return;
     }
 
@@ -251,8 +251,10 @@ void CodeGenerate::Pop(const char *reg) {
 }
 
 void CodeGenerate::Visitor(ExprVarNode *node) {
-    GenerateAddress(node);
-    if (node ->Type ->IsIntegerType()){
+    if (node -> Type -> IsPointerType()){
+        printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
+    }else{
+        GenerateAddress(node);
         Load(node -> Type);
     }
 }
@@ -470,10 +472,10 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             printf("\t  neg %%rax\n");
             break;
         case UnaryOperator::Deref:
-            GenerateAddress(node);
-            Load(node -> Type);
+            node -> Lhs ->Accept(this);
+            Load(node -> Lhs -> Type);
             break;
-        case UnaryOperator::Amp:
+        case UnaryOperator::Addr:
             GenerateAddress(node -> Lhs.get());
             break;
     }
@@ -484,13 +486,13 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         if (varNode -> Type ->IsFloatType()){
             printf("\t  %s %d(%%rbp),%s\n",GetMoveCode(varNode ->Type).data(),varNode->VarObj->Offset,Xmm[Depth]);
             Depth ++;
-        }else{
-            printf("\t  lea %d(%%rbp),%%rax\n",varNode->VarObj ->Offset);
+        }else {
+            printf("\t  lea %d(%%rbp),%%rax\n",varNode -> VarObj -> Offset);
         }
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         if (unaryNode -> Uop == UnaryOperator::Deref){
-            unaryNode -> Lhs ->Accept(this);
-        }else {
+            unaryNode ->Lhs->Accept(this);
+        }else{
             printf("unaryNode must be defer!\n");
             assert(0);
         }
@@ -499,6 +501,22 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         memberAccessNode -> Lhs ->Accept(this);
         auto field = record -> GetField(memberAccessNode -> fieldName);
         printf("\t  sub  $%d,%%rax\n", field ->Offset);
+    }else if (auto arefNode = dynamic_cast<ArefNode *>(node)){
+        auto varNode = std::dynamic_pointer_cast<ExprVarNode>(arefNode ->Lhs);
+        arefNode -> Offset ->Accept(this);
+        if (auto ptrType  = std::dynamic_pointer_cast<PointerType>(varNode ->Type)){
+            printf("\t  mov $%d,%%rcx\n",node-> Type->Size);
+            printf("\t  imul %%rax,%%rcx\n");
+            printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
+            printf("\t  mov (%%rax),%%rax\n");
+            printf("\t  add %%rcx,%%rax\n");
+            return;
+        }else if (auto arrType  = std::dynamic_pointer_cast<ArrayType>(varNode ->Type)){
+            printf("\t  mov $%d,%%rcx\n",arrType ->ElementType ->Size);
+            printf("\t  imul %%rax,%%rcx\n");
+            printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
+            printf("\t  add %%rcx,%%rax\n");
+        }
     } else{
         printf("not a value\n");
         assert(0);
@@ -657,6 +675,42 @@ const std::string CodeGenerate::GetRax(std::shared_ptr<Type> type) {
     } else{
         assert(0);
     }
+}
+
+const std::string CodeGenerate::GetRcx(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "%cl";
+    }else if (type -> Size == 2){
+        return "%cx";
+    }else if (type -> Size == 4){
+        return "%ecx";
+    }else if (type -> Size == 8){
+        return "%rcx";
+    } else{
+        assert(0);
+    }
+}
+
+
+void CodeGenerate::Visitor(ArefNode *node) {
+    auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
+    if (node -> Lhs ->Type ->IsPointerType()){
+        node -> Offset ->Accept(this);
+        printf("\t  mov $%d,%%rcx\n",node-> Type->Size);
+        printf("\t  imul %%rax,%%rcx\n");
+        printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
+        printf("\t  mov (%%rax),%%rax\n");
+        printf("\t  add %%rcx,%%rax\n");
+        Load(node->Type);
+        return;
+    }
+    node -> Offset ->Accept(this);
+    auto aType = std::dynamic_pointer_cast<ArrayType>(varNode->Type);
+    printf("\t  mov $%d,%%rcx\n",aType -> ElementType ->Size);
+    printf("\t  imul %%rax,%%rcx\n");
+    printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
+    printf("\t  add %%rcx,%%rax\n");
+    Load(node ->Type);
 }
 
 

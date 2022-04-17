@@ -63,4 +63,6 @@ a toy c compailer
 - 2022-04-15
     - Support  | & >> << bit operation symbol  : `1 >> 2 | 3 << 2 & 3`
 - 2022-04-16
-    - Support  postFixExpr ++ -- and ^  bit operation symbol  : `2 ^3 int i = 0; i++;`  
+    - Support  postFixExpr ++ -- and ^  bit operation symbol and   : `2 ^3 int i = 0; i++;`  
+- 2022-4-17
+  - Support arry[i++] fix pointer index problem 

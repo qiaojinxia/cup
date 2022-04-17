@@ -55,6 +55,7 @@ namespace BDD{
         void Visitor(MemberAccessNode *node) override;
         void Visitor(BreakStmtNode *node) override;
         void Visitor(ContinueStmtNode *node) override;
+        void Visitor(ArefNode *node) override;
 
         void Push();
 
@@ -79,6 +80,8 @@ namespace BDD{
         const std::string GetIDivCode(std::shared_ptr<Type> type);
 
         const std::string GetRax(std::shared_ptr<Type> type);
+        const std::string GetRcx(std::shared_ptr<Type> type);
+
         void Pop(const char *reg);
     };
 }

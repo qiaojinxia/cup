@@ -49,7 +49,7 @@ namespace BDD{
         Plus,
         Minus,
         Deref,
-        Amp,
+        Addr,
     };
 
     class UnaryNode : public AstNode{
@@ -255,6 +255,14 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class ArefNode : public AstNode{
+    public:
+        std::shared_ptr<AstNode> Lhs; //expr node
+        std::shared_ptr<AstNode> Offset ;
+        void Accept(AstVisitor *visitor) override;
+    };
+
+
     enum class CastOperator {
         Double,
         Float,
@@ -295,6 +303,7 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(MemberAccessNode *node){};
         virtual void Visitor(BreakStmtNode *node){};
         virtual void Visitor(ContinueStmtNode *node){};
+        virtual void Visitor(ArefNode *node){};
 
     };
 }

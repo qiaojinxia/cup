@@ -119,10 +119,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                Lex.ExceptToken( TokenKind::Assign);
                auto valueNode = ParseUnaryExpr();
                valueNode-> Type = type;
-               for (auto &n:assignNodes) {
-
+               for (auto &n:assignNodes)
                    n ->Rhs = valueNode;
-               }
                multiAssignNode ->AssignNodes = assignNodes;
                return multiAssignNode;
            }
@@ -229,9 +227,8 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         return node;
     }
     auto node = std::make_shared<ExprStmtNode>();
-        if (Lex.CurrentToken -> Kind != TokenKind::Semicolon){
+    if (Lex.CurrentToken -> Kind != TokenKind::Semicolon)
         node -> Lhs = ParseExpr();
-    }
     Lex.ExceptToken(TokenKind::Semicolon);
     return node;
 }
@@ -389,7 +386,7 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
                 node -> Uop = UnaryOperator::Deref;
                 break;
             case TokenKind::Amp:
-                node -> Uop = UnaryOperator::Amp;
+                node -> Uop = UnaryOperator::Addr;
                 break;
             default:
                 break;
@@ -408,12 +405,9 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             return ParseFuncCallNode();
         }else if (Lex.CurrentToken -> Kind == TokenKind::LBracket){
             Lex.GetNextToken();
-            auto addNode = std::make_shared<BinaryNode>();
-            addNode -> Lhs = left;
-            addNode -> Rhs = ParseExpr();
-            auto starNode = std::make_shared<UnaryNode>();
-            starNode -> Lhs = addNode;
-            starNode -> Uop = UnaryOperator::Deref;
+            auto starNode = std::make_shared<ArefNode>();
+            starNode -> Offset = ParseUnaryExpr();
+            starNode -> Lhs = left;
             Lex.ExceptToken(TokenKind::RBracket);
             left = starNode;
             continue;

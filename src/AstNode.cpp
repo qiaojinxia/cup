@@ -99,3 +99,7 @@ void ContinueStmtNode::Accept(AstVisitor *visitor) {
 void CastNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void ArefNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

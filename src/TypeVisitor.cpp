@@ -259,10 +259,10 @@ void TypeVisitor::Visitor(UnaryNode *node) {
             }else if (node -> Lhs -> Type->IsArrayType()){
                 node -> Type = std::dynamic_pointer_cast<ArrayType>(node -> Lhs->Type) ->ElementType;
             }else {
-                printf("invalid defer operation");
+                node -> Type = node -> Lhs -> Type;
             }
             break;
-        case UnaryOperator::Amp:
+        case UnaryOperator::Addr:
             node -> Type = std::make_shared<PointerType>(node -> Lhs ->Type);
             break;
     }
@@ -293,5 +293,16 @@ void TypeVisitor::Visitor(ContinueStmtNode *node) {}
 
 void TypeVisitor::Visitor(CastNode *node) {
     node ->Accept(this);
+}
+
+void TypeVisitor::Visitor(ArefNode *node) {
+    node -> Lhs ->Accept(this);
+    node -> Offset ->Accept(this);
+    if (auto leftArrayType = std::dynamic_pointer_cast<ArrayType>(node -> Lhs->Type)){
+        node -> Type = leftArrayType -> ElementType;
+        return;
+    }
+    auto leftPtrBaseType = std::dynamic_pointer_cast<PointerType>(node -> Lhs->Type)->Base;
+    node -> Type  = leftPtrBaseType;
 }
 
