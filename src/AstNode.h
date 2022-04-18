@@ -141,14 +141,13 @@ class BinaryNode :public  AstNode{
     class ConstantNode : public AstNode{
     private:
     public:
-        ConstantNode(std::shared_ptr<Token> tk):Token(tk){};
+        ConstantNode(std::list<std::shared_ptr<Token>> tk):Tokens(tk){};
+        ConstantNode(std::shared_ptr<Token> tk){Tokens.push_back(tk);};
         std::string Name;
-        int Offset;
-        std::shared_ptr<Token> Token;
+        std::list<std::shared_ptr<Token>> Tokens;
         int Value;
         void Accept(AstVisitor *visitor) override;
     };
-
 
     class ExprStmtNode: public AstNode{
     public:
@@ -259,6 +258,13 @@ class BinaryNode :public  AstNode{
     public:
         std::shared_ptr<AstNode> Lhs; //expr node
         std::shared_ptr<AstNode> Offset ;
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class AssignNode : public AstNode{
+    public:
+        std::shared_ptr<AstNode> Lhs;
+        std::shared_ptr<AstNode> Rhs;
         void Accept(AstVisitor *visitor) override;
     };
 

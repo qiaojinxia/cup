@@ -19,7 +19,7 @@ namespace BDD{
         const char *Regx32[6] = {"%edi","%esi","%edx","%ecx" ,"%r8d","%r9d"};
         const char *Regx16[6] = {"%di","%si","%dx","%cx" ,"%r8w","%r9w"};
         const char *Regx8[6] = {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"};
-
+        const int MaxBit {8};
         const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
         int XmmCount{0};
         int Depth{0};
@@ -81,7 +81,8 @@ namespace BDD{
 
         const std::string GetRax(std::shared_ptr<Type> type);
         const std::string GetRcx(std::shared_ptr<Type> type);
-
+        const std::string GetRcx(int size);
+        const std::string GetRax(int size);
         void Pop(const char *reg);
     };
 }

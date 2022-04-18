@@ -37,6 +37,20 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             Lex.ExceptToken(TokenKind::RParent);
             break;
         }
+        case TokenKind::LBrace:
+            Lex.GetNextToken();
+            if (Lex.CurrentToken ->Kind == TokenKind::Num){
+                std::list<std::shared_ptr<Token>> tks;
+                while(Lex.CurrentToken->Kind == TokenKind::Num){
+                    tks.push_back(Lex.CurrentToken);
+                    Lex.SkipToken(TokenKind::Comma);
+                }
+                auto constNode = std::make_shared<ConstantNode>(tks);
+                Scope::GetInstance() -> PutToConstantTable(constNode);
+                Lex.GetNextToken();
+                node = constNode;
+                break;
+            }
         case TokenKind::Identifier:
         {
             Lex.BeginPeekToken();
@@ -117,6 +131,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                    assignNodes.push_back(assignNode);
                }
                Lex.ExceptToken( TokenKind::Assign);
+               //array constant init
                auto valueNode = ParseUnaryExpr();
                valueNode-> Type = type;
                for (auto &n:assignNodes)
@@ -365,7 +380,7 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     }
     while(Lex.CurrentToken -> Kind == TokenKind::Identifier){
         (*nameTokens).push_back(Lex.CurrentToken);
-        Lex.SkipToken(TokenKind::Comma);
+        Lex.GetNextToken();
     }
     return ParseTypeSuffix(type);
 }
@@ -585,7 +600,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 break;
 
             default:
-                DiagLoc(Lex.SourceCode,Lex.GetLocation(),"unimpl binaryOperation %s ",TokenKind::Equal);
+                return leftNode;
         }
     }
     return leftNode;

@@ -342,6 +342,7 @@ void Lexer::SkipToken(TokenKind kind) {
     GetNextToken();
     if (CurrentToken->Kind == kind){
         GetNextToken();
+        return;
     }
 }
 

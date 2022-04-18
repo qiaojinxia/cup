@@ -66,3 +66,5 @@ a toy c compailer
     - Support  postFixExpr ++ -- and ^  bit operation symbol and   : `2 ^3 int i = 0; i++;`  
 - 2022-4-17
   - Support arry[i++] fix pointer index problem 
+- 2022-4-18
+    - Support arry init value case:`int a[3] = {1,2,3}`

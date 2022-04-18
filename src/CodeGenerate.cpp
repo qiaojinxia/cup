@@ -229,6 +229,10 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
     if (node ->Type ->IsFloatType()){
         printf("\t  %s %s(%%rip), %s\n", GetMoveCode(node->Type).data(),node->Name.data(),Xmm[Depth++]);
         return;
+    }else if (node ->Type ->IsArrayType()){
+        std::string constName = std::string(node->Name);
+        printf("\t  lea %s(%%rip),%%rax\n",constName.data());
+        return;
     }
     printf("\t  mov $%d, %%rax\n",node->Value);
 
@@ -260,25 +264,39 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
 }
 
 void CodeGenerate::Visitor(ProgramNode *node) {
-    for(auto& v : scope -> Scope::GetInstance() -> GetConstantTable()){
-        if (v.second ->Type ->IsFloatType()){
-            printf("%s:\n",v.first.data());
-            if (v.second->Type ->Size == 4 ){
-                auto s_num =  std::string(v.second->Token -> Content).c_str();
-                float d_num = atof(s_num);
-                int * lp_num = (int *)&d_num;
-                printf("\t.quad  %s\n", convert_to_hex(*lp_num).data());
-            }else if (v .second->Type ->Size == 8){
-                auto s_num =  std::string(v.second->Token -> Content).c_str();
-                double d_num = atof(s_num);
-                long * lp_num = (long *)&d_num;
-                printf("\t.quad  %s\n", convert_to_hex(*lp_num).data());
-            }else{
-                assert(0);
+    for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
+        if (v.second->Type->IsFloatType()) {
+            printf("%s:\n", v.first.data());
+            if (v.second->Type->Size == 4) {
+                for (auto &constantValue: v.second->Tokens) {
+                    auto s_num = std::string(constantValue->Content).c_str();
+                    float d_num = atof(s_num);
+                    int *lp_num = (int *) &d_num;
+                    printf("\t.long  %s\n", convert_to_hex(*lp_num).data());
+                }
+            } else if (v.second->Type->Size == 8) {
+                for (auto &constantValue: v.second->Tokens) {
+                    auto s_num = std::string(constantValue->Content).c_str();
+                    double d_num = atof(s_num);
+                    long *lp_num = (long *) &d_num;
+                    printf("\t.quad  %s\n", convert_to_hex(*lp_num).data());
+                }
+            }
+        }else  if (v.second->Type->IsArrayType()) {
+            printf("%s:\n", v.first.data());
+            auto aType = std::dynamic_pointer_cast<ArrayType>(v.second->Type);
+            if (aType->ElementType->Size == 4) {
+                for (auto &constantValue: v.second->Tokens) {
+                    printf("\t.long  %d\n",int(constantValue ->Value));
+                }
+            } else if (aType->ElementType->Size == 8) {
+                for (auto &constantValue: v.second->Tokens) {
+                    printf("\t.quad  %ld\n", constantValue ->Value);
+                }
             }
         }
     }
-    for (auto &s: node -> Funcs)
+    for (auto &s: node->Funcs)
         s->Accept(this);
 }
 
@@ -489,6 +507,9 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         }else {
             printf("\t  lea %d(%%rbp),%%rax\n",varNode -> VarObj -> Offset);
         }
+    }else if(auto constNode = dynamic_cast<ConstantNode *>(node)){
+        std::string constName =  std::string(constNode->Name);
+        printf("\t  lea %s(%%rip),%%rax\n",constName.data());
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         if (unaryNode -> Uop == UnaryOperator::Deref){
             unaryNode ->Lhs->Accept(this);
@@ -550,6 +571,24 @@ void CodeGenerate::Load(std::shared_ptr<Type> type) {
 
 void CodeGenerate::Store(std::shared_ptr<Type> type) {
     Pop("%rdi");
+    if (type ->IsArrayType()){
+        auto aType = std::dynamic_pointer_cast<ArrayType>(type);
+        for (int i = 0; i < (aType->ArrayLen + 1) /(MaxBit /aType ->ElementType->Size ) ;i ++) {
+            auto size =  (aType -> ArrayLen * aType ->ElementType->Size) - (i * MaxBit);
+            if (size >= MaxBit){
+                printf("\t  mov %d(%%rax),%%rcx\n",MaxBit * i);
+                printf("\t  mov %%rcx,%d(%%rdi)\n",MaxBit * i);
+                continue;
+            }
+            if (size == 0){
+                return;
+            }
+            printf("\t  mov %d(%%rax),%s\n",MaxBit * i,GetRcx(size).data());
+            printf("\t  mov %s,%d(%%rdi)\n",GetRcx(size).data(),MaxBit * i);
+
+        }
+        return;
+    }
     if (type -> Size == 1){
         printf("\t  mov %%al,(%%rdi)\n");
     }else if (type -> Size == 2){
@@ -677,6 +716,21 @@ const std::string CodeGenerate::GetRax(std::shared_ptr<Type> type) {
     }
 }
 
+const std::string CodeGenerate::GetRcx(int size) {
+    if (size == 1){
+        return "%cl";
+    }else if (size == 2){
+        return "%cx";
+    }else if (size == 4){
+        return "%ecx";
+    }else if (size == 8){
+        return "%rcx";
+    } else{
+        assert(0);
+    }
+}
+
+
 const std::string CodeGenerate::GetRcx(std::shared_ptr<Type> type) {
     if (type -> Size == 1){
         return "%cl";
@@ -711,6 +765,20 @@ void CodeGenerate::Visitor(ArefNode *node) {
     printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
     printf("\t  add %%rcx,%%rax\n");
     Load(node ->Type);
+}
+
+const std::string CodeGenerate::GetRax(int size) {
+    if (size == 1){
+        return "%al";
+    }else if (size == 2){
+        return "%ax";
+    }else if (size == 4){
+        return "%eax";
+    }else if (size == 8){
+        return "%rax";
+    } else{
+        assert(0);
+    }
 }
 
 
