@@ -380,7 +380,7 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     }
     while(Lex.CurrentToken -> Kind == TokenKind::Identifier){
         (*nameTokens).push_back(Lex.CurrentToken);
-        Lex.GetNextToken();
+        Lex.SkipToken(TokenKind::Comma);
     }
     return ParseTypeSuffix(type);
 }
