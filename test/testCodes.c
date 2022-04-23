@@ -81,12 +81,13 @@ int testCode(){
 //    assert(6,({int i = 0;i++;int m = 2;m + i;}));
     assert(1,({(char)8590066177;}));
     assert(513,({(short)8590066177;}));
-    assert(0,({int a = (long)&*(int *)0;}));
+    assert(1,({int a = (long)&*(int *)1;}));
     assert(1,({(long)1;}));
     assert(513,({int x=512; *(char *)&x=1; x; }));
     assert(5,({ int x=5; long y=(long)&x; *(int*)y;  }));
     assert(-1,({  (char)255; }));
-
+    assert(-1,({ (char)0xff;}));
+    assert(-17,({ (char)0b11101111;}));
     return 0;
 }
 

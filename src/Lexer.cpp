@@ -8,6 +8,7 @@
 #include "Diag.h"
 #include <string>
 #include <cmath>
+#include "Common.h"
 
 using namespace BDD;
 void BDD::Lexer::GetNextChar() {
@@ -114,21 +115,42 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::Num;
         value = 0;
         int n = 0;
-        do {
-            if (kind == TokenKind::FloatNum){
-                n+= 1;
-            }
-            value = value * 10 + CurChar - '0';
+        int  begin ;
+        if (CurChar == '0' && PeekChar(1) =='x'){
             GetNextChar();
-            if (CurChar == '.'){
-                kind = TokenKind::FloatNum;
+            int count = -1;
+            begin = Cursor;
+            do {
                 GetNextChar();
+                count ++;
+            } while (IsHex());
+            value = hexToDec(SourceCode.substr(begin, count), count);
+        }else if(CurChar == '0' && PeekChar(1) =='b'){
+            GetNextChar();
+            int count = -1;
+            begin = Cursor;
+            do {
+                GetNextChar();
+                count ++;
+            } while (IsHex());
+            value = binToDec(SourceCode.substr(begin, count), count);
+        }else{
+            do {
+                if (kind == TokenKind::FloatNum){
+                    n+= 1;
+                }
+                value = value * 10 + CurChar - '0';
+                GetNextChar();
+                if (CurChar == '.'){
+                    kind = TokenKind::FloatNum;
+                    GetNextChar();
+                }
+            }while (isdigit(CurChar));
+            if (kind == TokenKind::FloatNum){
+                float a = value / pow(10,n);
+                int *m = (int*)&a;
+                value = *m;
             }
-        }while (isdigit(CurChar));
-        if (kind == TokenKind::FloatNum){
-            float a = value / pow(10,n);
-            int *m = (int*)&a;
-            value = *m;
         }
     }else if (CurChar == '>'){
         switch (PeekChar(1)) {
@@ -220,6 +242,11 @@ bool BDD::Lexer::IsDigit() {
     return CurChar >= '0' && CurChar <= '9';
 }
 
+
+bool BDD::Lexer::IsHex() {
+    return (CurChar >= '0' && CurChar <= '9') || (CurChar >= 'A' && CurChar <= 'F') || (CurChar >= 'a' && CurChar <= 'f');
+}
+
 bool BDD::Lexer::IsLetterOrDigit() {
     return IsLetter() || IsDigit();
 }
@@ -275,6 +302,8 @@ char Lexer::PeekChar(int n) {
     }
     return '\0';
 }
+
+
 
 void Lexer::EndPeekToken() {
     CurChar = PeekPointCurChar;

@@ -55,3 +55,26 @@ std::string  BDD::string_format(const char *format, ...)
     return "0x" + Hex;
 }
 
+long BDD::hexToDec(std::basic_string_view<char> content, int length){
+    unsigned long result = 0;
+    for (int i = 0; i < length; i++) {
+        result += hexToDec(content[i]) * (1 << (4 * (length - i -1)));
+    }
+    return result;
+}
+
+long BDD::binToDec(std::basic_string_view<char> content, int length){
+    unsigned long result = 0;
+    for (int i = 0; i < length; i++) {
+        result += content[i] - '0' << (length - i -1);
+    }
+    return result;
+}
+
+
+char BDD::hexToDec(char hex){
+    if (hex >= '0' && hex <= '9') return hex-'0';
+    if (hex >= 'A'  && hex <= 'F') return hex-'A'+10;
+    if (hex  >= 'a' && hex <= 'f') return hex-'a'+10;
+    return hex=0;
+}

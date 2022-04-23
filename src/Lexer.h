@@ -120,8 +120,7 @@ namespace BDD{
         void SkipComment();
 
 
-
-
+        bool IsHex();
     };
 
 

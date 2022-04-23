@@ -69,4 +69,4 @@ a toy c compailer
 - 2022-4-18
     - Support arry init value case:`int a[3] = {1,2,3}`
 - 2022-4-19 ～ 2022-4-23
-    - Support part of Type case:`int a = (long)&*(int *)0;`
+    - Support part of Type and supoort hex binary num  case:`int a = (long)&*(int *)0; int a = 0xffff;int b = 0b11111111`
