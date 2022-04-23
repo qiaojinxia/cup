@@ -15,13 +15,10 @@ std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(Buil
 
 std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 );
 std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(BuildInType::Kind::Double,8,8 );
-
 std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(LongType);
 
 
-
-
-bool Type::IsIntegerType() const {
+bool Type::IsIntegerNum() const {
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Int
@@ -60,7 +57,7 @@ bool Type::IsUnionType() const {
     return false;
 }
 
-bool Type::IsFloatType() const {
+bool Type::IsFloatNum() const {
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Float
@@ -69,6 +66,55 @@ bool Type::IsFloatType() const {
     return false;
 }
 
+bool Type::IsIntType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Int;
+    }
+    return false;
+}
+
+bool Type::IsLongType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Long;
+    }
+    return false;
+}
+
+bool Type::IsCharType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Char;
+    }
+    return false;
+}
+
+bool Type::IsShortType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Short;
+    }
+    return false;
+}
+
+bool Type::IsFloatType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Float;
+    }
+    return false;
+}
+
+bool Type::IsDoubleType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Double;
+    }
+    return false;
+}
+
+
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
     for(auto &field:fields){
@@ -76,5 +122,26 @@ std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
             return field;
         }
     }
+    return nullptr;
+}
+
+
+std::shared_ptr<Type> BuildInType::GetBaseType() {
+    return nullptr;
+}
+
+std::shared_ptr<Type> PointerType::GetBaseType() {
+    return Base;
+}
+
+std::shared_ptr<Type> ArrayType::GetBaseType() {
+    return ElementType;
+}
+
+std::shared_ptr<Type> FunctionType::GetBaseType() {
+    return ReturnType;
+}
+
+std::shared_ptr<Type> RecordType::GetBaseType() {
     return nullptr;
 }

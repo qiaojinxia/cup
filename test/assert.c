@@ -36,5 +36,5 @@ void print_float(float a){
 }
 
 void print_lfloat(double a){
-    printf("%lf\n",a);
+    printf("%f\n",a);
 }

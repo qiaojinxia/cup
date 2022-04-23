@@ -1,23 +1,28 @@
-Prog           := Stmt* | BlockStmt
-Function       := identifier '(' FuncArg? ')' '{' Stmt* '}'
-FuncArg        := identifier (,identifier)*
-Stmt           := BinaryExpr*
-               := if '(' EqualityExpr | RelationalExpr ')' Stmt 'else' Stmt
-               :=  '{' Stmt '}'
-               :=  while '(' Stmt ')'  '{' Stmt '}'
-               :=  do '{' Stmt '}' while  '(' Stmt ')'
-               :=  for '(' Init ; Cond ; Incr ')' '{' Stmt '}'
-BinaryExpr     := AddExpr  | EqualityExpr | EqualityExpr | AssignExpr | RelationalExpr
-AddExpr        :=  UnaryExpr | AddExpr + AddExpr | AddExpr - AddExpr |
+Prog           ::= Stmt* | BlockStmt
+Function       ::= identifier "(" FuncArg? ')' '{' Stmt* '}'
+FuncArg        ::= identifier (,identifier)*
+Stmt           ::= BinaryExpr*
+               ::= if '(' EqualityExpr | RelationalExpr ')' Stmt 'else' Stmt
+               ::=  '{' Stmt '}'
+               ::=  while '(' Stmt ')'  '{' Stmt '}'
+               ::=  do '{' Stmt '}' while  '(' Stmt ')'
+               ::=  for '(' Init ; Cond ; Incr ')' '{' Stmt '}'
+BinaryExpr     ::= AddExpr  | EqualityExpr | EqualityExpr | AssignExpr | RelationalExpr
+AddExpr        ::=  UnaryExpr | AddExpr + AddExpr | AddExpr - AddExpr |
                   AddExpr * AddExpr | AddExpr /  AddExpr
-UnaryExpr      := UnaryOperation  UnaryExpr| PrimaryExpr
-AssignExpr     := AddExpr = AddExpr
-EqualityExpr   := EqualityExpr == EqualityExpr
-               := EqualityExpr != EqualityExpr
-RelationalExpr := AddExpr < AddExpr | AddExpr <= AddExpr |
+CastExpr       ::=  UnaryExpr
+UnaryExpr      ::= UnaryOperation UnaryExpr| PrimaryExpr
+AssignExpr     ::= AddExpr = AddExpr
+EqualityExpr   ::= EqualityExpr == EqualityExpr
+               ::= EqualityExpr != EqualityExpr
+RelationalExpr ::= AddExpr < AddExpr | AddExpr <= AddExpr |
                   AddExpr > AddExpr | AddExpr >= AddExpr
-PrimaryExpr    := Num
-               := ID
-               := ( BinaryExpr )
-               := Identifier"(" Args? ")"?
-Args           := AssignExpr (,AssignExpr)*
+BitOperationExpr ::=
+PrimaryExpr    ::= Num
+               ::= ID
+               ::= ( BinaryExpr )
+               ::= Identifier"(" Args? ")"?
+Args           ::= AssignExpr (,AssignExpr)*
+TypeDesc       ::= 'void' | 'char' | 'short' | 'int' | 'long'
+                   | 'float' | 'double' | 'signed' | 'unsigned'
+                   | struct_or_union_spec | enum_spec | typedef_name

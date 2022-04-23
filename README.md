@@ -68,3 +68,5 @@ a toy c compailer
   - Support arry[i++] fix pointer index problem 
 - 2022-4-18
     - Support arry init value case:`int a[3] = {1,2,3}`
+- 2022-4-19 ～ 2022-4-23
+    - Support part of Type case:`int a = (long)&*(int *)0;`

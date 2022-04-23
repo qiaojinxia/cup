@@ -84,6 +84,8 @@ namespace BDD{
         const std::string GetRcx(int size);
         const std::string GetRax(int size);
         void Pop(const char *reg);
+
+
     };
 }
 

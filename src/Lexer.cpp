@@ -20,7 +20,7 @@ void BDD::Lexer::GetNextChar() {
 
 void BDD::Lexer::GetNextToken() {
     SkipWhiteSpace();
-    int value = 0;
+    long value = 0;
     TokenKind kind;
     int startPos = Cursor -1;
     if (CurChar == '\0'){
@@ -345,5 +345,6 @@ void Lexer::SkipToken(TokenKind kind) {
         return;
     }
 }
+
 
 

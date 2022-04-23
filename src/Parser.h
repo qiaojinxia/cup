@@ -30,15 +30,13 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseFuncCallNode();
 
-        std::shared_ptr<Type> ParseDeclarationSpec();
+        std::shared_ptr<Type> ParseDeclarationSpec(std::shared_ptr<Type> baseType);
 
         std::shared_ptr<Type> ParseDeclarator(std::shared_ptr<Type> baseType,std::list<std::shared_ptr<Token>> *nameTokens);
 
         std::shared_ptr<Type> ParseTypeSuffix(std::shared_ptr<Type> baseType);
 
         std::shared_ptr<AstNode> ParsePostFixExpr();
-
-
 
         std::shared_ptr<AstNode> ParsePrimaryExpr();
 
@@ -55,10 +53,15 @@ namespace BDD{
         std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type);
 
         std::shared_ptr<AstNode> ParseBinaryExpr(int priority);
+
         std::shared_ptr<AstNode> ParseBinaryOperationExpr(std::shared_ptr<AstNode> left,BinaryOperator op);
 
-    private:
+        std::shared_ptr<AstNode> ParseCastExpr();
 
+        std::shared_ptr<AstNode> ParseDeclarationExpr();
+
+    private:
+        const bool IsTypeName();
     };
 
 }

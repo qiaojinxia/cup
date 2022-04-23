@@ -40,15 +40,22 @@ namespace BDD{
     public:
         virtual ~Type(){};
         Type(TypeClass tc,int size,int align) : TypeC(tc) , Size(size),Align(align){};
-        bool IsIntegerType() const;
+        bool IsIntegerNum() const;
+        bool IsFloatNum() const;
+        virtual std::shared_ptr<Type> GetBaseType(){return nullptr;};
+
         bool IsFunctionType() const;
         bool IsPointerType() const;
         bool IsArrayType() const;
-
+        bool IsIntType() const;
+        bool IsCharType() const;
+        bool IsShortType() const;
         bool IsFloatType() const;
-
+        bool IsDoubleType() const;
         bool IsStructType() const;
         bool IsUnionType() const;
+
+        bool IsLongType() const;
     };
 
 
@@ -68,12 +75,15 @@ namespace BDD{
         Kind GetKind() const{
             return Knd;
         }
+        std::shared_ptr<Type> GetBaseType() ;
     };
 
     class  PointerType : public Type{
     public:
         std::shared_ptr<Type> Base;
         PointerType(std::shared_ptr<Type> base)  : Type(TypeClass::PtrType, 8, 8), Base(base) {}
+
+        std::shared_ptr<Type> GetBaseType();
     };
 
 
@@ -81,12 +91,15 @@ namespace BDD{
         std::shared_ptr<Type> Type;
         std::shared_ptr<Token> TToken;
     };
+
     class FunctionType : public Type{
     private:
         std::shared_ptr<Type> ReturnType;
     public:
         std::list<std::shared_ptr<Param>> Params;
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8), ReturnType(returnType) {}
+
+        std::shared_ptr<Type> GetBaseType();
     };
 
     struct ArrayType : public Type{
@@ -95,6 +108,8 @@ namespace BDD{
         int ArrayLen;
         ArrayType(std::shared_ptr<Type> elementType,int len) :
         Type(TypeClass::AryType,len * elementType->Size,elementType ->Align),ElementType(elementType),ArrayLen(len){}
+
+        std::shared_ptr<Type> GetBaseType();
     };
 
     struct Field {
@@ -115,6 +130,8 @@ namespace BDD{
         TagKind Kind;
         std::list<std::shared_ptr<Field>> fields;
         RecordType() : Type(TypeClass::RecordType,1,1){}
+
+        std::shared_ptr<Type> GetBaseType();
     };
 }
 

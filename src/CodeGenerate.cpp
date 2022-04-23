@@ -96,7 +96,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
         auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
         printf("\t  mov %%rax,%%rcx\n");
-        printf("\t  add $%d,%%rcx\n",constNode->Value);
+        printf("\t  add $%ld,%%rcx\n",constNode->Value);
         printf("\t  mov %s,%d(%%rbp)\n", GetRcx(constNode ->Type).data(),varNode->VarObj -> Offset);
         return;
     }else if (node -> BinOp == BinaryOperator::Decr){
@@ -107,7 +107,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
             constNode->Value *= node -> Lhs ->Type ->Size;
         }
         printf("\t  mov %%rax,%%rcx\n");
-        printf("\t  sub $%d,%%rcx\n",constNode->Value);
+        printf("\t  sub $%ld,%%rcx\n",constNode->Value);
         printf("\t  mov %s,%d(%%rbp)\n", GetRcx(constNode ->Type).data(),varNode-> VarObj -> Offset);
         return;
     }
@@ -220,7 +220,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
-    if (node ->Type ->IsFloatType()){
+    if (node->Type->IsFloatNum()){
         printf("\t  %s %s(%%rip), %s\n", GetMoveCode(node->Type).data(),node->Name.data(),Xmm[Depth++]);
         return;
     }else if (node ->Type ->IsArrayType()){
@@ -228,7 +228,7 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
         printf("\t  lea %s(%%rip),%%rax\n",constName.data());
         return;
     }
-    printf("\t  mov $%d, %%rax\n",node->Value);
+    printf("\t  mov $%ld, %%rax\n",node->Value);
 
 }
 
@@ -294,12 +294,12 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     int  size = 0 ;
     bool isFloat = false;
     for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
-        if (v.second->Type->IsFloatType()) {
+        if (v.second->Type->IsFloatNum()) {
             isFloat = true;
             size = v.second->Type ->Size;
         }else  if (v.second->Type->IsArrayType()) {
             auto aType = std::dynamic_pointer_cast<ArrayType>(v.second->Type);
-            if (aType -> ElementType ->IsFloatType()){
+            if (aType->ElementType->IsFloatNum()){
                 isFloat = true;
             }
             size = aType -> ElementType ->Size;
@@ -425,9 +425,9 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     }
     auto index = 0;
     for (auto &var: node->Params){
-        if (var -> Type ->IsFloatType()){
+        if (var->Type->IsFloatNum()){
             printf("\t %s %s, %d(%%rbp)\n", GetMoveCode(var->Type).data(), Xmm[Depth++], var -> Offset);
-        }else if (var -> Type -> IsIntegerType()){
+        }else if (var->Type->IsIntegerNum()){
             if (var -> Type -> Size == 1){
                 printf("\t  mov %s, %d(%%rbp)\n",Regx8[index++],var -> Offset );
             }else if(var -> Type -> Size == 2){
@@ -457,12 +457,12 @@ void CodeGenerate::Visitor(FunctionNode *node) {
 void CodeGenerate::Visitor(FuncCallNode *node) {
     for(auto &arg:node -> Args){
         arg ->Accept(this);
-        if (!arg ->Type ->IsFloatType()){
+        if (!arg->Type->IsFloatNum()){
             Push();
         }
     }
     for (int i = node-> Args.size() -1; i >= 0; --i) {
-        if (node->Args[i] ->Type->IsFloatType()){}
+        if (node->Args[i]->Type->IsFloatNum()){}
         else{
             Pop(Regx64[i]);
             //todo push float to stack
@@ -563,7 +563,7 @@ void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
 }
 
 void CodeGenerate::Load(std::shared_ptr<Type> type) {
-    if (type -> IsFloatType()){
+    if (type->IsFloatNum()){
         if (type -> Size == 4){
             printf("\t  movss (%%rax),%s\n",  Xmm[Depth++]);
         }else if (type -> Size == 8){
@@ -603,7 +603,7 @@ void CodeGenerate::Store(std::shared_ptr<Type> type) {
         return;
     }
 
-    if (type ->IsFloatType()){
+    if (type->IsFloatNum()){
         if (type -> Size == 4){
             printf("\t  movss %s,(%%rdi)\n",Xmm[Depth-1]);
         }else if (type -> Size == 8){
@@ -666,13 +666,13 @@ std::string_view CodeGenerate::currentContinueTarget() {
 }
 
 const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
-    if (type -> IsFloatType()){
+    if (type->IsFloatNum()){
         if (type -> Size == 4){
             return "movss";
         }else if (type -> Size == 8){
             return "movsd";
         }
-    }else if (type->IsIntegerType()){
+    }else if (type->IsIntegerNum()){
         if (type -> Size == 1){
             return "movsb";
         }else if (type -> Size == 2){
@@ -688,14 +688,29 @@ const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
 
 void CodeGenerate::Visitor(CastNode *node) {
     node -> Node ->Accept( this);
-    if (node -> Cop == CastOperator::Double){
+    if (node -> Type ->IsDoubleType()){
         printf("\t  cvtss2sd %s, %s\n", Xmm[Depth - 1], Xmm[Depth - 1]);
-    }else if  (node -> Cop == CastOperator::Float){
+    }else if(node -> Type ->IsFloatType()){
         printf("\t  cvtsd2ss %s, %s\n", Xmm[Depth - 1], Xmm[Depth - 1]);
-    }else{
+//    }else if(node -> Cop == CastOperator::Int && node->Node->Type->IsCharType()){
+//        printf("\t  movsx  %%al,%%eax\n");
+//    }else if(node -> Cop == CastOperator::Int && node->Node->Type->IsShortType()){
+//        printf("\t  movsx  %%ax,%%eax\n");
+//    }else if(node -> Cop == CastOperator::Int && node->Node->Type->IsIntType()){
+    }else if(node -> Type -> IsCharType() && node->Node->Type->IsIntType()){
+        printf("\t  movsbl %%al, %%eax\n");
+    }else if(node -> Type -> IsShortType() && node->Node->Type->IsIntType()){
+        printf("\t  movswl %%ax, %%eax\n");
+    }else if(node -> Type -> IsPointerType() && node->Node->Type->IsIntType()){
+   }else if(node -> Type -> IsLongType() && node->Node->Type->IsPointerType()){
+    }else if(node -> Type -> IsIntType() && node->Node->Type->IsPointerType()){
+        printf("\t  movsx %%eax, %%rax\n");
+    }else if(node -> Type -> IsLongType() && node->Node->Type->IsIntType()){
+    }else if(node -> Type -> IsPointerType() && node->Node->Type->IsPointerType()){
+    }else if(node -> Type -> IsPointerType() && node->Node->Type->IsLongType()){
+    }else {
         assert(0);
-    }
-
+   }
 }
 
 const std::string CodeGenerate::GetIDivCode(std::shared_ptr<Type> type) {
