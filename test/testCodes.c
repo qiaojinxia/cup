@@ -77,8 +77,8 @@ int testCode(){
 //    assert(3, ({ int i=2; i++;i;}));
 //    assert(1, ({ int i=2; i--;i;}));
 //    assert(1, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; *p--; }));
-//    assert(6,({7 ^ 1;}));
-//    assert(6,({int i = 0;i++;int m = 2;m + i;}));
+    assert(6,({7 ^ 1;}));
+    assert(6,({int i = 0;i++;int m = 2;m + i;}));
     assert(1,({(char)8590066177;}));
     assert(513,({(short)8590066177;}));
     assert(1,({int a = (long)&*(int *)1;}));
@@ -93,6 +93,8 @@ int testCode(){
     assert_fd((float )5.5,({ (double)(float)5.5;}));
     assert(5,({ (long)(float)5.5;}));
     assert_fd(5.0,({ (double)(int)5.5;}));
+    assert_f(1.324234,({ int a = 1068073088; float * b= (float *)&a;*b;}));
+    assert(1068073088,({ float a = 1.324234; int * b= (int *)&a;*b;}));
     return 0;
 }
 

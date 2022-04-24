@@ -566,7 +566,7 @@ void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
 }
 
 void CodeGenerate::Load(std::shared_ptr<Type> type) {
-    if (type->IsFloatNum()){
+    if (type->IsFloatNum() || (type->GetBaseType() != nullptr && type->GetBaseType() ->IsFloatNum())){
         if (type -> Size == 4){
             printf("\t  movss (%%rax),%s\n",  Xmm[Depth++]);
         }else if (type -> Size == 8){
@@ -702,12 +702,9 @@ void CodeGenerate::Visitor(CastNode *node) {
         printf("%s code not exists!\n",fromTo.data());
         return;
     }
-    if (Depth != 0){
-        string_replace(castCode,"%xmm0",Xmm[Depth-1]);
+    if (is_contains_str(castCode,"%xmm0")){
+        string_replace(castCode,"%xmm0",Xmm[Depth++]);
     }
-//    if (!node -> Type -> IsFloatNum() && node -> Lhs -> Type -> IsFloatNum()){
-//        Depth --;
-//    }
     printf("\t  %s \n",castCode.data());
 }
 

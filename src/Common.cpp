@@ -90,3 +90,11 @@ void BDD::string_replace(std::string &origin,const std::string &search,const std
         pos+=b;
     }
 }
+
+bool BDD::is_contains_str(std::string str,std::string contains_str) {
+    std::string::size_type idx = str.find(contains_str);
+    if (idx != std::string::npos) {
+        return true;
+    }
+    return false;
+}
