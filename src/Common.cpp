@@ -78,3 +78,15 @@ char BDD::hexToDec(char hex){
     if (hex  >= 'a' && hex <= 'f') return hex-'a'+10;
     return hex=0;
 }
+
+void BDD::string_replace(std::string &origin,const std::string &search,const std::string&content)
+{
+    std::string::size_type pos=0;
+    std::string::size_type a= search.size();
+    std::string::size_type b= content.size();
+    while((pos=origin.find(search,pos))!=std::string::npos)
+    {
+        origin.replace(pos,a,content);
+        pos+=b;
+    }
+}

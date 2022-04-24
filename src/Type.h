@@ -32,14 +32,13 @@ namespace BDD{
             RecordType,
         };
         int Size;
-
         int Align;
+        const char * Alias;
     private:
         TypeClass TypeC;
-
     public:
         virtual ~Type(){};
-        Type(TypeClass tc,int size,int align) : TypeC(tc) , Size(size),Align(align){};
+        Type(TypeClass tc,int size,int align, const char * alias ) : TypeC(tc) , Size(size),Align(align),Alias(alias){};
         bool IsIntegerNum() const;
         bool IsFloatNum() const;
         virtual std::shared_ptr<Type> GetBaseType(){return nullptr;};
@@ -71,7 +70,7 @@ namespace BDD{
         };
         Kind Knd;
     public:
-        BuildInType(Kind knd,int size,int align) : Type(TypeClass::BInType, size, align), Knd(knd) {}
+        BuildInType(Kind knd,int size,int align,const char * alias) : Type(TypeClass::BInType, size, align,alias), Knd(knd) {}
         Kind GetKind() const{
             return Knd;
         }
@@ -81,7 +80,7 @@ namespace BDD{
     class  PointerType : public Type{
     public:
         std::shared_ptr<Type> Base;
-        PointerType(std::shared_ptr<Type> base)  : Type(TypeClass::PtrType, 8, 8), Base(base) {}
+        PointerType(std::shared_ptr<Type> base ) : Type(TypeClass::PtrType, 8, 8,"u64"), Base(base) {}
 
         std::shared_ptr<Type> GetBaseType();
     };
@@ -97,7 +96,7 @@ namespace BDD{
         std::shared_ptr<Type> ReturnType;
     public:
         std::list<std::shared_ptr<Param>> Params;
-        FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8), ReturnType(returnType) {}
+        FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8,"func"), ReturnType(returnType) {}
 
         std::shared_ptr<Type> GetBaseType();
     };
@@ -107,7 +106,7 @@ namespace BDD{
         std::shared_ptr<Type> ElementType;
         int ArrayLen;
         ArrayType(std::shared_ptr<Type> elementType,int len) :
-        Type(TypeClass::AryType,len * elementType->Size,elementType ->Align),ElementType(elementType),ArrayLen(len){}
+        Type(TypeClass::AryType,len * elementType->Size,elementType ->Align,"u64"),ElementType(elementType),ArrayLen(len){}
 
         std::shared_ptr<Type> GetBaseType();
     };
@@ -129,7 +128,7 @@ namespace BDD{
         std::shared_ptr<Field> GetField(std::string_view fieldName);
         TagKind Kind;
         std::list<std::shared_ptr<Field>> fields;
-        RecordType() : Type(TypeClass::RecordType,1,1){}
+        RecordType() : Type(TypeClass::RecordType,1,1,"u64"){}
 
         std::shared_ptr<Type> GetBaseType();
     };

@@ -613,7 +613,7 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
             auto type = ParseDeclarationSpec(nullptr);
             castNode -> Type  = type;
             Lex.SkipToken(TokenKind::RParent);
-            castNode -> Node = ParseCastExpr();
+            castNode -> Lhs = ParseCastExpr();
             return castNode;
         }else{
             Lex.EndPeekToken();

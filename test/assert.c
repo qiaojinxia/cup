@@ -22,11 +22,12 @@ void assert_f(float  excepted,float actual){
     }
 }
 
+
 void assert_fd(float  excepted,double actual){
     if(excepted  - actual <= 0.000001 &&  excepted  - actual >=  -0.000001){
-        printf("code(%d) => %f\n",codeId ++ ,actual);
+        printf("code(%d) => %lf\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %f,but got %f\n",codeId++,excepted,actual);
+        printf("code(%d) expected %lf,but got %lf\n",codeId++,excepted,actual);
         exit(-1);
     }
 }

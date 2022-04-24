@@ -13,6 +13,8 @@ namespace BDD{
     long hexToDec(std::basic_string_view<char> content, int length);
 
     long binToDec(std::basic_string_view<char> content, int length);
+
+    void string_replace(std::string &origin, const std::string &search, const std::string &content);
 }
 
 

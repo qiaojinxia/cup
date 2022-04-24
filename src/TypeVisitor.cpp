@@ -40,12 +40,12 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::DoubleAdd;
                     if (node -> Lhs -> Type -> Size == 4 ){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Lhs;
+                        castNode -> Lhs = node -> Lhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Lhs = castNode;
                     }else if (node -> Rhs -> Type -> Size == 4){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Rhs;
+                        castNode -> Lhs = node -> Rhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Rhs = castNode;
                     }
@@ -80,12 +80,12 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::DoubleSub;
                     if (node -> Lhs -> Type -> Size == 4 ){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Lhs;
+                        castNode -> Lhs = node -> Lhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Lhs = castNode;
                     }else if (node -> Rhs -> Type -> Size == 4){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Rhs;
+                        castNode -> Lhs = node -> Rhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Rhs = castNode;
                     }
@@ -107,7 +107,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::DoubleAssign;
                     if (node -> Rhs -> Type -> Size == 4){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Rhs;
+                        castNode -> Lhs = node -> Rhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Rhs = castNode;
                     }
@@ -115,7 +115,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::FloatAssign;
                     if (node -> Rhs -> Type -> Size == 8){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Rhs;
+                        castNode -> Lhs = node -> Rhs;
                         castNode ->Type = Type::FloatType;
                         node -> Rhs = castNode;
                     }
@@ -128,12 +128,12 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::DoubleMul;
                     if (node -> Lhs -> Type -> Size == 4 ){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Lhs;
+                        castNode -> Lhs = node -> Lhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Lhs = castNode;
                     }else if (node -> Rhs -> Type -> Size == 4){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Rhs;
+                        castNode -> Lhs = node -> Rhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Rhs = castNode;
                     }
@@ -150,12 +150,12 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::DoubleDiv;
                     if (node -> Lhs -> Type -> Size == 4 ){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Lhs;
+                        castNode -> Lhs = node -> Lhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Lhs = castNode;
                     }else if (node -> Rhs -> Type -> Size == 4){
                         auto castNode = std::make_shared<CastNode>();
-                        castNode -> Node = node -> Rhs;
+                        castNode -> Lhs = node -> Rhs;
                         castNode ->Type = Type::DoubleType;
                         node -> Rhs = castNode;
                     }
@@ -292,7 +292,7 @@ void TypeVisitor::Visitor(BreakStmtNode *node) {}
 void TypeVisitor::Visitor(ContinueStmtNode *node) {}
 
 void TypeVisitor::Visitor(CastNode *node) {
-    node -> Node ->Accept(this);
+    node -> Lhs ->Accept(this);
 }
 
 void TypeVisitor::Visitor(ArefNode *node) {

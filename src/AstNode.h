@@ -270,7 +270,7 @@ class BinaryNode :public  AstNode{
 
     class CastNode : public AstNode{
     public:
-        std::shared_ptr<AstNode> Node;
+        std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
     };
 

@@ -8,13 +8,13 @@
 
 using namespace BDD;
 
-std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 );
-std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(BuildInType::Kind::Char,1,1 );
-std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(BuildInType::Kind::Short ,2,2 );
-std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 );
+std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 ,"i32");
+std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(BuildInType::Kind::Char,1,1 ,"i8");
+std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(BuildInType::Kind::Short ,2,2 ,"i16");
+std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 ,"i64");
 
-std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 );
-std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(BuildInType::Kind::Double,8,8 );
+std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 ,"f32");
+std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(BuildInType::Kind::Double,8,8 ,"f64");
 std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(LongType);
 
 

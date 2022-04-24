@@ -88,6 +88,11 @@ int testCode(){
     assert(-1,({  (char)255; }));
     assert(-1,({ (char)0xff;}));
     assert(-17,({ (char)0b11101111;}));
+    assert(-1,({ (short)65535;}));
+    assert(-1,({ -1 >> 1;}));
+    assert_fd((float )5.5,({ (double)(float)5.5;}));
+    assert(5,({ (long)(float)5.5;}));
+    assert_fd(5.0,({ (double)(int)5.5;}));
     return 0;
 }
 

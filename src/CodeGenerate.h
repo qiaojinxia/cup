@@ -12,6 +12,7 @@
 
 namespace BDD{
     class CodeGenerate:public AstVisitor{
+        std::unordered_map< std::string, std::string> CastMap;
     private:
         int StackLevel{0};
         int Sequence{0};
@@ -29,6 +30,7 @@ namespace BDD{
         std::list<std::string_view> BreakStack;
         std::list<std::string_view> ContinueStack;
     public:
+
         CodeGenerate(){
             Scope:Scope::GetInstance();
         }
@@ -85,7 +87,7 @@ namespace BDD{
         const std::string GetRax(int size);
         void Pop(const char *reg);
 
-
+        std::string GetCastCode(std::string fromTo);
     };
 }
 
