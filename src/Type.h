@@ -17,13 +17,19 @@ namespace BDD{
     class RecordType;
     class Type {
     public:
+        static std::shared_ptr<BuildInType> VoidType;
         static std::shared_ptr<BuildInType> IntType;
+        static std::shared_ptr<BuildInType> UIntType;
         static std::shared_ptr<PointerType> Pointer;
         static std::shared_ptr<BuildInType> CharType;
+        static std::shared_ptr<BuildInType> UCharType;
         static std::shared_ptr<BuildInType> ShortType;
+        static std::shared_ptr<BuildInType> UShortType;
         static std::shared_ptr<BuildInType> LongType;
+        static std::shared_ptr<BuildInType> ULongType;
         static std::shared_ptr<BuildInType> FloatType;
         static std::shared_ptr<BuildInType> DoubleType;
+
         enum class TypeClass{
             BInType,
             PtrType,
@@ -55,18 +61,34 @@ namespace BDD{
         bool IsUnionType() const;
 
         bool IsLongType() const;
+
+        bool IsUnsignedNum() const;
+
+        bool IsUIntType() const;
+
+        bool IsULongType() const;
+
+
     };
 
 
     class BuildInType: public Type{
     public:
-        enum class Kind{
-            Char,
-            Short,
-            Int,
-            Long,
-            Float,
-            Double,
+        enum  Kind{
+            Void = 0x00,
+            Char  = 0x2,
+            Short = 0x4,
+            Int   = 0x6,
+            Long  = 0x8,
+            Float = 0x100,
+            Double = 0x200,
+            Signed = 0x10000,
+            UnSigned = 0x20000,
+            UChar = UnSigned | Char,
+            UShort = UnSigned |Short,
+            UInt = UnSigned | Int,
+            ULong = UnSigned | Long,
+            UnDefine = 0x30000,
         };
         Kind Knd;
     public:

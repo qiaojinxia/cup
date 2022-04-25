@@ -62,7 +62,8 @@ namespace BDD{
         MMinus,
         Break,
         Continue,
-
+        SIGNED,
+        UNSIGNED,
     };
     class SourceLocation{
     public:

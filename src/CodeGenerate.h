@@ -59,8 +59,6 @@ namespace BDD{
         void Visitor(ContinueStmtNode *node) override;
         void Visitor(ArefNode *node) override;
 
-        void Push();
-
         void PushBreak(std::string_view label);
         void PopBreak();
         std::string_view currentBreakTarget();
@@ -72,6 +70,7 @@ namespace BDD{
 
         void Push(std::shared_ptr<Type> ty);
         void Pop(std::shared_ptr<Type> ty);
+        void Pop(std::shared_ptr<Type> ty,const char *reg);
 
         void Load(std::shared_ptr<Type> ty);
         void Store(std::shared_ptr<Type> ty);
@@ -85,9 +84,10 @@ namespace BDD{
         const std::string GetRcx(std::shared_ptr<Type> type);
         const std::string GetRcx(int size);
         const std::string GetRax(int size);
-        void Pop(const char *reg);
 
         std::string GetCastCode(std::string fromTo);
+
+        const std::string GetRdi(std::shared_ptr<Type> sharedPtr);
     };
 }
 

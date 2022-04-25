@@ -72,3 +72,5 @@ a toy c compailer
     - Support part of Type and supoort hex binary num  case:`int a = (long)&*(int *)0; int a = 0xffff;int b = 0b11111111`
 - 2022-4-24
     - complete  type cast 
+- 2022-4-25
+    - add unsigned、signed keyword case:`unsigned long int a = 18446744073709551615`

@@ -63,8 +63,6 @@ namespace BDD{
         Incr,
         Decr,
         PointerAdd,
-        ArrayPointerAdd,
-        ArrayPointerSub,
         FloatAdd,
         FloatSub,
         FloatMul,
@@ -74,6 +72,7 @@ namespace BDD{
         DoubleMul,
         DoubleDiv,
         DoubleAssign,
+        UDiv,
         Sub,
         PointerSub,
         PointerDiff,
@@ -145,7 +144,7 @@ class BinaryNode :public  AstNode{
         ConstantNode(std::shared_ptr<Token> tk){Tokens.push_back(tk);};
         std::string Name;
         std::list<std::shared_ptr<Token>> Tokens;
-        long Value;
+        unsigned long Value;
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -270,7 +269,7 @@ class BinaryNode :public  AstNode{
 
     class CastNode : public AstNode{
     public:
-        std::shared_ptr<AstNode> Lhs;
+        std::shared_ptr<AstNode> CstNode;
         void Accept(AstVisitor *visitor) override;
     };
 

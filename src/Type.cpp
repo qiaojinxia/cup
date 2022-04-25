@@ -8,14 +8,18 @@
 
 using namespace BDD;
 
-std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 ,"i32");
+std::shared_ptr<BuildInType> Type::VoidType = std::make_shared<BuildInType>(BuildInType::Kind::Void,8,8 ,"u64");
 std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(BuildInType::Kind::Char,1,1 ,"i8");
 std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(BuildInType::Kind::Short ,2,2 ,"i16");
+std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 ,"i32");
 std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 ,"i64");
-
+std::shared_ptr<BuildInType> Type::UCharType = std::make_shared<BuildInType>(BuildInType::Kind::UInt,1,1 ,"u8");
+std::shared_ptr<BuildInType> Type::UShortType = std::make_shared<BuildInType>(BuildInType::Kind::ULong,2,2 ,"u16");
+std::shared_ptr<BuildInType> Type::UIntType = std::make_shared<BuildInType>(BuildInType::Kind::UInt,4,4 ,"u32");
+std::shared_ptr<BuildInType> Type::ULongType = std::make_shared<BuildInType>(BuildInType::Kind::ULong,8,8 ,"u64");
 std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 ,"f32");
 std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(BuildInType::Kind::Double,8,8 ,"f64");
-std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(LongType);
+std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(ULongType);
 
 
 bool Type::IsIntegerNum() const {
@@ -25,6 +29,15 @@ bool Type::IsIntegerNum() const {
         ||  build_in_type -> GetKind() == BuildInType::Kind::Char
         ||  build_in_type -> GetKind() == BuildInType::Kind::Short
         ||  build_in_type -> GetKind() == BuildInType::Kind::Long;
+    }
+    return false;
+}
+
+bool Type::IsUnsignedNum() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::UInt
+                ||  build_in_type -> GetKind() == BuildInType::Kind::ULong;
     }
     return false;
 }
@@ -48,6 +61,10 @@ bool Type::IsStructType() const {
     }
     return false;
 }
+
+
+
+
 
 bool Type::IsUnionType() const {
     if (TypeC == TypeClass::RecordType){
@@ -114,6 +131,21 @@ bool Type::IsDoubleType() const {
     return false;
 }
 
+bool Type::IsUIntType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::UInt;
+    }
+    return false;
+}
+
+bool Type::IsULongType() const {
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::ULong;
+    }
+    return false;
+}
 
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {

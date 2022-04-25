@@ -222,6 +222,10 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Float;
             }else if(content == "double"){
                 kind = TokenKind::Double;
+            }else if(content == "signed"){
+                kind = TokenKind::SIGNED;
+            }else if(content == "unsigned"){
+                kind = TokenKind::UNSIGNED;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);

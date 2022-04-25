@@ -13,6 +13,17 @@ void assert(int  excepted,int actual){
     }
 }
 
+
+void assert_u(long  excepted,unsigned long actual){
+    if(excepted == actual){
+        printf("code(%d) => %lu\n",codeId ++ ,actual);
+    }else{
+        printf("code(%d) expected %ld,but got %lu\n",codeId++,excepted,actual);
+        exit(-1);
+    }
+}
+
+
 void assert_f(float  excepted,float actual){
     if(excepted  - actual <= 0.000001 ){
         printf("code(%d) => %f\n",codeId ++ ,actual);

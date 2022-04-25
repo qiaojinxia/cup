@@ -29,13 +29,13 @@ int testCode(){
 //    assert(5,({ int x = 7;int y = x;int *z = &y;*(z-1) = 5;x;}));
 //    assert(1,({ int x = 9;int y = 4;int *z = &y;int *k = &x;z-k;}));
 //    assert(-1,({ int x = 3;int y = 4;int *z = &x;int *k = &y;z-k;}));
-//    assert_f(1.0,({ float x[6] = {1,2,3,546,342,3443};float m = x[4] + 2.0;m;}));
+//    assert_f(1.0,({ float x[6] = {1,2,3,546,342,3443};float m = x[4] + 2.0;m;})); //needfix
 //    assert(4,({ int x = 2; int *y = &x ; sizeof(x);}));
 //    assert(8,({ int x = 2; int *y = &x ; sizeof y;}));
 //    assert(4,({ sizeof(7);}));
 //    assert(7,({ int a[3];a[0] = 7;a[1] = 3;int * x = &a[0];*x;}));
-//    assert(1,({char x; sizeof(x);}));
-//    assert(2,({short y; sizeof(y);}));
+//    assert(1,({char x; sizeof(x);})); //needfix
+//    assert(2,({short y; sizeof(y);})); //needfix
 //    assert(8,({long z; sizeof(z);}));
 //////    assert(17,({ int x = 1;char y = 2;short z = 5; long m = 9;testFuncAdd(x,y,z,m);}));
 //    assert(2,({int m = 1;{m = 2;} m;}));
@@ -77,27 +77,33 @@ int testCode(){
 //    assert(3, ({ int i=2; i++;i;}));
 //    assert(1, ({ int i=2; i--;i;}));
 //    assert(1, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; *p--; }));
-    assert(6,({7 ^ 1;}));
-    assert(6,({int i = 0;i++;int m = 2;m + i;}));
-    assert(1,({(char)8590066177;}));
-    assert(513,({(short)8590066177;}));
-    assert(1,({int a = (long)&*(int *)1;}));
-    assert(1,({(long)1;}));
-    assert(513,({int x=512; *(char *)&x=1; x; }));
-    assert(5,({ int x=5; long y=(long)&x; *(int*)y;  }));
-    assert(-1,({  (char)255; }));
-    assert(-1,({ (char)0xff;}));
-    assert(-17,({ (char)0b11101111;}));
-    assert(-1,({ (short)65535;}));
-    assert(-1,({ -1 >> 1;}));
-    assert_fd((float )5.5,({ (double)(float)5.5;}));
-    assert(5,({ (long)(float)5.5;}));
-    assert_fd(5.0,({ (double)(int)5.5;}));
-    assert_f(1.324234,({ int a = 1068073088; float * b= (float *)&a;*b;}));
-    assert(1068073088,({ float a = 1.324234; int * b= (int *)&a;*b;}));
+//    assert(6,({7 ^ 1;}));
+//    assert(6,({int i = 0;i++;int m = 2;m + i;}));
+//    assert(1,({(char)8590066177;}));
+//    assert(513,({(short)8590066177;}));
+//    assert(1,({int a = (long)&*(int *)1;}));
+//    assert(1,({(long)1;}));
+//    assert(513,({int x=512; *(char *)&x=1; x; }));
+//    assert(5,({ int x=5; long y=(long)&x; *(int*)y;  }));
+//    assert(-1,({  (char)255; }));
+//    assert(-1,({ (char)0xff;}));
+//    assert(-17,({ (char)0b11101111;}));
+//    assert(-1,({ (short)65535;}));
+//    assert(-1,({ -1 >> 1;}));
+//    assert_fd((float )5.5,({ (double)(float)5.5;}));
+//    assert(5,({ (long)(float)5.5;}));
+//    assert_fd(5.0,({ (double)(int)5.5;}));
+//    assert_f(1.324234,({ int a = 1068073088; float * b= (float *)&a;*b;}));
+//    assert(1068073088,({ float a = 1.324234; int * b= (int *)&a;*b;}));
+    testType();
     return 0;
 }
 
 //int testFuncAdd(int a,char b,short c,long d) {
 //    return  a + b + c + d;
 //}
+
+int testType(){
+    assert_u((long)9223372036854775807,({  unsigned long  a = 18446744073709551615; int b = 2; a / b;}));
+    return 0;
+}
