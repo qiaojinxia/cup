@@ -196,7 +196,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 assert(0);
             }
             break;
-        case BinaryOperator::Div:
+        case BinaryOperator::IDiv:
             if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
                 if (node -> Lhs -> Type -> Size == 8 && node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleDiv;
@@ -216,7 +216,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 }
             }else if (node->Lhs->Type->IsUnsignedNum() || node->Rhs->Type->IsUnsignedNum()){
 
-                node ->BinOp = BinaryOperator::UDiv;
+                node ->BinOp = BinaryOperator::Div;
             }else if(node->Lhs->Type == node->Rhs->Type ){
             }else{
                 assert(0);
@@ -326,7 +326,7 @@ void TypeVisitor::Visitor(UnaryNode *node) {
 
 void TypeVisitor::Visitor(SizeOfExprNode *node) {
         node -> Lhs ->Accept(this);
-        node -> Type = node -> Lhs ->Type;
+        node ->Type = Type::IntType;
 }
 
 void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {

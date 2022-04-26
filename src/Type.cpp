@@ -159,7 +159,30 @@ std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
 
 
 std::shared_ptr<Type> BuildInType::GetBaseType() {
-    return nullptr;
+    switch (Knd) {
+        case Kind::Char:
+            return CharType;
+        case Kind::UChar:
+            return UCharType;
+        case Kind::Short:
+            return ShortType;
+        case Kind::UShort:
+            return UShortType;
+        case Kind::Int:
+            return IntType;
+        case Kind::UInt:
+            return UIntType;
+        case Kind::Long:
+            return LongType;
+        case Kind::ULong:
+            return ULongType;
+        case Kind::Float:
+            return FloatType;
+        case Kind::Double:
+            return DoubleType;
+        default :
+            assert(0);
+    }
 }
 
 std::shared_ptr<Type> PointerType::GetBaseType() {

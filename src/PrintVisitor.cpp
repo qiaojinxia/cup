@@ -23,10 +23,10 @@ void PrintVisitor::Visitor(BinaryNode *node) {
         case BinaryOperator::Mul:
             printf(" * ");
             break;
-        case BinaryOperator::Div:
+        case BinaryOperator::IDiv:
             printf(" / ");
             break;
-        case BinaryOperator::Mod:
+        case BinaryOperator::IMod:
             printf(" %c ",'%');
             break;
         case BinaryOperator::Assign:

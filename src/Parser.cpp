@@ -608,13 +608,13 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mul);
                 break;
             case TokenKind::Slash:
-                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Div);
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::IDiv);
                 break;
             case TokenKind::Assign:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Assign);
                 break;
             case TokenKind::Mod:
-                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mod);
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::IMod);
                 break;
             case TokenKind::VerticalBar:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);

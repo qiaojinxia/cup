@@ -16,10 +16,13 @@ namespace BDD{
     private:
         int StackLevel{0};
         int Sequence{0};
-        const char *Regx64[6] = {"%rdi","%rsi","%rdx","%rcx" ,"%r8","%r9"};
-        const char *Regx32[6] = {"%edi","%esi","%edx","%ecx" ,"%r8d","%r9d"};
-        const char *Regx16[6] = {"%di","%si","%dx","%cx" ,"%r8w","%r9w"};
-        const char *Regx8[6] = {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"};
+        const char *Regx64[5][6] = {
+                {"%dil","%sil","%dl","%cl" ,"%r8b","%r9b"},
+                {"%di","%si","%dx","%cx" ,"%r8w","%r9w"},
+                {"%edi","%esi","%edx","%ecx" ,"%r8d","%r9d"},
+                {"","","","" ,"",""},
+                {"%rdi","%rsi","%rdx","%rcx" ,"%r8","%r9"},
+        };
         const int MaxBit {8};
         const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
         int XmmCount{0};

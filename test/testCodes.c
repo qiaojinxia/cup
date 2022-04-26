@@ -1,5 +1,5 @@
 int testCode(){
-//    assert(-35,({ 10 - 3  * 4  + 5 + 4 / 3  + 3 - 4  * 2 * 6 +2 * 7 - 7 / 4 *3 - 2 - 1 *2 -2+1+2/3;}));
+    assert(-35,({ 10 - 3  * 4  + 5 + 4 / 3  + 3 - 4  * 2 * 6 +2 * 7 - 7 / 4 *3 - 2 - 1 *2 -2+1+2/3;}));
 //    assert(14,({  2  +  3 * 5 - 3 ;}));
 //    assert(1,({ 10 - 3  * 4  + 5 - 4 / 3  + 3 - 4 ;}));
 //    assert(2,({ 10 + 3  - 4  + 5 - 4 / 3  + 3 % 2 - 4 * 3 ;}));
@@ -34,9 +34,9 @@ int testCode(){
 //    assert(8,({ int x = 2; int *y = &x ; sizeof y;}));
 //    assert(4,({ sizeof(7);}));
 //    assert(7,({ int a[3];a[0] = 7;a[1] = 3;int * x = &a[0];*x;}));
-//    assert(1,({char x; sizeof(x);})); //needfix
-//    assert(2,({short y; sizeof(y);})); //needfix
-//    assert(8,({long z; sizeof(z);}));
+    assert(1,({char x; sizeof(x);}));
+    assert(2,({short y; sizeof(y);}));
+    assert(8,({long z; sizeof(z);}));
 //////    assert(17,({ int x = 1;char y = 2;short z = 5; long m = 9;testFuncAdd(x,y,z,m);}));
 //    assert(2,({int m = 1;{m = 2;} m;}));
 //    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y, *p=&x, *q=&y; *q=*p; y.a; }));
@@ -104,6 +104,6 @@ int testCode(){
 //}
 
 int testType(){
-    assert_u((long)9223372036854775807,({  unsigned long  a = 18446744073709551615; int b = 2; a / b;}));
+    assert_u((unsigned long)9223372036854775807,({  unsigned long  a = 18446744073709551615; int b = 2; a / b;}));
     return 0;
 }
