@@ -74,3 +74,5 @@ a toy c compailer
     - complete  type cast 
 - 2022-4-25
     - add unsigned、signed keyword case:`unsigned long int a = 18446744073709551615`
+- 2022-4-26
+    - fix bug
