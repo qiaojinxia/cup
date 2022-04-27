@@ -76,3 +76,5 @@ a toy c compailer
     - add unsigned、signed keyword case:`unsigned long int a = 18446744073709551615`
 - 2022-4-26
     - fix bug
+- 2022-4-26
+    - complete Type conversion  unsigned signed In Mod/IMod operator  case:`long a = -123213213213;int b = 3; a % b;`

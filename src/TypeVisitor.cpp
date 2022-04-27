@@ -4,7 +4,7 @@
 
 #include "TypeVisitor.h"
 #include "Diag.h"
-
+#include "Type.h"
 using namespace BDD;
 
 void TypeVisitor::Visitor(ExprStmtNode *node) {
@@ -19,6 +19,30 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     node ->Rhs ->Accept(this);
     node -> Type =  node -> Lhs -> Type;
     switch (node ->BinOp) {
+        case BinaryOperator::Assign:
+            if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+                if (node -> Lhs -> Type -> Size == 8){
+                    node ->BinOp = BinaryOperator::DoubleAssign;
+                    if (node -> Rhs -> Type -> Size == 4){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> CstNode = node -> Rhs;
+                        castNode ->Type = Type::DoubleType;
+                        node -> Rhs = castNode;
+                    }
+                }else if (node -> Lhs -> Type -> Size == 4){
+                    node ->BinOp = BinaryOperator::FloatAssign;
+                    if (node -> Rhs -> Type -> Size == 8){
+                        auto castNode = std::make_shared<CastNode>();
+                        castNode -> CstNode = node -> Rhs;
+                        castNode ->Type = Type::FloatType;
+                        node -> Rhs = castNode;
+                    }
+                }
+            }
+            CurAssignType = node->Lhs->Type;
+            node ->Rhs ->Accept(this);
+            CurAssignType = nullptr;
+            break;
         case BinaryOperator::Add:
             if (node -> Lhs -> Type ->IsPointerType() && node->Rhs->Type->IsIntegerNum()){
                 node -> BinOp = BinaryOperator::PointerAdd;
@@ -151,27 +175,6 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             node ->Type = std::make_shared<PointerType>(node->Rhs->Type);;
         case BinaryOperator::PointerSub:
             node ->Type = std::make_shared<PointerType>(node->Rhs->Type);
-        case BinaryOperator::Assign:
-            if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
-                if (node -> Lhs -> Type -> Size == 8){
-                    node ->BinOp = BinaryOperator::DoubleAssign;
-                    if (node -> Rhs -> Type -> Size == 4){
-                        auto castNode = std::make_shared<CastNode>();
-                        castNode -> CstNode = node -> Rhs;
-                        castNode ->Type = Type::DoubleType;
-                        node -> Rhs = castNode;
-                    }
-                }else if (node -> Lhs -> Type -> Size == 4){
-                    node ->BinOp = BinaryOperator::FloatAssign;
-                    if (node -> Rhs -> Type -> Size == 8){
-                        auto castNode = std::make_shared<CastNode>();
-                        castNode -> CstNode = node -> Rhs;
-                        castNode ->Type = Type::FloatType;
-                        node -> Rhs = castNode;
-                    }
-                }
-            }
-            break;
         case BinaryOperator::Mul:
             if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
                 if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
@@ -215,20 +218,66 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     node ->BinOp = BinaryOperator::FloatDiv;
                 }
             }else if (node->Lhs->Type->IsUnsignedNum() || node->Rhs->Type->IsUnsignedNum()){
-
                 node ->BinOp = BinaryOperator::Div;
             }else if(node->Lhs->Type == node->Rhs->Type ){
             }else{
                 assert(0);
             }
             break;
+        case BinaryOperator::IMod:
+        case BinaryOperator::Mod: {
+            bool hasUnsigned = false;
+            if (node->Lhs->Type->IsUnsignedNum() || node->Rhs->Type->IsUnsignedNum()) {
+                hasUnsigned = true;
+            }
+            //find max size type
+            auto toConvertType = node->Lhs->Type;
+            if (node->Lhs->Type->Size < node->Rhs->Type->Size) {
+                toConvertType = node->Rhs->Type;
+            }
+            if (toConvertType->Size < 4) {
+                toConvertType = Type::IntType;
+            }
+
+            //if toConvert Type is maxSize Type and is unsigned and and Express has Unsigned number  not need to convert type
+            //if toConvert Type is maxSize Type and isnot Unsigned and Express has Unsigned number we need to cast it to Unsigned
+            //if toConvert Type is maxSize Type and Express no Unsigned number we don't nedd to cast type
+            if (!toConvertType->IsUnsignedNum() && hasUnsigned) {
+                toConvertType = BuildInType::GetBuildInType(
+                        static_cast<BuildInType::Kind>(std::dynamic_pointer_cast<BuildInType>(toConvertType)->Knd |
+                                                       BuildInType::Kind::UnSigned));
+            }
+            if (node->Lhs->Type != toConvertType) {
+                auto castNodeLhs = std::make_shared<CastNode>();
+                castNodeLhs->CstNode = node->Lhs;
+                castNodeLhs->Type = toConvertType;
+                node->Lhs = castNodeLhs;
+            }
+            if (node->Rhs->Type != toConvertType) {
+                auto castNodeLhs = std::make_shared<CastNode>();
+                castNodeLhs->CstNode = node->Rhs;
+                castNodeLhs->Type = toConvertType;
+                node->Rhs = castNodeLhs;
+            }
+            if (hasUnsigned){
+                node ->BinOp = BinaryOperator::Mod;
+            }else{
+                node ->BinOp = BinaryOperator::IMod;
+            }
+            node->Type = toConvertType;
+        }
+            break;
+
+
         default:
             break;
     }
 }
 
 void TypeVisitor::Visitor(ConstantNode *node) {
-
+    if (CurAssignType){
+        node ->Type = CurAssignType;
+    }
 }
 
 void TypeVisitor::Visitor(ExprVarNode *node) {

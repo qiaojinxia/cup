@@ -14,7 +14,7 @@ std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(Bui
 std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 ,"i32");
 std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 ,"i64");
 std::shared_ptr<BuildInType> Type::UCharType = std::make_shared<BuildInType>(BuildInType::Kind::UInt,1,1 ,"u8");
-std::shared_ptr<BuildInType> Type::UShortType = std::make_shared<BuildInType>(BuildInType::Kind::ULong,2,2 ,"u16");
+std::shared_ptr<BuildInType> Type::UShortType = std::make_shared<BuildInType>(BuildInType::Kind::UShort,2,2 ,"u8");
 std::shared_ptr<BuildInType> Type::UIntType = std::make_shared<BuildInType>(BuildInType::Kind::UInt,4,4 ,"u32");
 std::shared_ptr<BuildInType> Type::ULongType = std::make_shared<BuildInType>(BuildInType::Kind::ULong,8,8 ,"u64");
 std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 ,"f32");
@@ -36,8 +36,10 @@ bool Type::IsIntegerNum() const {
 bool Type::IsUnsignedNum() const {
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
-        return  build_in_type -> GetKind() == BuildInType::Kind::UInt
-                ||  build_in_type -> GetKind() == BuildInType::Kind::ULong;
+        return  build_in_type -> GetKind() == BuildInType::Kind::UChar
+                ||  build_in_type -> GetKind() == BuildInType::Kind::UShort
+                    ||  build_in_type -> GetKind() == BuildInType::Kind::UInt
+                        ||  build_in_type -> GetKind() == BuildInType::Kind::ULong;
     }
     return false;
 }
@@ -181,6 +183,39 @@ std::shared_ptr<Type> BuildInType::GetBaseType() {
         case Kind::Double:
             return DoubleType;
         default :
+            assert(0);
+    }
+}
+
+std::shared_ptr<BuildInType> BuildInType::GetBuildInType(BuildInType::Kind kind) {
+    switch (kind) {
+        case Void:
+            return VoidType;
+        case Char:
+            return CharType;
+        case Short:
+            return ShortType;
+        case Int:
+            return IntType;
+        case Long:
+            return LongType;
+        case Float:
+            return FloatType;
+        case Double:
+            return DoubleType;
+        case Signed:
+            assert(0);
+        case UnSigned:
+            assert(0);
+        case UChar:
+            return UCharType;
+        case UShort:
+            return UShortType;
+        case UInt:
+            return UIntType;
+        case ULong:
+            return ULongType;
+        case UnDefine:
             assert(0);
     }
 }

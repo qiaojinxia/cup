@@ -78,6 +78,7 @@ namespace BDD{
         PointerDiff,
         Mul,
         IDiv,
+        Mod,
         IMod,
         And,
         Or,
@@ -94,20 +95,6 @@ namespace BDD{
         LesserEqual,
         Eof,
     };
-    static std::map<BinaryOperator,int> OpPrecedence = {
-        {BinaryOperator::Equal,        7},
-        {BinaryOperator::NotEqual,     7},
-        {BinaryOperator::Greater,      6},
-        {BinaryOperator::GreaterEqual, 6},
-        {BinaryOperator::Lesser,       6},
-        {BinaryOperator::LesserEqual,  6},
-        {BinaryOperator::Add,          4},
-        {BinaryOperator::Sub,          4},
-        {BinaryOperator::Mul,          3},
-        {BinaryOperator::IDiv,         3},
-        {BinaryOperator::IMod,         3},
-        {BinaryOperator::Eof,          15},
-    };
     static std::map<TokenKind,int> TOpPrecedence = {
 
             {TokenKind::Assign, 14},
@@ -115,6 +102,7 @@ namespace BDD{
             {TokenKind::Minus,    4},
             {TokenKind::Slash,    3},
             {TokenKind::Asterisk, 3},
+            {TokenKind::Mod,         3},
             {TokenKind::Equal,     7},
             {TokenKind::NotEqual,     7},
             {TokenKind::LesserEqual,     6},
@@ -272,6 +260,7 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<AstNode> CstNode;
         void Accept(AstVisitor *visitor) override;
     };
+
 
     class AstVisitor{
     public:

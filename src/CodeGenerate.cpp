@@ -19,7 +19,7 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         Push(Type::Pointer);
         node -> Rhs -> Accept(this);
         Pop(Type::Pointer, GetRdi(Type::Pointer).data());
-        Store(node -> Rhs->Type);
+        Store(node -> Rhs);
         return;
     }else if (node -> BinOp == BinaryOperator::FloatAdd){
         node -> Lhs -> Accept(this);
@@ -74,25 +74,66 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
         Push(Type::Pointer);
         node -> Rhs -> Accept(this);
         Pop(Type::Pointer, GetRdi(Type::Pointer).data());
-        Store(node -> Lhs -> Type);
+        Store(node -> Lhs );
         Depth --;
         return;
-    }else if (node -> BinOp == BinaryOperator::IMod){
-        auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
+    }else if (node -> BinOp == BinaryOperator::IMod){  // lhs % rhs
+        auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Rhs);
         if (exprNode){
-            node -> Rhs -> Accept(this);
-            printf("\t  cdq\n");
+            node -> Lhs -> Accept(this);
+            if (node -> Lhs ->Type ->Size == 4){
+                printf("\t  cdq\n");
+            }else if(node -> Lhs ->Type ->Size == 8){
+                printf("\t  cqo\n");
+            }
             printf("\t  %s %d(%%rbp)\n", GetIDivCode(exprNode->VarObj ->Type).data(), exprNode -> VarObj ->Offset);
         }else{
             node -> Lhs -> Accept(this);
-            Push(node ->Lhs ->Type);
+            Push(node -> Lhs ->Type);
             node -> Rhs -> Accept(this);
-            printf("\t  mov %%rax,%%rdi\n");
+            printf("\t  mov %s,%s\n", GetRax(node ->Rhs ->Type).data(),GetRdi(node ->Rhs ->Type).data());
             Pop(node ->Lhs ->Type);
-            printf("\t  cdq\n");
-            printf("\t  idiv %%rdi\n");
+            if (node -> Lhs ->Type ->Size == 4){
+                printf("\t  cdq\n");
+            }else if(node -> Lhs ->Type ->Size == 8){
+                printf("\t  cqo\n");
+            }
+            printf("\t  idiv %s\n",GetRdi(node ->Rhs ->Type).data());
         }
-        printf("\t  mov %%edx,%%eax\n");
+        if (node -> Lhs -> Type ->Size == 4 ){
+            printf("\t  mov %%edx,%%eax\n");
+        }else if (node -> Lhs -> Type ->Size == 8){
+            printf("\t  mov %%rdx,%%rax\n");
+        }
+        return;
+    }else if (node -> BinOp == BinaryOperator::Mod){  // lhs % rhs
+        auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Rhs);
+        if (exprNode){
+            node -> Lhs -> Accept(this);
+            if (node -> Lhs ->Type ->Size == 4){
+                printf("\t  xor %%edx,%%edx\n");
+            }else if(node -> Lhs ->Type ->Size == 8){
+                printf("\t  xor %%rdx,%%rdx\n");
+            }
+            printf("\t  %s %d(%%rbp)\n", GetDivCode(exprNode->VarObj ->Type).data(), exprNode -> VarObj ->Offset);
+        }else{
+            node -> Lhs -> Accept(this);
+            Push(node -> Lhs ->Type);
+            node -> Rhs -> Accept(this);
+            printf("\t  mov %s,%s\n", GetRax(node ->Rhs ->Type).data(),GetRdi(node ->Rhs ->Type).data());
+            Pop(node ->Lhs ->Type);
+            if (node -> Lhs ->Type ->Size == 4){
+                printf("\t xor %%edx,%%edx\n");
+            }else if(node -> Lhs ->Type ->Size == 8){
+                printf("\t  xor %%rdx,%%rdx\n");
+            }
+            printf("\t  div %s\n",GetRdi(node ->Rhs ->Type).data());
+        }
+        if (node -> Lhs -> Type ->Size == 4 ){
+            printf("\t  mov %%edx,%%eax\n");
+        }else if (node -> Lhs -> Type ->Size == 8){
+            printf("\t  mov %%rdx,%%rax\n");
+        }
         return;
     }else if (node -> BinOp == BinaryOperator::Incr){
         node -> Lhs -> Accept(this);
@@ -242,7 +283,7 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
         printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
     }else{
         GenerateAddress(node);
-        Load(node -> Type);
+        Load(node);
     }
 }
 
@@ -479,11 +520,11 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             break;
         case UnaryOperator::Minus:
             node -> Lhs ->Accept(this);
-            printf("\t  neg %%rax\n");
+            printf("\t  neg %s\n", GetRax(node -> Lhs -> Type).data());
             break;
         case UnaryOperator::Deref:
             node -> Lhs ->Accept(this);
-            Load(node -> Lhs -> Type);
+            Load(node -> Lhs);
             break;
         case UnaryOperator::Addr:
             GenerateAddress(node -> Lhs.get());
@@ -541,7 +582,23 @@ void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
     }
 }
 
-void CodeGenerate::Load(std::shared_ptr<Type> type) {
+void CodeGenerate::Load(AstNode *node) {
+    auto type = node -> Type;
+    if (auto castNode = dynamic_cast<CastNode *>(node)){
+        type = castNode ->CstNode ->Type;
+    }
+    Load(type);
+}
+
+void CodeGenerate::Load(std::shared_ptr<AstNode> node) {
+    auto type = node -> Type;
+    if (auto castNode = std::dynamic_pointer_cast<CastNode>(node)){
+        type = castNode ->CstNode ->Type;
+    }
+    Load(type);
+}
+
+void CodeGenerate::Load(std::shared_ptr<Type> type){
     if (type->IsFloatNum() || (type->GetBaseType() != nullptr && type->GetBaseType() ->IsFloatNum())){
         if (type -> Size == 4){
             printf("\t  movss (%%rax),%s\n",  Xmm[Depth++]);
@@ -553,7 +610,12 @@ void CodeGenerate::Load(std::shared_ptr<Type> type) {
     printf("\t  mov (%%rax),%s\n", GetRax(type->Size).data());
 }
 
-void CodeGenerate::Store(std::shared_ptr<Type> type) {
+
+void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
+    auto type = node -> Type;
+    if (auto castNode = std::dynamic_pointer_cast<CastNode>(node)){
+        type = castNode ->CstNode ->Type;
+    }
     if (type ->IsArrayType()){
         auto aType = std::dynamic_pointer_cast<ArrayType>(type);
         for (int i = 0; i < (aType->ArrayLen + 1) /(MaxBit /aType ->ElementType->Size ) ;i ++) {
@@ -588,7 +650,7 @@ void CodeGenerate::Visitor(MemberAccessNode *node) {
     node -> Lhs-> Accept(this);
     auto field = record -> GetField(node -> fieldName);
     printf("\t  sub  $%d,%%rax\n", field ->Offset);
-    Load(node ->Type);
+    Load(node);
 }
 
 void CodeGenerate::Visitor(BreakStmtNode *node) {
@@ -681,6 +743,22 @@ const std::string CodeGenerate::GetIDivCode(std::shared_ptr<Type> type) {
     }
 }
 
+
+const std::string CodeGenerate::GetDivCode(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "divb";
+    }else if (type -> Size == 2){
+        return "divw";
+    }else if (type -> Size == 4){
+        return "divw";
+    }else if (type -> Size == 8){
+        return "divq";
+    } else{
+        assert(0);
+    }
+}
+
+
 void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     printf("\t  sub $%d, %%rsp          #Push %s\n",ty->Size,GetRax(ty).data());
     printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
@@ -754,7 +832,7 @@ void CodeGenerate::Visitor(ArefNode *node) {
         printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
         printf("\t  mov (%%rax),%%rax\n");
         printf("\t  add %%rcx,%%rax\n");
-        Load(node->Type);
+        Load(node);
         return;
     }
     node -> Offset ->Accept(this);
@@ -763,7 +841,7 @@ void CodeGenerate::Visitor(ArefNode *node) {
     printf("\t  imul %%rax,%%rcx\n");
     printf("\t  lea %d(%%rbp),%%rax\n",varNode ->VarObj ->Offset);
     printf("\t  add %%rcx,%%rax\n");
-    Load(node ->Type);
+    Load(node);
 }
 
 const std::string CodeGenerate::GetRax(int size) {
@@ -784,10 +862,16 @@ std::string BDD::CodeGenerate::GetCastCode(std::string fromTo) {
     if (CastMap.empty()){
         CastMap["i8->i32"] = "movsbl %al, %eax";
         CastMap["u8->i32"] = "movzbl %al, %eax";
+        CastMap["u8->u32"] =  "movzbl %al, %eax";
+
         CastMap["i16->i32"] = "movswl %ax, %eax";
         CastMap["u16->u32"] = "movzwl %ax, %eax";
         CastMap["i32->f32"] = "cvtsi2ssl %eax, %xmm0";
         CastMap["i32->i64"] = "movsx %eax, %rax";
+
+        CastMap["i16->u32"] = "movzwl %ax, %eax";
+
+        CastMap["u32->u64"] = "NULL";
 
 
         CastMap["i32->i8"] =  "movsb %al, %rax";
@@ -796,6 +880,8 @@ std::string BDD::CodeGenerate::GetCastCode(std::string fromTo) {
 
         CastMap["i32->u64"] =  "NULL";
         CastMap["u64->i32"] =  "NULL";
+
+        CastMap["u16->i32"] =  "movzwl %ax, %eax";
 
         CastMap["u64->i64"] =  "NULL";
         CastMap["i64->u64"] =  "NULL";
@@ -852,3 +938,5 @@ const std::string CodeGenerate::GetRdi(std::shared_ptr<Type> type) {
         assert(0);
     }
 }
+
+

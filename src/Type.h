@@ -15,6 +15,7 @@ namespace BDD{
     class PointerType;
     class ArrayType;
     class RecordType;
+
     class Type {
     public:
         static std::shared_ptr<BuildInType> VoidType;
@@ -29,7 +30,6 @@ namespace BDD{
         static std::shared_ptr<BuildInType> ULongType;
         static std::shared_ptr<BuildInType> FloatType;
         static std::shared_ptr<BuildInType> DoubleType;
-
         enum class TypeClass{
             BInType,
             PtrType,
@@ -92,6 +92,7 @@ namespace BDD{
         };
         Kind Knd;
     public:
+        static std::shared_ptr<BuildInType> GetBuildInType(Kind kind);
         BuildInType(Kind knd,int size,int align,const char * alias) : Type(TypeClass::BInType, size, align,alias), Knd(knd) {}
         Kind GetKind() const{
             return Knd;

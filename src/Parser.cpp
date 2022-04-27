@@ -614,7 +614,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Assign);
                 break;
             case TokenKind::Mod:
-                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::IMod);
+                leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mod);
                 break;
             case TokenKind::VerticalBar:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);

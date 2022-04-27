@@ -75,8 +75,9 @@ namespace BDD{
         void Pop(std::shared_ptr<Type> ty);
         void Pop(std::shared_ptr<Type> ty,const char *reg);
 
-        void Load(std::shared_ptr<Type> ty);
-        void Store(std::shared_ptr<Type> ty);
+        void Load(std::shared_ptr<AstNode> node);
+        void Load(AstNode *node);
+        void Store(std::shared_ptr<AstNode> node);
 
         void GenerateAddress(AstNode *node);
 
@@ -91,6 +92,10 @@ namespace BDD{
         std::string GetCastCode(std::string fromTo);
 
         const std::string GetRdi(std::shared_ptr<Type> sharedPtr);
+
+        const std::string GetDivCode(std::shared_ptr<Type> type);
+
+        void Load(std::shared_ptr<Type> type);
     };
 }
 
