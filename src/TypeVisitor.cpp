@@ -39,6 +39,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                     }
                 }
             }
+            //to set the assign expr lhs node and rhs node with same type
             CurAssignType = node->Lhs->Type;
             node ->Rhs ->Accept(this);
             CurAssignType = nullptr;
@@ -276,8 +277,17 @@ void TypeVisitor::Visitor(BinaryNode *node) {
 
 void TypeVisitor::Visitor(ConstantNode *node) {
     if (CurAssignType){
+//        if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
+//            auto index = 0;
+//            for (auto &filed:structType->fields) {
+//                node ->Tokens[0] -> Size =  filed->type->GetBaseType()->Size;
+//            }
+//        }else if(auto structType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
+//
+//        }
         node ->Type = CurAssignType;
     }
+
 }
 
 void TypeVisitor::Visitor(ExprVarNode *node) {

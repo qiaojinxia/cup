@@ -128,10 +128,10 @@ class BinaryNode :public  AstNode{
     class ConstantNode : public AstNode{
     private:
     public:
-        ConstantNode(std::list<std::shared_ptr<Token>> tk):Tokens(tk){};
+        ConstantNode(std::vector<std::shared_ptr<Token>> tk):Tokens(tk){};
         ConstantNode(std::shared_ptr<Token> tk){Tokens.push_back(tk);};
         std::string Name;
-        std::list<std::shared_ptr<Token>> Tokens;
+        std::vector<std::shared_ptr<Token>> Tokens;
         unsigned long Value;
         void Accept(AstVisitor *visitor) override;
     };

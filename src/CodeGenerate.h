@@ -96,6 +96,7 @@ namespace BDD{
         const std::string GetDivCode(std::shared_ptr<Type> type);
 
         void Load(std::shared_ptr<Type> type);
+
     };
 }
 

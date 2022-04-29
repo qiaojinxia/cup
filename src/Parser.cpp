@@ -19,6 +19,7 @@ using namespace BDD;
 //         | ident func-args?
 //         | str
 //         | num
+//
 
 std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
     auto node = std::make_shared<AstNode>();
@@ -50,7 +51,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         case TokenKind::LBrace:
             Lex.GetNextToken();
             if (Lex.CurrentToken ->Kind == TokenKind::Num){
-                std::list<std::shared_ptr<Token>> tks;
+                std::vector<std::shared_ptr<Token>> tks;
                 while(Lex.CurrentToken->Kind == TokenKind::Num){
                     tks.push_back(Lex.CurrentToken);
                     Lex.SkipToken(TokenKind::Comma);
@@ -468,7 +469,7 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
 }
 
 
-//ParsePostFixExpr ::= ParsePrimaryExpr ("++" | "--" ｜ "->" ident | "." ident ｜ "[" ParseExpr "]")*
+//ParsePostFixExpr ::= ParsePrimaryExpr ("++" | "--" ｜ "->" ident | "." ident ｜ "[" ParseExpr "]" )*
 std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
     auto left = ParsePrimaryExpr();
     while (true){

@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 
+
 namespace BDD{
     enum class TokenKind{
         Equal,
@@ -80,6 +81,7 @@ namespace BDD{
         long Value;
         std::string_view Content;
         SourceLocation Location;
+
     };
     class Lexer {
     private:

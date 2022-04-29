@@ -33,6 +33,15 @@ void assert_f(float  excepted,float actual){
     }
 }
 
+void assert_char(char  excepted,char actual){
+    if(excepted  == actual ){
+        printf("code(%d) => %c\n",codeId ++ ,actual);
+    }else{
+        printf("code(%d) expected %c,but got %c\n",codeId++,excepted,actual);
+        exit(-1);
+    }
+}
+
 
 void assert_fd(float  excepted,double actual){
     if(excepted  - actual <= 0.000001 &&  excepted  - actual >=  -0.000001){
