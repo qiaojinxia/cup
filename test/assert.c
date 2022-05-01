@@ -53,9 +53,9 @@ void assert_fd(float  excepted,double actual){
 }
 
 void print_float(float a){
-    printf("%f\n",a);
+    printf("output:%f\n",a);
 }
 
 void print_lfloat(double a){
-    printf("%f\n",a);
+    printf("output:%f\n",a);
 }

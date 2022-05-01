@@ -49,19 +49,15 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             break;
         }
         case TokenKind::LBrace:
+        {
             Lex.GetNextToken();
             if (Lex.CurrentToken ->Kind == TokenKind::Num){
-                std::vector<std::shared_ptr<Token>> tks;
-                while(Lex.CurrentToken->Kind == TokenKind::Num){
-                    tks.push_back(Lex.CurrentToken);
-                    Lex.SkipToken(TokenKind::Comma);
-                }
-                auto constNode = std::make_shared<ConstantNode>(tks);
-                Scope::GetInstance() -> PutToConstantTable(constNode);
-                Lex.GetNextToken();
-                node = constNode;
-                break;
+                auto initValues  = ParseInitListExpr();
+                node = initValues;
+                Scope::GetInstance() -> PutToConstantTable(initValues);
             }
+        }
+            break;
         case TokenKind::Identifier:
         {
             Lex.BeginPeekToken();
@@ -288,6 +284,7 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
 
 //ParseDeclarationSpec :=  ( int ｜ char | short | long | union | struct | union | float | double | *)  ParseDeclarationSpec |  ε
 std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
+    std::shared_ptr<Type> sType;
     while(true){
         if (Lex.CurrentToken -> Kind == TokenKind::Int){
             Lex.GetNextToken();
@@ -307,10 +304,12 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Struct){
             Lex.GetNextToken();
-            return ParseStructDeclaration();
+            sType = ParseStructDeclaration();
+           continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Union){
             Lex.GetNextToken();
-            return ParseUnionDeclaration();
+            sType =  ParseUnionDeclaration();
+            continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Float){
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Float;
@@ -321,7 +320,12 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Asterisk){
             Lex.GetNextToken();
-           auto pointerType = std::make_shared<PointerType>(ParseDeclarationSpec(baseType));
+            std::shared_ptr<PointerType> pointerType;
+            if (sType){
+                pointerType = std::make_shared<PointerType>(sType);
+            }else{
+                pointerType = std::make_shared<PointerType>(ParseDeclarationSpec(baseType));
+            }
            return pointerType;
         }else if(Lex.CurrentToken -> Kind == TokenKind::SIGNED){
             Lex.GetNextToken();
@@ -335,6 +339,8 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             break;
         }
     }
+    if (sType)
+        return sType;
     std::shared_ptr<Type> type;
     switch ((BuildInType::Kind)baseType) {
         case BuildInType::Kind::Void:
@@ -726,7 +732,7 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
         }
         Lex.ExceptToken( TokenKind::Assign);
         //array constant init
-        auto valueNode = ParseCastExpr();
+        auto valueNode = ParseExpr();
         valueNode-> Type = type;
         for (auto &n:assignNodes)
             n ->Rhs = valueNode;
@@ -734,5 +740,27 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
         return multiAssignNode;
     }
     return nullptr;
+}
+
+// (init1,",")*
+std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
+    std::shared_ptr<ConstantNode> cursor = std::make_shared<ConstantNode>(nullptr) ;
+    std::shared_ptr<ConstantNode> root = cursor;
+    do {
+        if (cursor ->Token){
+            cursor ->Next = std::make_shared<ConstantNode>(nullptr);
+            cursor = cursor -> Next;
+        }
+        auto token = Lex.CurrentToken;
+        if (Lex.CurrentToken ->Kind == TokenKind::LBrace){
+            Lex.GetNextToken();
+            cursor -> Sub = ParseInitListExpr();
+            Lex.ExceptToken(TokenKind::RBrace);
+        }else{
+            cursor -> Token = token;
+        }
+        Lex.SkipToken(TokenKind::Comma);
+    }while(Lex.CurrentToken->Kind == TokenKind::Num || Lex.CurrentToken->Kind == TokenKind::LBrace);
+    return root;
 }
 

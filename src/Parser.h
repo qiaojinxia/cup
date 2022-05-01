@@ -58,6 +58,8 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseCastExpr();
 
+        std::shared_ptr<ConstantNode> ParseInitListExpr();
+
         std::shared_ptr<AstNode> ParseDeclarationExpr();
 
 

@@ -80,3 +80,5 @@ a toy c compailer
     - complete Type conversion  unsigned signed In Mod/IMod operator  case:`long a = -123213213213;int b = 3; a % b;`
 - 2022-4-27 ～ 4-29
     - optimization code and add struct init case `struct aa {int a;} xx = { a:3};`
+- 2022-4-29 ～ 5-1
+    - support memorycopy struct  from heap  to  stack ,Complete struct pointer -> visiter member support struct pointer case:`struct Books *bk = &a;`

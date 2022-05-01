@@ -15,5 +15,5 @@ programPath:
 testCode:
 	cd ./cmake-build-debug/ && make
 	cd ./cmake-build-debug/ && ./boddy "path" "../test/testCodes.c" > tmp.s
-	clang ./cmake-build-debug/tmp.s ./test/main.c ./test/assert.c  -o tmp.out
+	clang ./cmake-build-debug/tmp.s ./test/copy.s ./test/main.c ./test/assert.c  -o tmp.out
 	./tmp.out

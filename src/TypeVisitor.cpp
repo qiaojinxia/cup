@@ -276,15 +276,41 @@ void TypeVisitor::Visitor(BinaryNode *node) {
 }
 
 void TypeVisitor::Visitor(ConstantNode *node) {
+    auto cursor = node;
     if (CurAssignType){
-//        if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
-//            auto index = 0;
-//            for (auto &filed:structType->fields) {
-//                node ->Tokens[0] -> Size =  filed->type->GetBaseType()->Size;
-//            }
-//        }else if(auto structType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
-//
-//        }
+        node-> Size = CurAssignType ->Size;
+        if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
+            for (auto &filed:structType->fields) {
+                cursor ->Type = filed ->type;
+                if (cursor ->Sub != nullptr){
+                    auto bak = CurAssignType;
+                    CurAssignType = cursor ->Type;
+                    cursor -> Sub ->Accept(this);
+                    CurAssignType = bak;
+                }
+                cursor  = cursor ->Next.get();
+                if (cursor == nullptr){
+                    break;
+                }
+            }
+            return;
+        }else if(auto arrType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
+            node-> Size = CurAssignType ->Size;
+            while (cursor) {
+                cursor ->Type = arrType->ElementType;
+                if (cursor ->Next == nullptr){
+                    break;
+                }
+                cursor  = cursor ->Next.get();
+                if (cursor ->Sub != nullptr){
+                    auto bak = CurAssignType;
+                    cursor -> Sub ->Accept(this);
+                    CurAssignType = bak;
+                }
+
+            }
+            return;
+        }
         node ->Type = CurAssignType;
     }
 

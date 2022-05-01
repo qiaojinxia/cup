@@ -251,28 +251,15 @@ void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
-    if (node->Type->IsFloatNum()){
-        printf("\t  %s %s(%%rip), %s        #FloatConstant %s \n", GetMoveCode(node->Type).data(),node->Name.data(),Xmm[Depth++],node->Name.data());
+    if (node ->isInStack && node->Type->IsFloatNum()) {
+        printf("\t  %s %s(%%rip), %s        #FloatConstant %s \n", GetMoveCode(node->Type).data(), node->Name.data(),
+               Xmm[Depth++], node->Name.data());
         return;
-    }else if (node ->Type ->IsArrayType()){
+    }else if (node ->isInStack){
         std::string constName = std::string(node->Name);
-        printf("\t  lea %s(%%rip),%%rax     #ArrayConstant %s\n",constName.data(),constName.data());
-        return;
-    }else if (node ->Type ->IsStructType()){
-        std::string constName = std::string(node->Name);
-        printf("\t  lea %s(%%rip),%%rax     #StructConstant %s\n",constName.data(),constName.data());
+        printf("\t  lea %s(%%rip),%%rsi     #Constant %s\n",constName.data(),constName.data());
         return;
     }
-//    else if (node ->Type ->IsIntType() || ){
-//        printf("\t  mov $%d, %%eax\n",(int)node->Value);
-//    }else if(node ->Type ->IsUIntType()){
-//        printf("\t  mov $%u, %%eax\n",(unsigned int)node->Value);
-//    }else if (node ->Type ->IsLongType()){
-//        printf("\t  mov $%ld, %%rax\n",(long)node->Value);
-//    }else if (node ->Type ->IsULongType()){
-//        printf("\t  mov $%lu, %%rax\n",node->Value);
-//    }
-
     printf("\t  mov $%lu, %%rax   #Constant %lu\n",node->Value,node->Value);
 }
 
@@ -321,40 +308,37 @@ void printConstant(int size, bool isFloat,std::shared_ptr<Token> token)
     return;
 }
 
-void CodeGenerate::Visitor(ProgramNode *node) {
-    int  size = 0 ;
+void ParseInit(std::shared_ptr<ConstantNode> node){
+    int size = 0 ;
     bool isFloat = false;
+    int align = 0;
+    int offset = 0;
+    while (node) {
+        //single value direct loading mov $num,%rax
+        node ->isInStack = true;
+        isFloat = node ->Type->IsFloatNum();
+        size = node ->Type ->Size;
+        offset += node ->Type ->Size;
+        int gap = AlignTo(offset,node->Type->Align) -offset;
+        offset += gap;
+        if (gap != 0)
+            printf("\t.zero  %d\n",gap);
+        if (node -> Sub){
+            ParseInit(node ->Sub);
+        }else{
+            printConstant(size,isFloat ,node ->Token);
+        }
+        node = node ->Next;
+    }
+}
+
+void CodeGenerate::Visitor(ProgramNode *node) {
     for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
-        if (v.second->Type->IsFloatNum()) {
-            isFloat = true;
-            size = v.second->Type ->Size;
-            printf("%s:\n", v.second -> Name.data());
-            for (auto &token:v.second->Tokens) {
-                printConstant(size,isFloat ,token);
-            }
-        }else  if (v.second->Type->IsArrayType()) {
-            auto aType = std::dynamic_pointer_cast<ArrayType>(v.second->Type);
-            if (aType->ElementType->IsFloatNum()){
-                isFloat = true;
-            }
-            size = aType -> ElementType ->Size;
-            printf("%s:\n", v.second -> Name.data());
-            for (auto &token:v.second->Tokens) {
-                printConstant(size,isFloat ,token);
-            }
-        }else if( auto structType = std::dynamic_pointer_cast<RecordType>(v.second ->Type)){
-            auto index = 0;
-            printf("%s:\n", v.second -> Name.data());
-            for (auto &field : structType->fields) {
-                isFloat = field ->type ->IsFloatNum();
-                size = field ->type ->GetBaseType() ->Size;
-                printConstant(size,isFloat ,v.second->Tokens[index]);
-                index ++;
-            }
-        } else{
+        if (v .second ->Next == nullptr && !v .second ->Type->IsFloatNum()){
             continue;
         }
-
+        printf("%s:\n", v .second -> Name.data());
+        ParseInit(v.second);
     }
     for (auto &s: node->Funcs)
         s->Accept(this);
@@ -501,7 +485,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
     for (int i = node-> Args.size() -1; i >= 0; --i) {
         if (node->Args[i]->Type->IsFloatNum()){}
         else{
-            Pop(node ->Args[i]->Type, Regx64[node ->Args[i]->Type->Size/2][i]);
+            Pop(node ->Args[i]->Type, Regx64[node ->Args[i]->Type->GetBaseType()->Size/2][i]);
             //todo push float to stack
         }
 
@@ -566,7 +550,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         auto record = std::dynamic_pointer_cast<RecordType>(memberAccessNode ->Lhs -> Type);
         memberAccessNode -> Lhs ->Accept(this);
         auto field = record -> GetField(memberAccessNode -> fieldName);
-        printf("\t  sub  $%d,%%rax\n", field ->Offset);
+        printf("\t  add  $%d,%%rax\n", field ->Offset);
     }else if (auto arefNode = dynamic_cast<ArefNode *>(node)){
         auto varNode = std::dynamic_pointer_cast<ExprVarNode>(arefNode ->Lhs);
         arefNode -> Offset ->Accept(this);
@@ -597,7 +581,7 @@ void CodeGenerate::Load(AstNode *node) {
 
 void CodeGenerate::Load(std::shared_ptr<AstNode> node) {
     auto type = node -> Type;
-    if (auto castNode = std::dynamic_pointer_cast<CastNode>(node)){
+    if (auto castNode = std::dynamic_pointer_cast<CastNode>(node)){ //int a = 0; in b = 3;(long) a + long(b)  load from memory a is int
         type = castNode ->CstNode ->Type;
     }
     Load(type);
@@ -605,14 +589,14 @@ void CodeGenerate::Load(std::shared_ptr<AstNode> node) {
 
 void CodeGenerate::Load(std::shared_ptr<Type> type){
     if (type->IsFloatNum() || (type->GetBaseType() != nullptr && type->GetBaseType() ->IsFloatNum())){
-        if (type -> Size == 4){
-            printf("\t  movss (%%rax),%s\n",  Xmm[Depth++]);
-        }else if (type -> Size == 8){
-            printf("\t  movsd (%%rax),%s\n",  Xmm[Depth++]);
-        }
+        printf("\t  %s (%%rax),%s\n", GetMoveCode(type ->GetBaseType()).data(),Xmm[Depth++]);
         return;
+    }else if(type -> IsPointerType()){
+        return;
+    }else{
+        printf("\t  mov (%%rax),%s\n", GetRax(type ->GetBaseType()->Size).data());
     }
-    printf("\t  mov (%%rax),%s\n", GetRax(type->Size).data());
+
 }
 
 
@@ -621,42 +605,55 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
     if (auto castNode = std::dynamic_pointer_cast<CastNode>(node)){
         type = castNode ->CstNode ->Type;
     }
-    if (type ->IsArrayType()){
-        auto aType = std::dynamic_pointer_cast<ArrayType>(type);
-        for (int i = 0; i < (aType->ArrayLen + 1) /(MaxBit /aType ->ElementType->Size ) ;i ++) {
-            auto size =  (aType -> ArrayLen * aType ->ElementType->Size) - (i * MaxBit);
-            if (size >= MaxBit){
-                printf("\t  mov %d(%%rax),%%rcx\n",MaxBit * i);
-                printf("\t  mov %%rcx,%d(%%rdi)\n",MaxBit * i);
-                continue;
-            }
-            if (size == 0){
-                return;
-            }
-            printf("\t  mov %d(%%rax),%s\n",MaxBit * i,GetRcx(size).data());
-            printf("\t  mov %s,%d(%%rdi)\n",GetRcx(size).data(),MaxBit * i);
-
+    if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(node)){
+        if (constNode ->isInStack){
+            printf("\t  mov $%d,%%rcx\n",constNode->Size);
+            printf("\t  call _mempcy\n");
+            return;
         }
-        return;
-    }else if (type ->IsStructType()){
-        auto aType = std::dynamic_pointer_cast<RecordType>(type);
-        auto offset = 0;
-        for (auto &field:aType->fields) {
-            printf("\t  mov  %d(%%rax),%s\n", offset,GetRcx(field->type).data());
-            printf("\t  mov  %s,%d(%%rdi)\n", GetRcx(field->type).data(),field ->Offset);
-            offset += field ->type ->Size;
+    }else if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node)){
+        if (type -> IsStructType() || type -> IsArrayType()){
+            printf("\t  mov %%rax,%%rsi\n");
+            printf("\t  mov $%d,%%rcx\n",exprNode ->Type ->Size);
+            printf("\t  call _mempcy\n");
+            return;
         }
-        return;
     }
     if (type->IsFloatNum()){
-        if (type -> Size == 4){
-            printf("\t  movss %s,(%%rdi)\n",Xmm[Depth-1]);
-        }else if (type -> Size == 8){
-            printf("\t  movsd %s,(%%rdi)\n",Xmm[Depth-1]);
-        }
+        printf("\t  %s %s,(%%rdi)\n", GetMoveCode(type).data(),Xmm[Depth-1]);
     }else{
         printf("\t  mov %s,(%%rdi)\n",GetRax(type).data());
     }
+
+//    if (type ->IsArrayType()){
+//        auto aType = std::dynamic_pointer_cast<ArrayType>(type);
+//        for (int i = 0; i < (aType->ArrayLen + 1) /(MaxBit /aType ->ElementType->Size ) ;i ++) {
+//            auto size =  (aType -> ArrayLen * aType ->ElementType->Size) - (i * MaxBit);
+//            if (size >= MaxBit){
+//                printf("\t  mov %d(%%rax),%%rcx\n",MaxBit * i);
+//                printf("\t  mov %%rcx,%d(%%rdi)\n",MaxBit * i);
+//                continue;
+//            }
+//            if (size == 0){
+//                return;
+//            }
+//            printf("\t  mov %d(%%rax),%s\n",MaxBit * i,GetRcx(size).data());
+//            printf("\t  mov %s,%d(%%rdi)\n",GetRcx(size).data(),MaxBit * i);
+//        }
+//        return;
+//    }else if (type ->IsStructType()){
+//        if (type ->Size < 24){
+//            auto aType = std::dynamic_pointer_cast<RecordType>(type);
+//            auto offset = 0;
+//            for (auto &field:aType->fields) {
+//                printf("\t  mov  %d(%%rax),%s\n", offset,GetRcx(field->type).data());
+//                printf("\t  mov  %s,%d(%%rdi)\n", GetRcx(field->type).data(),field ->Offset);
+//                offset += field ->type ->Size;
+//            }
+//        }
+//        return;
+//    }
+
 }
 
 void CodeGenerate::Visitor(MemberAccessNode *node) {
@@ -664,7 +661,7 @@ void CodeGenerate::Visitor(MemberAccessNode *node) {
     node -> Lhs-> Accept(this);
     auto field = record -> GetField(node -> fieldName);
     printf("\t  add  $%d,%%rax\n", field ->Offset);
-    Load(node);
+    Load(field ->type);
 }
 
 void CodeGenerate::Visitor(BreakStmtNode *node) {

@@ -95,30 +95,34 @@ int testCode(){
 //    assert_fd(5.0,({ (double)(int)5.5;}));
 //    assert_f(1.324234,({ int a = 1068073088; float * b= (float *)&a;*b;}));
 //    assert(1068073088,({ float a = 1.324234; int * b= (int *)&a;*b;}));
-    testType();
-    return 0;
-}
-
-
-int  testStruct(){
-    struct Books
-    {
-        long  a;
-        int  b;
-        char  c;
-        int   book_id;
-    } book = {7, 2, 97, 32};
-    assert(7,book.a);
-    assert(2,book.b);
-    assert_char(97,book.c);
-    assert(32,book.book_id);
-}
-
-//int testType(){
 //    assert((int)1,({ unsigned short  a = 7777; unsigned short b = 2; a % b;}));
 //    assert((int)-1,({ short  c = -7777; short d = 2; c % d;}));
 //    assert_u((unsigned long)1,({  unsigned long  a = 18446744073709551615; int b = 2; a % b;}));
 //    assert_u(( long)-1,({ long  a = -123123232323; int b = 2; a % b;}));
 //    assert(0,({ long a = -123213213213; int b = 3; a % b;}));
-//    return 0;
-//}
+    testStruct();
+    return 0;
+}
+
+int testStruct(){
+    struct Books
+    {
+        unsigned long  name;
+        int  price;
+        char  index;
+        int   book_id;
+        int * a[4];
+    } book = {7, 2, 97, 32,{0x0001,0b111,3434,123}};
+    struct Books a;
+    a = book;
+    a.price = 22;
+    struct Books *bk = &a;
+    assert(2,({book.price;}));
+    float total = (float)bk->price + (float)book.price;
+    assert_char(97,a.index);
+    assert_f(24.0,total);
+//    assert_char(97,book.c);
+//    assert(32,book.book_id);
+
+}
+
