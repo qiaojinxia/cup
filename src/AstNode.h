@@ -134,10 +134,14 @@ class BinaryNode :public  AstNode{
         std::string Name;
         int Size;
         bool isInStack;
+        int Offset;
         std::shared_ptr<Token> Token;
         unsigned long Value;
+        unsigned long GetValue();
         void Accept(AstVisitor *visitor) override;
     };
+
+
 
     class ExprStmtNode: public AstNode{
     public:

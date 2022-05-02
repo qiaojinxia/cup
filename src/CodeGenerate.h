@@ -82,6 +82,8 @@ namespace BDD{
         void GenerateAddress(AstNode *node);
 
         const std::string GetMoveCode(std::shared_ptr<Type> type);
+        const std::string GetMoveCode2(std::shared_ptr<Type>  type);
+
         const std::string GetIDivCode(std::shared_ptr<Type> type);
 
         const std::string GetRax(std::shared_ptr<Type> type);

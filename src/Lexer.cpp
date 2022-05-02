@@ -180,6 +180,15 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Lesser;
         }
         GetNextChar();
+    }else if(CurChar == '"'){
+        GetNextChar();
+        while(CurChar !='"'){
+            GetNextChar();
+        }
+        GetNextChar();
+        std::string_view content = SourceCode.substr(startPos,Cursor - 1 - startPos);
+        kind = TokenKind::String;
+
     }else{
         if (IsLetter()){
             GetNextChar();

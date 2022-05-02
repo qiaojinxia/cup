@@ -281,6 +281,7 @@ void TypeVisitor::Visitor(ConstantNode *node) {
         node-> Size = CurAssignType ->Size;
         if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
             for (auto &filed:structType->fields) {
+                cursor -> Offset = filed ->Offset;
                 cursor ->Type = filed ->type;
                 if (cursor ->Sub != nullptr){
                     auto bak = CurAssignType;
@@ -295,8 +296,11 @@ void TypeVisitor::Visitor(ConstantNode *node) {
             }
             return;
         }else if(auto arrType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
+            int offset = 0;
             node-> Size = CurAssignType ->Size;
             while (cursor) {
+                cursor -> Offset = offset;
+                offset += arrType->ElementType->Size;
                 cursor ->Type = arrType->ElementType;
                 if (cursor ->Next == nullptr){
                     break;

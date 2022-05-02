@@ -35,9 +35,9 @@ void assert_f(float  excepted,float actual){
 
 void assert_char(char  excepted,char actual){
     if(excepted  == actual ){
-        printf("code(%d) => %c\n",codeId ++ ,actual);
+        printf("code(%d) => %d\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %c,but got %c\n",codeId++,excepted,actual);
+        printf("code(%d) expected %c,but got %d\n",codeId++,excepted,actual);
         exit(-1);
     }
 }
@@ -51,6 +51,10 @@ void assert_fd(float  excepted,double actual){
         exit(-1);
     }
 }
+void print_s(char * a){
+    printf("output:%s\n",a);
+}
+
 
 void print_float(float a){
     printf("output:%f\n",a);

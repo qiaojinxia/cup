@@ -50,11 +50,14 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         }
         case TokenKind::LBrace:
         {
+            Lex.BeginPeekToken();
             Lex.GetNextToken();
             if (Lex.CurrentToken ->Kind == TokenKind::Num){
                 auto initValues  = ParseInitListExpr();
                 node = initValues;
                 Scope::GetInstance() -> PutToConstantTable(initValues);
+            }else{
+                Lex.EndPeekToken();
             }
         }
             break;
@@ -91,6 +94,17 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
            Scope::GetInstance() -> PutToConstantTable(constNode);
            break;
        }
+        case TokenKind::String:
+        {
+            auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
+            constNode -> Value = Lex.CurrentToken -> Value;
+            constNode -> Type = Type::StringType;
+            constNode -> Size = Lex.CurrentToken->Content.size();
+            Lex.GetNextToken();
+            node =  constNode;
+            Scope::GetInstance() -> PutToConstantTable(constNode);
+            break;
+        }
        case TokenKind::FloatNum:
         {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
@@ -742,7 +756,7 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
     return nullptr;
 }
 
-// (init1,",")*
+// "{" (init1,",")* "}"
 std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
     std::shared_ptr<ConstantNode> cursor = std::make_shared<ConstantNode>(nullptr) ;
     std::shared_ptr<ConstantNode> root = cursor;
@@ -755,12 +769,12 @@ std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
         if (Lex.CurrentToken ->Kind == TokenKind::LBrace){
             Lex.GetNextToken();
             cursor -> Sub = ParseInitListExpr();
-            Lex.ExceptToken(TokenKind::RBrace);
         }else{
             cursor -> Token = token;
+            Lex.SkipToken(TokenKind::Comma);
         }
-        Lex.SkipToken(TokenKind::Comma);
     }while(Lex.CurrentToken->Kind == TokenKind::Num || Lex.CurrentToken->Kind == TokenKind::LBrace);
+    Lex.ExceptToken(TokenKind::RBrace);
     return root;
 }
 

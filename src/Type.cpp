@@ -20,7 +20,7 @@ std::shared_ptr<BuildInType> Type::ULongType = std::make_shared<BuildInType>(Bui
 std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 ,"f32");
 std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(BuildInType::Kind::Double,8,8 ,"f64");
 std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(ULongType);
-
+std::shared_ptr<PointerType> Type::StringType = std::make_shared<PointerType>(CharType);
 
 bool Type::IsIntegerNum() const {
     if (TypeC == TypeClass::BInType){
@@ -105,6 +105,14 @@ bool Type::IsCharType() const {
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Char;
+    }
+    return false;
+}
+
+bool Type::IsStringType() const {
+    if (TypeC == TypeClass::PtrType){
+        auto base_type = dynamic_cast<const PointerType *>(this);
+        return  base_type ->Base ->IsCharType() ;
     }
     return false;
 }

@@ -257,7 +257,7 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
         return;
     }else if (node ->isInStack){
         std::string constName = std::string(node->Name);
-        printf("\t  lea %s(%%rip),%%rsi     #Constant %s\n",constName.data(),constName.data());
+        printf("\t  lea %s(%%rip),%%rax     #Constant %s\n",constName.data(),constName.data());
         return;
     }
     printf("\t  mov $%lu, %%rax   #Constant %lu\n",node->Value,node->Value);
@@ -280,9 +280,12 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
     }
 }
 
-void printConstant(int size, bool isFloat,std::shared_ptr<Token> token)
+void printConstant(int size, bool isFloat,bool isString,std::shared_ptr<Token> token)
 {
-    if (isFloat){
+    if (isString){
+        auto s_string =  std::string(token->Content).c_str();
+        printf("\t.string  %s\n", s_string);
+    }else if (isFloat){
         if (size == 4 ) {
                 auto s_num = std::string(token->Content).c_str();
                 float d_num = atof(s_num);
@@ -311,6 +314,7 @@ void printConstant(int size, bool isFloat,std::shared_ptr<Token> token)
 void ParseInit(std::shared_ptr<ConstantNode> node){
     int size = 0 ;
     bool isFloat = false;
+    bool isString = false;
     int align = 0;
     int offset = 0;
     while (node) {
@@ -318,6 +322,7 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
         node ->isInStack = true;
         isFloat = node ->Type->IsFloatNum();
         size = node ->Type ->Size;
+        isString = node -> Type -> IsStringType();
         offset += node ->Type ->Size;
         int gap = AlignTo(offset,node->Type->Align) -offset;
         offset += gap;
@@ -326,7 +331,7 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
         if (node -> Sub){
             ParseInit(node ->Sub);
         }else{
-            printConstant(size,isFloat ,node ->Token);
+            printConstant(size,isFloat , isString,node ->Token);
         }
         node = node ->Next;
     }
@@ -334,7 +339,7 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
 
 void CodeGenerate::Visitor(ProgramNode *node) {
     for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
-        if (v .second ->Next == nullptr && !v .second ->Type->IsFloatNum()){
+        if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
             continue;
         }
         printf("%s:\n", v .second -> Name.data());
@@ -484,7 +489,9 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
     }
     for (int i = node-> Args.size() -1; i >= 0; --i) {
         if (node->Args[i]->Type->IsFloatNum()){}
-        else{
+        else if (node->Args[i]->Type->IsPointerType() || node->Args[i]->Type->IsStructType() || node->Args[i]->Type->IsArrayType()){
+            Pop(node ->Args[i]->Type, Regx64[4][i]);
+        }else{
             Pop(node ->Args[i]->Type, Regx64[node ->Args[i]->Type->GetBaseType()->Size/2][i]);
             //todo push float to stack
         }
@@ -562,7 +569,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
 }
 
 void CodeGenerate::Visitor(SizeOfExprNode *node) {
-    printf("\t  mov $%d,%s\n",node -> Lhs -> Type -> GetBaseType() -> Size, GetRax(node ->Type).data());
+    printf("\t  mov $%d,%%rax\n",node -> Lhs -> Type  -> Size);
 }
 
 void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
@@ -606,14 +613,26 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         type = castNode ->CstNode ->Type;
     }
     if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(node)){
-        if (constNode ->isInStack){
+        //if arry or struct field total size <= 48 generate code to set init value  else store the
+        // init value  and copy memory to stack
+        if (constNode ->Type ->IsPointerType()){
+            printf("\t  mov %%rax,(%%rdi)\n");
+            return;
+        }if (constNode -> Size <= 48 && !constNode ->Type -> IsStringType()){
+            auto offset = 0;
+            auto cursor = constNode;
+            while(cursor){
+                printf("\t  %s  $%ld,%d(%%rdi)\n", GetMoveCode2(cursor->Type).data(), cursor->GetValue(),cursor -> Offset);
+                cursor = cursor->Next;
+            }
+            return;
+        }else if (constNode ->isInStack){
             printf("\t  mov $%d,%%rcx\n",constNode->Size);
             printf("\t  call _mempcy\n");
             return;
         }
     }else if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(node)){
         if (type -> IsStructType() || type -> IsArrayType()){
-            printf("\t  mov %%rax,%%rsi\n");
             printf("\t  mov $%d,%%rcx\n",exprNode ->Type ->Size);
             printf("\t  call _mempcy\n");
             return;
@@ -720,6 +739,27 @@ const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
     assert(0);
 }
 
+const std::string CodeGenerate::GetMoveCode2(std::shared_ptr<Type>  type) {
+    if (type->IsFloatNum()){
+        if (type -> Size == 4){
+            return "movss";
+        }else if (type -> Size == 8){
+            return "movsd";
+        }
+    }else if (type->IsIntegerNum()){
+        if (type -> Size == 1){
+            return "movb";
+        }else if (type -> Size == 2){
+            return "movs";
+        }else if (type -> Size == 4){
+            return "movl";
+        }else if (type -> Size == 8){
+            return "movq";
+        }
+    }
+    assert(0);
+}
+
 void CodeGenerate::Visitor(CastNode *node) {
     node->CstNode->Accept(this);
     if (node ->Type == node ->CstNode ->Type || node ->Type ->Alias == node -> CstNode ->Type ->Alias ){
@@ -779,15 +819,23 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
 
 void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
     printf("\t  mov(%%rsp),%s           #Pop %s\n",GetRax(ty).data(),GetRax(ty).data());
-    printf("\t  add $%d, %%rsp\n",ty->Size);
     StackLevel --;
+    if (ty->IsStructType() || ty ->IsArrayType() || ty -> IsPointerType()){
+        printf("\t  add $%d, %%rsp\n",Type::VoidType->Size);
+        return;
+    }
+    printf("\t  add $%d, %%rsp\n",ty->Size);
 }
 
 
 void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
     printf("\t  mov(%%rsp),%s           #Pop %s\n",std::string(reg).data(),std::string(reg).data());
-    printf("\t  add $%d, %%rsp\n",ty->Size);
     StackLevel --;
+    if (ty->IsStructType() || ty ->IsArrayType() || ty -> IsPointerType()){
+        printf("\t  add $%d, %%rsp\n",Type::VoidType->Size);
+        return;
+    }
+    printf("\t  add $%d, %%rsp\n",ty->Size);
 }
 
 const std::string CodeGenerate::GetRax(std::shared_ptr<Type> type) {

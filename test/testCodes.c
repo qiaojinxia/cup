@@ -56,15 +56,15 @@ int testCode(){
 //    assert_f(1.0,({float num = 2.0; float num1 = 1.0;num - num1;}));
 //    assert_f(2.469134,({float num = 1.234567;float num1 = 2.0;num * num1;}));
 //    assert_f( 1.117284,({float num = 1.234567;float num1 = 2.0;num / num1 + 0.5;}));
-//    assert_f(0.617284,({float num = 2.234567;float num1 = 2.0;num + num1;}));
-//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 + num2;}));
-//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 - num2;}));
-//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 * num2;}));
-//    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 / num2;}));
-//    print_float(({float num1 = 2.0; 2.0 + 1.344 + 2.0004 / 2.9393 + 2323.0 * 4.2 / 1.0 * 3.0;}));
-//    print_float(({3.0 *2.0 + 4.0 / 2.0+ 4.0 / 2.0+ 4.0 / 2.0+ 4.0 / 2.0+ 4.0 / 2.0/ 2.0+ 4.0 / 2.0+ 4.0 / 2.0 + 4.0 / 2.0+ 4.0 / 2.0;}));
-//    print_lfloat(({float a = 1.0; double b = 2.0; a + b;}));
-//    assert(1,({long num = 4;long num1 = 2;(num + 3) % (1 + 1);}));
+    assert_f(0.617284,({float num = 2.234567;float num1 = 2.0;num + num1;}));
+    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 + num2;}));
+    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 - num2;}));
+    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 * num2;}));
+    print_lfloat(({double num1 = 2.0;double num2 = 1.4; num1 / num2;}));
+    print_float(({float num1 = 2.0; 2.0 + 1.344 + 2.0004 / 2.9393 + 2323.0 * 4.2 / 1.0 * 3.0;}));
+    print_float(({3.0 *2.0 + 4.0 / 2.0+ 4.0 / 2.0+ 4.0 / 2.0+ 4.0 / 2.0+ 4.0 / 2.0/ 2.0+ 4.0 / 2.0+ 4.0 / 2.0 + 4.0 / 2.0+ 4.0 / 2.0;}));
+    print_lfloat(({float a = 1.0; double b = 2.0; a + b;}));
+    assert(1,({long num = 4;long num1 = 2;(num + 3) % (1 + 1);}));
 //    assert(2,({long num = 4;long num1 = 2;(num + 3) & (1 + 1);}));
 //    assert(111,({long num = 101;long num1 = 10;  num | num1;}));
 //    assert(15,({7 + 8 | 10 * 3 / 2 & 1 | 3;}));
@@ -113,6 +113,10 @@ int testStruct(){
         int   book_id;
         int * a[4];
     } book = {7, 2, 97, 32,{0x0001,0b111,3434,123}};
+    int  a[3] = {1,2,3};
+    assert(3,a[2]);
+
+
     struct Books a;
     a = book;
     a.price = 22;
@@ -121,6 +125,11 @@ int testStruct(){
     float total = (float)bk->price + (float)book.price;
     assert_char(97,a.index);
     assert_f(24.0,total);
+    char * x = "hello,world";
+    print_s(x);
+    memset(book,0x1,sizeof book);
+    assert_char(1,book.index);
+
 //    assert_char(97,book.c);
 //    assert(32,book.book_id);
 

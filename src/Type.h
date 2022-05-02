@@ -15,7 +15,6 @@ namespace BDD{
     class PointerType;
     class ArrayType;
     class RecordType;
-
     class Type {
     public:
         static std::shared_ptr<BuildInType> VoidType;
@@ -30,6 +29,7 @@ namespace BDD{
         static std::shared_ptr<BuildInType> ULongType;
         static std::shared_ptr<BuildInType> FloatType;
         static std::shared_ptr<BuildInType> DoubleType;
+        static std::shared_ptr<PointerType> StringType;
         enum class TypeClass{
             BInType,
             PtrType,
@@ -59,7 +59,7 @@ namespace BDD{
         bool IsDoubleType() const;
         bool IsStructType() const;
         bool IsUnionType() const;
-
+        bool IsStringType() const;
         bool IsLongType() const;
 
         bool IsUnsignedNum() const;

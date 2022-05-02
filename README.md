@@ -82,3 +82,5 @@ a toy c compailer
     - optimization code and add struct init case `struct aa {int a;} xx = { a:3};`
 - 2022-4-29 ～ 5-1
     - support memorycopy struct  from heap  to  stack ,Complete struct pointer -> visiter member support struct pointer case:`struct Books *bk = &a;`
+- 2022-5-2
+    - support string  case:`string a = "232434";`
