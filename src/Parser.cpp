@@ -151,6 +151,7 @@ std::shared_ptr<ProgramNode> Parser::Parse() {
     return node;
 }
 
+
 std::shared_ptr<AstNode> Parser::ParseStatement() {
     if (Lex.CurrentToken -> Kind == TokenKind::If){
         auto node = std::make_shared<IfStmtNode>();
@@ -229,6 +230,19 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         auto node = std::make_shared<ContinueStmtNode>();
         Lex.ExceptToken(TokenKind::Semicolon);
         return node;
+    }else if (Lex.CurrentToken -> Kind == TokenKind::TypeDef){
+        //"typedef" ("char" | "short" | "int" | "long" | "float" | "double" | "struct{" (field1,)+ "}")+ aliasName
+        Lex.GetNextToken();
+        auto tokens = std::list<std::shared_ptr<Token>>();
+        auto type = ParseDeclarator(ParseDeclarationSpec(0),&tokens);
+        if(Scope::GetInstance() -> FindTag( Lex.CurrentToken->Content)){
+            DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"typedef repeated!");
+        }
+        for (auto token:tokens) {
+            auto newType = std::make_shared<AliasType>(type,token);
+            Scope::GetInstance() ->PushTag(token->Content,newType);
+        }
+        return std::make_shared<EmptyNode>();
     }
     auto node = std::make_shared<ExprStmtNode>();
     if (Lex.CurrentToken -> Kind != TokenKind::Semicolon)
@@ -350,6 +364,11 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             baseType |= (int) BuildInType::Kind::UnSigned;
             continue;
         }else{
+            auto type = Scope::GetInstance() -> FindTag(Lex.CurrentToken ->Content);
+            if (type){
+                Lex.GetNextToken();
+                return type;
+            }
             break;
         }
     }
@@ -696,6 +715,9 @@ const bool Parser::IsTypeName() {
         || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED){
         return true;
     }
+    if(Scope::GetInstance() -> FindTagInCurrentScope(Lex.CurrentToken->Content)){
+        return true;
+    }
     return false;
 }
 
@@ -720,7 +742,7 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
 
 //ParseDeclarationExpr
 std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
-    if (IsTypeName()){
+     if (IsTypeName()){
         std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
         auto tokens = std::list<std::shared_ptr<Token>>();
         auto type = ParseDeclarator(ParseDeclarationSpec(0),&tokens);
@@ -777,4 +799,5 @@ std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
     Lex.ExceptToken(TokenKind::RBrace);
     return root;
 }
+
 

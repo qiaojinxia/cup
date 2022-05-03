@@ -6,9 +6,9 @@
 static int codeId = 0;
 void assert(int  excepted,int actual){
     if(excepted == actual){
-        printf("code(%d) => %d\n",codeId ++ ,actual);
+        printf("code test pass (%d) => %d\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %d,but got %d\n",codeId++,excepted,actual);
+        printf("code test pass (%d) expected %d,but got %d\n",codeId++,excepted,actual);
         exit(-1);
     }
 }
@@ -16,9 +16,9 @@ void assert(int  excepted,int actual){
 
 void assert_u(long  excepted, long actual){
     if(excepted == actual){
-        printf("code(%d) => %lu\n",codeId ++ ,actual);
+        printf("code test pass (%d) => %lu\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %ld,but got %lu\n",codeId++,excepted,actual);
+        printf("code test pass (%d) expected %ld,but got %lu\n",codeId++,excepted,actual);
         exit(-1);
     }
 }
@@ -26,18 +26,18 @@ void assert_u(long  excepted, long actual){
 
 void assert_f(float  excepted,float actual){
     if(excepted  - actual <= 0.000001 ){
-        printf("code(%d) => %f\n",codeId ++ ,actual);
+        printf("code test pass (%d) => %f\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %f,but got %f\n",codeId++,excepted,actual);
+        printf("code test pass (%d) expected %f,but got %f\n",codeId++,excepted,actual);
         exit(-1);
     }
 }
 
 void assert_char(char  excepted,char actual){
     if(excepted  == actual ){
-        printf("code(%d) => %d\n",codeId ++ ,actual);
+        printf("code test pass (%d) => %d\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %c,but got %d\n",codeId++,excepted,actual);
+        printf("code test pass (%d) expected %c,but got %d\n",codeId++,excepted,actual);
         exit(-1);
     }
 }
@@ -45,9 +45,9 @@ void assert_char(char  excepted,char actual){
 
 void assert_fd(float  excepted,double actual){
     if(excepted  - actual <= 0.000001 &&  excepted  - actual >=  -0.000001){
-        printf("code(%d) => %lf\n",codeId ++ ,actual);
+        printf("code test pass (%d) => %lf\n",codeId ++ ,actual);
     }else{
-        printf("code(%d) expected %lf,but got %lf\n",codeId++,excepted,actual);
+        printf("code test pass (%d) expected %lf,but got %lf\n",codeId++,excepted,actual);
         exit(-1);
     }
 }

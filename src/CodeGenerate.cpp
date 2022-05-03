@@ -983,3 +983,7 @@ const std::string CodeGenerate::GetRdi(std::shared_ptr<Type> type) {
         assert(0);
     }
 }
+
+void CodeGenerate::Visitor(EmptyNode *node) {
+    //do nothing
+}

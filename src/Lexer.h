@@ -47,6 +47,7 @@ namespace BDD{
         Double,
         Struct,
         Union,
+        TypeDef,
         Return,
         Comma,
         Identifier,

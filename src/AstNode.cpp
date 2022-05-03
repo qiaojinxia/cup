@@ -133,3 +133,7 @@ void CastNode::Accept(AstVisitor *visitor) {
 void ArefNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void EmptyNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

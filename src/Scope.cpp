@@ -45,7 +45,6 @@ std::shared_ptr<Type> Scope::FindTag(std::string_view tagName) {
             return tagNode -> second;
         }
     }
-    printf("undefined variable %s",tagName.data());
     return nullptr;
 }
 

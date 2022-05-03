@@ -15,6 +15,7 @@ namespace BDD{
     class PointerType;
     class ArrayType;
     class RecordType;
+    class AliasType;
     class Type {
     public:
         static std::shared_ptr<BuildInType> VoidType;
@@ -36,6 +37,7 @@ namespace BDD{
             FuncType,
             AryType,
             RecordType,
+            AliasType,
         };
         int Size;
         int Align;
@@ -154,6 +156,14 @@ namespace BDD{
         RecordType() : Type(TypeClass::RecordType,1,1,"u64"){}
 
         std::shared_ptr<Type> GetBaseType();
+    };
+
+    struct AliasType : public  Type{
+    public:
+        std::shared_ptr<Type> Base;
+        std::shared_ptr<Token> token;
+        std::shared_ptr<Type> GetBaseType();
+        AliasType(std::shared_ptr<Type> typ,std::shared_ptr<Token> tk) : Type(TypeClass::AliasType,typ ->Size,typ->Align,typ->Alias) ,Base(typ),token(tk){}
     };
 }
 

@@ -61,6 +61,7 @@ namespace BDD{
         void Visitor(BreakStmtNode *node) override;
         void Visitor(ContinueStmtNode *node) override;
         void Visitor(ArefNode *node) override;
+        void Visitor(EmptyNode *node) override;
 
         void PushBreak(std::string_view label);
         void PopBreak();

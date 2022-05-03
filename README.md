@@ -84,3 +84,5 @@ a toy c compailer
     - support memorycopy struct  from heap  to  stack ,Complete struct pointer -> visiter member support struct pointer case:`struct Books *bk = &a;`
 - 2022-5-2
     - support string  case:`string a = "232434";`
+- 2022-5-3
+  - support typedef case:`typedef int caomao;caomao a = 0;caomao b = 1; caomao c = a + b;`

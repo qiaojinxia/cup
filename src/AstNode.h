@@ -268,6 +268,11 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    //when parse no effect statement return empty node such as: typedef
+    class EmptyNode : public AstNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
 
     class AstVisitor{
     public:
@@ -295,6 +300,7 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(BreakStmtNode *node){};
         virtual void Visitor(ContinueStmtNode *node){};
         virtual void Visitor(ArefNode *node){};
+        virtual void Visitor(EmptyNode *node){};
     };
 }
 

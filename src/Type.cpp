@@ -22,7 +22,12 @@ std::shared_ptr<BuildInType> Type::DoubleType = std::make_shared<BuildInType>(Bu
 std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(ULongType);
 std::shared_ptr<PointerType> Type::StringType = std::make_shared<PointerType>(CharType);
 
+
 bool Type::IsIntegerNum() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsIntegerNum();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Int
@@ -34,6 +39,10 @@ bool Type::IsIntegerNum() const {
 }
 
 bool Type::IsUnsignedNum() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsUnsignedNum();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::UChar
@@ -53,10 +62,18 @@ bool Type::IsPointerType() const {
 }
 
 bool Type::IsArrayType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsArrayType();
+    }
     return TypeC == TypeClass::AryType;
 }
 
 bool Type::IsStructType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsStructType();
+    }
     if (TypeC == TypeClass::RecordType){
         auto ry = dynamic_cast<const RecordType *>(this);
         return ry -> Kind  == RecordType::TagKind::Struct;
@@ -64,11 +81,11 @@ bool Type::IsStructType() const {
     return false;
 }
 
-
-
-
-
 bool Type::IsUnionType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsUnionType();
+    }
     if (TypeC == TypeClass::RecordType){
         auto ry = dynamic_cast<const RecordType *>(this);
         return ry -> Kind  == RecordType::TagKind::Union;
@@ -77,6 +94,10 @@ bool Type::IsUnionType() const {
 }
 
 bool Type::IsFloatNum() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsFloatNum();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Float
@@ -86,6 +107,10 @@ bool Type::IsFloatNum() const {
 }
 
 bool Type::IsIntType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsIntType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Int;
@@ -94,6 +119,10 @@ bool Type::IsIntType() const {
 }
 
 bool Type::IsLongType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsLongType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Long;
@@ -102,6 +131,10 @@ bool Type::IsLongType() const {
 }
 
 bool Type::IsCharType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsCharType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Char;
@@ -110,6 +143,10 @@ bool Type::IsCharType() const {
 }
 
 bool Type::IsStringType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsStringType();
+    }
     if (TypeC == TypeClass::PtrType){
         auto base_type = dynamic_cast<const PointerType *>(this);
         return  base_type ->Base ->IsCharType() ;
@@ -118,6 +155,10 @@ bool Type::IsStringType() const {
 }
 
 bool Type::IsShortType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsShortType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Short;
@@ -126,6 +167,10 @@ bool Type::IsShortType() const {
 }
 
 bool Type::IsFloatType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsFloatType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Float;
@@ -134,6 +179,10 @@ bool Type::IsFloatType() const {
 }
 
 bool Type::IsDoubleType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsDoubleType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::Double;
@@ -142,6 +191,10 @@ bool Type::IsDoubleType() const {
 }
 
 bool Type::IsUIntType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsUIntType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::UInt;
@@ -150,6 +203,10 @@ bool Type::IsUIntType() const {
 }
 
 bool Type::IsULongType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsULongType();
+    }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
         return  build_in_type -> GetKind() == BuildInType::Kind::ULong;
@@ -242,4 +299,8 @@ std::shared_ptr<Type> FunctionType::GetBaseType() {
 
 std::shared_ptr<Type> RecordType::GetBaseType() {
     return nullptr;
+}
+
+std::shared_ptr<Type> AliasType::GetBaseType() {
+    return Base;
 }

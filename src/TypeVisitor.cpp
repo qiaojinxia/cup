@@ -451,3 +451,7 @@ void TypeVisitor::Visitor(ArefNode *node) {
     node -> Type  = leftPtrBaseType;
 }
 
+void TypeVisitor::Visitor(EmptyNode *node) {
+    //do nothing
+}
+
