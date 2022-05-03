@@ -52,10 +52,9 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         {
             Lex.BeginPeekToken();
             Lex.GetNextToken();
-            if (Lex.CurrentToken ->Kind == TokenKind::Num){
+            if (Lex.CurrentToken ->Kind == TokenKind::Num || Lex.CurrentToken ->Kind == TokenKind::String){
                 auto initValues  = ParseInitListExpr();
                 node = initValues;
-                Scope::GetInstance() -> PutToConstantTable(initValues);
             }else{
                 Lex.EndPeekToken();
             }
@@ -91,7 +90,6 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
            constNode -> Type = Type::IntType;
            Lex.GetNextToken();
            node =  constNode;
-           Scope::GetInstance() -> PutToConstantTable(constNode);
            break;
        }
         case TokenKind::String:
@@ -99,10 +97,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
             constNode -> Value = Lex.CurrentToken -> Value;
             constNode -> Type = Type::StringType;
-            constNode -> Size = Lex.CurrentToken->Content.size();
             Lex.GetNextToken();
             node =  constNode;
-            Scope::GetInstance() -> PutToConstantTable(constNode);
             break;
         }
        case TokenKind::FloatNum:
@@ -112,7 +108,6 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             constNode -> Type = Type::FloatType;
             Lex.GetNextToken();
             node =  constNode;
-            Scope::GetInstance() -> PutToConstantTable(constNode);
             break;
         }
         case TokenKind::SizeOf:
@@ -511,6 +506,9 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
 //ParsePostFixExpr ::= ParsePrimaryExpr ("++" | "--" ｜ "->" ident | "." ident ｜ "[" ParseExpr "]" )*
 std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
     auto left = ParsePrimaryExpr();
+    if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(left)){
+        Scope::GetInstance() -> PutToConstantTable(constNode);
+    }
     while (true){
         if (Lex.CurrentToken -> Kind == TokenKind::LParent){
             return ParseFuncCallNode();
@@ -782,20 +780,19 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
 std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
     std::shared_ptr<ConstantNode> cursor = std::make_shared<ConstantNode>(nullptr) ;
     std::shared_ptr<ConstantNode> root = cursor;
+    root ->isRoot = true;
     do {
-        if (cursor ->Token){
-            cursor ->Next = std::make_shared<ConstantNode>(nullptr);
-            cursor = cursor -> Next;
+        if (Lex.CurrentToken->Kind == TokenKind::Comma){
+            Lex.GetNextToken();
         }
-        auto token = Lex.CurrentToken;
         if (Lex.CurrentToken ->Kind == TokenKind::LBrace){
             Lex.GetNextToken();
             cursor -> Sub = ParseInitListExpr();
         }else{
-            cursor -> Token = token;
-            Lex.SkipToken(TokenKind::Comma);
+            cursor->Next  = std::dynamic_pointer_cast<ConstantNode>(ParsePrimaryExpr());
+            cursor = cursor -> Next;
         }
-    }while(Lex.CurrentToken->Kind == TokenKind::Num || Lex.CurrentToken->Kind == TokenKind::LBrace);
+    }while(Lex.CurrentToken->Kind == TokenKind::Comma);
     Lex.ExceptToken(TokenKind::RBrace);
     return root;
 }

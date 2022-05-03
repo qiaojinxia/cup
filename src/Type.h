@@ -71,6 +71,7 @@ namespace BDD{
         bool IsULongType() const;
 
 
+        bool IsAliasType() const;
     };
 
 

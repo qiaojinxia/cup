@@ -41,6 +41,9 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             }
             //to set the assign expr lhs node and rhs node with same type
             CurAssignType = node->Lhs->Type;
+            if (CurAssignType ->IsAliasType()){
+                CurAssignType = std::dynamic_pointer_cast<AliasType>(CurAssignType)->Base;
+            }
             node ->Rhs ->Accept(this);
             CurAssignType = nullptr;
             break;
@@ -278,7 +281,10 @@ void TypeVisitor::Visitor(BinaryNode *node) {
 void TypeVisitor::Visitor(ConstantNode *node) {
     auto cursor = node;
     if (CurAssignType){
-        node-> Size = CurAssignType ->Size;
+        if (node->isRoot){
+            node ->Type = CurAssignType;
+            cursor = cursor->Next.get();
+        }
         if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
             for (auto &filed:structType->fields) {
                 cursor -> Offset = filed ->Offset;
@@ -297,7 +303,6 @@ void TypeVisitor::Visitor(ConstantNode *node) {
             return;
         }else if(auto arrType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
             int offset = 0;
-            node-> Size = CurAssignType ->Size;
             while (cursor) {
                 cursor -> Offset = offset;
                 offset += arrType->ElementType->Size;
@@ -427,7 +432,7 @@ void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
 
 void TypeVisitor::Visitor(MemberAccessNode *node) {
     node ->Lhs -> Accept(this);
-    auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs  ->Type);
+    auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs  ->Type->GetBaseType());
     auto field = record ->GetField(node ->fieldName);
     node ->Type = field ->type;
 }

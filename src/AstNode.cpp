@@ -3,6 +3,7 @@
 //
 
 #include "AstNode.h"
+#include "Common.h"
 
 using namespace BDD;
 
@@ -15,32 +16,36 @@ void ConstantNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
 
-unsigned long ConstantNode::GetValue() {
+
+std::string ConstantNode::GetValue() {
     auto s_num = std::string(Token->Content).c_str();
+    if (is_contains_str(std::string(Token->Content),"0x")){
+        return s_num;
+    }
     if (this->Type->Alias == Type::CharType->Alias){
-        return (char)atoi(s_num);
+        return string_format("%d",(char)atoi(s_num));
     }else if(this->Type->Alias == Type::UCharType->Alias){
-        return (unsigned char)atoi(s_num);
+        return string_format("%u",(unsigned char)atoi(s_num));
     }else if(this->Type->Alias == Type::ShortType->Alias){
-        return (short)atoi(s_num);
+        return string_format("%d",(short)atoi(s_num));
     }else if(this->Type->Alias == Type::UShortType->Alias){
-        return (unsigned short)atoi(s_num);
+        return string_format("%u",(unsigned short)atoi(s_num));
     }else if(this->Type->Alias == Type::IntType->Alias){
-        return atoi(s_num);
+        return string_format("%d",(int)atoi(s_num));
     }else if(this->Type->Alias == Type::UIntType->Alias){
-        return (unsigned int)atoi(s_num);
+        return string_format("%u",(unsigned int)atoi(s_num));
     }else if(this->Type->Alias == Type::LongType->Alias){
-        return atol(s_num);
+        return string_format("%ld",atol(s_num));
     }else if(this->Type->Alias == Type::ULongType->Alias){
-        return (unsigned long )atol(s_num);
+        return  string_format("%lu",(unsigned long ) atol(s_num));
     }else if(this->Type->Alias == Type::FloatType->Alias){
         float d_num = atof(s_num);
         int *lp_num = (int *) &d_num;
-        return *lp_num;
+        return string_format("%lu",(unsigned long ) *lp_num); ;
     }else if(this->Type->Alias == Type::DoubleType->Alias){
         double d_num = atof(s_num);
         long *lp_num = (long *) &d_num;
-        return *lp_num;
+        return string_format("%lu",(unsigned long ) *lp_num);
     }
     return 0;
 }

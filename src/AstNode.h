@@ -132,12 +132,11 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<ConstantNode> Next;
         std::shared_ptr<ConstantNode> Sub;
         std::string Name;
-        int Size;
-        bool isInStack;
+        bool isRoot;
         int Offset;
         std::shared_ptr<Token> Token;
         unsigned long Value;
-        unsigned long GetValue();
+        std::string GetValue();
         void Accept(AstVisitor *visitor) override;
     };
 

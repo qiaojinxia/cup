@@ -100,11 +100,38 @@ int testCode(){
 //    assert_u((unsigned long)1,({  unsigned long  a = 18446744073709551615; int b = 2; a % b;}));
 //    assert_u(( long)-1,({ long  a = -123123232323; int b = 2; a % b;}));
 //    assert(0,({ long a = -123213213213; int b = 3; a % b;}));
-    testStruct();
+//    testStruct();
+    testTypeDef();
     return 0;
 }
 
-int testStruct(){
+int testTypeDef(){
+    typedef  float caomaofloat;
+    int x = 3.0;
+    int y = 4.0;
+    int z = x + y;
+    assert(7,z);
+    typedef struct User
+    {
+        char *  name;
+        int  age;
+        int  sex;
+        int height;
+        int width;
+    } user ;
+
+    user a = {
+            "caomaoboy",
+            10,
+            1,
+            190,
+            140
+    };
+    assert(140,({a.width;}));
+    print_s(a.name);
+}
+
+//int testStruct(){
 //    struct Books
 //    {
 //        unsigned long  name;
@@ -128,13 +155,5 @@ int testStruct(){
 //    print_s(x);
 //    memset(book,0x1,sizeof book);
 //    assert_char(1,book.index);
-    typedef  float caomaofloat;
-    caomaofloat x = 3.0;
-    caomaofloat y = 4.0;
-    caomaofloat z = x + y;
-    assert_f(7.0,z);
-//    assert_char(97,book.c);
-//    assert(32,book.book_id);
-
-}
+//}
 

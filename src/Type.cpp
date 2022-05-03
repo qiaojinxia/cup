@@ -214,6 +214,10 @@ bool Type::IsULongType() const {
     return false;
 }
 
+bool Type::IsAliasType() const {
+    return TypeC == TypeClass::AliasType;
+}
+
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
     for(auto &field:fields){
@@ -298,7 +302,10 @@ std::shared_ptr<Type> FunctionType::GetBaseType() {
 }
 
 std::shared_ptr<Type> RecordType::GetBaseType() {
-    return nullptr;
+    auto recorderType = std::make_shared<RecordType>();
+    recorderType ->fields = this ->fields;
+    recorderType ->Kind = this ->Kind;
+    return recorderType;
 }
 
 std::shared_ptr<Type> AliasType::GetBaseType() {
