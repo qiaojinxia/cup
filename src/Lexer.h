@@ -51,7 +51,7 @@ namespace BDD{
         Return,
         Comma,
         Identifier,
-        String,//todo改名
+        String,
         Assign,
         Amp,
         VerticalBar,

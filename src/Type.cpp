@@ -57,7 +57,24 @@ bool Type::IsFunctionType() const {
     return TypeC == TypeClass::FuncType;
 }
 
+bool Type::IsStringType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsStringType();
+    }
+    if (TypeC == TypeClass::AryType){
+        auto array_type = dynamic_cast<const ArrayType *>(this);
+        return  array_type -> ElementType -> IsCharType();
+    }
+    return false;
+}
+
+
 bool Type::IsPointerType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsPointerType();
+    }
     return TypeC == TypeClass::PtrType;
 }
 
@@ -142,10 +159,10 @@ bool Type::IsCharType() const {
     return false;
 }
 
-bool Type::IsStringType() const {
+bool Type::IsPtrCharType() const {
     if (TypeC == TypeClass::AliasType){
         auto alias_type = dynamic_cast<const AliasType *>(this);
-        return alias_type ->Base->IsStringType();
+        return alias_type->Base->IsPtrCharType();
     }
     if (TypeC == TypeClass::PtrType){
         auto base_type = dynamic_cast<const PointerType *>(this);
@@ -153,6 +170,8 @@ bool Type::IsStringType() const {
     }
     return false;
 }
+
+
 
 bool Type::IsShortType() const {
     if (TypeC == TypeClass::AliasType){

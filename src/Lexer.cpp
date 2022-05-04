@@ -186,7 +186,6 @@ void BDD::Lexer::GetNextToken() {
             GetNextChar();
         }
         GetNextChar();
-        std::string_view content = SourceCode.substr(startPos,Cursor - 1 - startPos);
         kind = TokenKind::String;
 
     }else{

@@ -66,7 +66,7 @@ long BDD::hexToDec(std::basic_string_view<char> content, int length){
 long BDD::binToDec(std::basic_string_view<char> content, int length){
     unsigned long result = 0;
     for (int i = 0; i < length; i++) {
-        result += content[i] - '0' << (length - i -1);
+        result += (content[i] - '0') << (length - i -1);
     }
     return result;
 }
@@ -97,4 +97,31 @@ bool BDD::is_contains_str(std::string str,std::string contains_str) {
         return true;
     }
     return false;
+}
+
+
+BDD::IteratorNode BDD::Str2IntArrayIterator::next() {
+    auto maxSize =  Cursor + 8;
+    if (maxSize > Content.size()){
+        maxSize =  Content.size()  ;
+    }
+    auto numSize = maxSize - Cursor  ;
+    int zero = 0;
+    if(numSize > 4){
+        zero = 8 - numSize;
+    }else if(numSize > 2){
+        zero = 4 - numSize ;
+    }
+
+    auto curVal = std::string(Content.substr(Cursor,maxSize));
+    unsigned long strValue = 0;
+    for (int i = 0; i < curVal.size(); i++) {
+        strValue += (unsigned long)curVal[curVal.size()-i-1] << ( 8 * (curVal.size() - i -1));
+    }
+    Cursor += maxSize;
+    return BDD::IteratorNode(strValue, numSize + zero);
+}
+
+bool BDD::Str2IntArrayIterator::has_next() {
+    return Cursor < Content.size() ;
 }

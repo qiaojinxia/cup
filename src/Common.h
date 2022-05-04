@@ -6,6 +6,24 @@
 #define BODDY_COMMON_H
 
 namespace BDD{
+    class IteratorNode{
+    public:
+        unsigned long Value;
+        int Size;
+        IteratorNode(unsigned long v,int s):Value(v),Size(s){};
+    };
+    class Str2IntArrayIterator{
+    private:
+        int Cursor = {0};
+        std::string_view Content;
+    public:
+        Str2IntArrayIterator(std::string_view content):Content(content){
+            Content = Content.substr(1,content.size()-2);
+        };
+        IteratorNode next();
+        bool has_next();
+    };
+
     std::string string_format(const char* fmt, ...);
     std::string convert_to_hex(long num);
     char hexToDec(char hex);

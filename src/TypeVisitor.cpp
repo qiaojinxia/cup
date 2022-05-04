@@ -302,6 +302,9 @@ void TypeVisitor::Visitor(ConstantNode *node) {
             }
             return;
         }else if(auto arrType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
+            if (arrType ->IsStringType()){
+                cursor = cursor->Next.get();
+            }
             int offset = 0;
             while (cursor) {
                 cursor -> Offset = offset;

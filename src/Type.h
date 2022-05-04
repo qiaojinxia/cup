@@ -61,9 +61,9 @@ namespace BDD{
         bool IsDoubleType() const;
         bool IsStructType() const;
         bool IsUnionType() const;
-        bool IsStringType() const;
+        bool IsPtrCharType() const;
         bool IsLongType() const;
-
+        bool IsStringType() const;
         bool IsUnsignedNum() const;
 
         bool IsUIntType() const;

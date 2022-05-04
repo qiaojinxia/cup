@@ -100,6 +100,7 @@ namespace BDD{
 
         void Load(std::shared_ptr<Type> type);
 
+        const std::string GetMoveCode(int size);
     };
 }
 

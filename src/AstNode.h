@@ -133,6 +133,7 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<ConstantNode> Sub;
         std::string Name;
         bool isRoot;
+        bool isStore;
         int Offset;
         std::shared_ptr<Token> Token;
         unsigned long Value;

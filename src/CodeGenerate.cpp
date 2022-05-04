@@ -255,16 +255,13 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
         printf("\t  %s %s(%%rip), %s        #FloatConstant %s \n", GetMoveCode(node->Type).data(), node->Name.data(),
                Xmm[Depth++], node->Name.data());
         return;
-    }else if (node ->Type ->IsStructType() || node ->Type ->IsArrayType()){
-        std::string constName = std::string(node->Name);
-        printf("\t  lea %s(%%rip),%%rax     #Constant %s\n",constName.data(),constName.data());
-        return;
-    }else if (node ->Type ->IsStringType()){
+    }else if (node ->isStore || node -> Type ->IsPtrCharType()){
         std::string constName = std::string(node->Name);
         printf("\t  lea %s(%%rip),%%rax     #Constant %s\n",constName.data(),constName.data());
         return;
     }
-    printf("\t  mov $%s, %%rax   #Constant %s\n",node->GetValue().c_str(),node->GetValue().c_str());
+    if (!node -> Type -> IsStringType() && !node -> Type -> IsStructType() && !node -> Type -> IsArrayType())
+        printf("\t  mov $%s, %%rax   #Constant %s\n",node->GetValue().c_str(),node->GetValue().c_str());
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ExprStmtNode *node) {
@@ -320,14 +317,25 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
     bool isFloat = false;
     bool isString = false;
     int offset = 0;
+    bool skip = false;
+    auto root = node;
+    if ( node ->Type  ->IsStringType() || node -> Type -> IsArrayType() || node -> Type -> IsStructType()) {
+        if (node->Type->Size <= 48 ){
+            skip = true;
+        }
+    }
     if (node->isRoot){
         node = node ->Next;
     }
     while (node) {
+        if(!(node -> Type ->IsPtrCharType() || !skip)){
+            node = node ->Next;
+            continue;
+        }
         //single value direct loading mov $num,%rax
         isFloat = node ->Type->IsFloatNum();
         size = node ->Type ->Size;
-        isString = node -> Type -> IsStringType();
+        isString = node->Type->IsPtrCharType();
         offset += node ->Type ->Size;
         int gap = AlignTo(offset,node->Type->Align) - offset;
         offset += gap;
@@ -338,7 +346,9 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
         }else{
             printConstant(size,isFloat , isString,node ->Token);
         }
+        node -> isStore = true;
         node = node ->Next;
+        root ->isStore = true;
     }
 }
 
@@ -347,6 +357,7 @@ void CodeGenerate::Visitor(ProgramNode *node) {
         if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
             continue;
         }
+        //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
         printf("%s:\n", v .second -> Name.data());
         ParseInit(v.second);
     }
@@ -593,10 +604,11 @@ void CodeGenerate::Load(AstNode *node) {
 
 void CodeGenerate::Load(std::shared_ptr<AstNode> node) {
     auto type = node -> Type;
-    if (auto castNode = std::dynamic_pointer_cast<CastNode>(node)){ //int a = 0; in b = 3;(long) a + long(b)  load from memory a is int
-        type = castNode ->CstNode ->Type;
+    auto cursor = node;
+    while (auto castNode = std::dynamic_pointer_cast<CastNode>(cursor)){ //int a = 0; in b = 3;(long) a + long(b)  load from memory a is int
+        cursor = castNode ->CstNode;
     }
-    Load(type);
+    Load(cursor ->Type);
 }
 
 void CodeGenerate::Load(std::shared_ptr<Type> type){
@@ -604,6 +616,7 @@ void CodeGenerate::Load(std::shared_ptr<Type> type){
         printf("\t  %s (%%rax),%s\n", GetMoveCode(type ->GetBaseType()).data(),Xmm[Depth++]);
         return;
     }else if(type -> IsPointerType()){
+        printf("\t  mov (%%rax),%%rax\n");
         return;
     }else{
         printf("\t  mov (%%rax),%s\n", GetRax(type ->GetBaseType()->Size).data());
@@ -619,33 +632,41 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         cursor = castNode ->CstNode;
     }
     if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(cursor)){
-        //if arry or struct field total size <= 48 generate code to set init value  else store the
-        // init value  and copy memory to stack
-        if (constNode->Type -> Size <= 48 ){
-            bool isInStack;
-            if (constNode -> isRoot){
-                constNode = constNode ->Next;
-                isInStack = true;
-            }
-            while(constNode){
-                if (constNode-> Type-> IsPointerType()){
+        if (constNode -> isRoot){
+            constNode = constNode ->Next;
+        }
+        while(constNode){
+            if (constNode -> isStore){
+                if (constNode-> Type-> IsPtrCharType()){
                     printf("\t  mov %%rax,%d(%%rdi)\n",constNode -> Offset);
+                }else{
+                    printf("\t  mov $%d,%%rcx\n",cursor->Type->Size);
+                    printf("\t  call _mempcy\n");
+                    return;
+                }
+            }else{
+                if (constNode-> Type-> IsPointerType()){
+                    assert(0);
                 }else if (constNode-> Type-> IsFloatNum()){
                     printf("\t  %s %s,(%%rdi)\n", GetMoveCode(constNode-> Type).data(),Xmm[Depth-1]);
-                }else if (isInStack){
-                    printf("\t  %s  $%s,%d(%%rdi)\n", GetMoveCode2(constNode->Type).data(), constNode->GetValue().c_str(), constNode -> Offset);
-                }else{
+                }else if(constNode->Type->IsStringType()){
+                    auto iter =  Str2IntArrayIterator(constNode->Token->Content);
+                    auto offset = 0;
+                    while(iter.has_next()){
+                        auto outPutIntNode = iter.next();
+                        printf("\t  %s $%lu,%s\n", GetMoveCode(outPutIntNode.Size).data(),outPutIntNode.Value, GetRax(outPutIntNode.Size).data());
+                        printf("\t  %s %s,%d(%%rdi)\n",  GetMoveCode(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data(), offset);
+                        offset += outPutIntNode .Size;
+                    }
+                }else if (!cursor -> Type -> IsStringType() && !cursor -> Type -> IsStructType() && !cursor -> Type -> IsArrayType()){
                     printf("\t  mov %s,(%%rdi)\n",GetRax(constNode-> Type).data());
+                }else{
+                    printf("\t  %s  $%s,%d(%%rdi)\n", GetMoveCode2(constNode->Type).data(), constNode->GetValue().c_str(), constNode -> Offset);
                 }
-                constNode = constNode->Next;
             }
-            return;
-        }else if (constNode->Type -> Size >= 48){
-            printf("\t  mov $%d,%%rcx\n",constNode->Type->Size);
-            printf("\t  call _mempcy\n");
-            return;
+            constNode = constNode->Next;
         }
-        assert(0);
+        return;
     }else if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(cursor)){
         type = exprNode->Type;
     }else if(auto binaryNode = std::dynamic_pointer_cast<BinaryNode>(cursor)){
@@ -672,7 +693,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
 
 void CodeGenerate::Visitor(MemberAccessNode *node) {
     auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs ->Type ->GetBaseType());
-    node -> Lhs-> Accept(this);
+    GenerateAddress(node->Lhs.get());
     auto field = record -> GetField(node -> fieldName);
     printf("\t  add  $%d,%%rax\n", field ->Offset);
     Load(field ->type);
@@ -713,6 +734,19 @@ std::string_view CodeGenerate::currentContinueTarget() {
     return ContinueStack.back();
 }
 
+const std::string CodeGenerate::GetMoveCode(int size) {
+    if (size == 1){
+        return "movb";
+    }else if (size == 2){
+        return "movw";
+    }else if (size == 4){
+        return "movl";
+    }else if (size  == 8){
+        return "movq";
+    }
+    assert(0);
+}
+
 const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
     if (type->IsFloatNum()){
         if (type -> Size == 4){
@@ -745,7 +779,7 @@ const std::string CodeGenerate::GetMoveCode2(std::shared_ptr<Type>  type) {
         if (type -> Size == 1){
             return "movb";
         }else if (type -> Size == 2){
-            return "movs";
+            return "movw";
         }else if (type -> Size == 4){
             return "movl";
         }else if (type -> Size == 8){
@@ -810,7 +844,7 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     if (ty ->IsAliasType()){
         ty = std::dynamic_pointer_cast<AliasType>(ty)->Base;
     }
-    if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsStringType() ){
+    if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
         size = Type::VoidType->Size;
     }
     printf("\t  sub $%d, %%rsp          #Push %s\n",size,GetRax(ty).data());
