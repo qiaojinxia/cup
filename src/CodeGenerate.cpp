@@ -585,7 +585,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
 }
 
 void CodeGenerate::Visitor(SizeOfExprNode *node) {
-    printf("\t  mov $%d,%%rax\n",node -> Lhs -> Type  -> Size);
+    printf("\t  mov $%d,%%rax   #sizeof %d\n",node -> Lhs -> Type  -> Size,node -> Lhs -> Type  -> Size);
 }
 
 void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
@@ -673,6 +673,8 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         type = binaryNode->Type;
     }else if(auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(cursor)){
         type = unaryNode->Type;
+    }else if(auto funcCallNode = std::dynamic_pointer_cast<FuncCallNode>(cursor)){
+        type = funcCallNode->Type;
     }
     if (type ->  IsStructType() || type ->  IsArrayType()){
         printf("\t  mov $%d,%%rcx\n",type ->Size);

@@ -88,3 +88,5 @@ a toy c compailer
   - support typedef case:`typedef int caomao;caomao a = 0;caomao b = 1; caomao c = a + b;`
 - 2022-5-4
   - support string init case:`char m[30] = "hello,world!";`
+- 2022-5-5
+  - optimization code fix sizeof support (type|expr) | varExpr 

@@ -15,6 +15,7 @@ void TypeVisitor::Visitor(ExprStmtNode *node) {
 }
 
 void TypeVisitor::Visitor(BinaryNode *node) {
+    CurAssignType = nullptr;
     node ->Lhs->Accept(this);
     node ->Rhs ->Accept(this);
     node -> Type =  node -> Lhs -> Type;
@@ -45,7 +46,6 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 CurAssignType = std::dynamic_pointer_cast<AliasType>(CurAssignType)->Base;
             }
             node ->Rhs ->Accept(this);
-            CurAssignType = nullptr;
             break;
         case BinaryOperator::Add:
             if (node -> Lhs -> Type ->IsPointerType() && node->Rhs->Type->IsIntegerNum()){
@@ -377,6 +377,7 @@ void TypeVisitor::Visitor(FunctionNode *node) {
 }
 
 void TypeVisitor::Visitor(FuncCallNode *node) {
+    CurAssignType = nullptr;
     for(auto &arg:node ->Args){
         arg ->Accept(this);
     }

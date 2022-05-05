@@ -111,10 +111,24 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             break;
         }
         case TokenKind::SizeOf:
-        {
+        {   //Accept type or var sizeof(int) |sizeof a
             Lex.GetNextToken();
             auto sizeOfNode = std::make_shared<SizeOfExprNode>();
-            sizeOfNode -> Lhs = ParseCastExpr();
+            if (Lex.CurrentToken ->Kind == TokenKind::LParent){
+                if (IsTypeName()){
+                    Lex.GetNextToken();
+                    auto type = ParseDeclarationSpec(0);
+                    auto emptyNode= std::make_shared<EmptyNode>();
+                    emptyNode ->Type = type;
+                    sizeOfNode -> Lhs = emptyNode;
+                    Lex.ExceptToken(TokenKind::RParent);
+                }else{
+                    sizeOfNode -> Lhs = ParseCastExpr();
+                }
+            }else{
+                sizeOfNode -> Lhs = ParsePrimaryExpr();
+            }
+
             node =  sizeOfNode;
             break;
         }
@@ -288,7 +302,7 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     Lex.ExceptToken(TokenKind::RBrace);
     return node;
 }
-
+//ParseFuncCallNode ::=
 std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
     auto node=std::make_shared<FuncCallNode>();
     node -> FuncName = Lex.CurrentToken -> Content;

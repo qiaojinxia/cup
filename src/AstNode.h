@@ -198,7 +198,6 @@ class BinaryNode :public  AstNode{
     public:
         std::string_view FuncName;
         std::vector<std::shared_ptr<AstNode>> Args;
-
         void Accept(AstVisitor *visitor) override;
     };
 
