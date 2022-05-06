@@ -31,6 +31,7 @@ namespace BDD{
         static std::shared_ptr<BuildInType> FloatType;
         static std::shared_ptr<BuildInType> DoubleType;
         static std::shared_ptr<PointerType> StringType;
+        static std::shared_ptr<BuildInType> BoolType;
         enum class TypeClass{
             BInType,
             PtrType,
@@ -48,7 +49,7 @@ namespace BDD{
         virtual ~Type(){};
         Type(TypeClass tc,int size,int align, const char * alias ) : TypeC(tc) , Size(size),Align(align),Alias(alias){};
         bool IsIntegerNum() const;
-        bool IsFloatNum() const;
+        bool IsFloatPointNum() const;
         virtual std::shared_ptr<Type> GetBaseType(){return nullptr;};
 
         bool IsFunctionType() const;
@@ -56,6 +57,7 @@ namespace BDD{
         bool IsArrayType() const;
         bool IsIntType() const;
         bool IsCharType() const;
+        bool IsBoolType() const;
         bool IsShortType() const;
         bool IsFloatType() const;
         bool IsDoubleType() const;
@@ -79,6 +81,7 @@ namespace BDD{
     public:
         enum  Kind{
             Void = 0x00,
+            Bool = 0x1,
             Char  = 0x2,
             Short = 0x4,
             Int   = 0x6,

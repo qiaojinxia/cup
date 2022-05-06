@@ -90,9 +90,13 @@ namespace BDD{
         Equal,
         NotEqual,
         Greater,
+        FloatGreater,
         GreaterEqual,
+        FloatGreaterEqual,
         Lesser,
+        FloatLesser,
         LesserEqual,
+        FloatLesserEqual,
         Eof,
     };
     static std::map<TokenKind,int> TOpPrecedence = {
@@ -137,6 +141,7 @@ class BinaryNode :public  AstNode{
         int Offset;
         std::shared_ptr<Token> Token;
         unsigned long Value;
+        bool isChange;
         std::string GetValue();
         void Accept(AstVisitor *visitor) override;
     };

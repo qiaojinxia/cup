@@ -90,3 +90,5 @@ a toy c compailer
   - support string init case:`char m[30] = "hello,world!";`
 - 2022-5-5
   - optimization code fix sizeof support (type|expr) | varExpr 
+- 2022-5-6
+    - Support Float compare compare case:`float a =1.0; float b = 2.0; int c = a > b `

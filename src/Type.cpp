@@ -10,6 +10,7 @@ using namespace BDD;
 
 std::shared_ptr<BuildInType> Type::VoidType = std::make_shared<BuildInType>(BuildInType::Kind::Void,8,8 ,"u64");
 std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(BuildInType::Kind::Char,1,1 ,"i8");
+std::shared_ptr<BuildInType> Type::BoolType = std::make_shared<BuildInType>(BuildInType::Kind::Bool,1,1 ,"bool");
 std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(BuildInType::Kind::Short ,2,2 ,"i16");
 std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 ,"i32");
 std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 ,"i64");
@@ -110,10 +111,10 @@ bool Type::IsUnionType() const {
     return false;
 }
 
-bool Type::IsFloatNum() const {
+bool Type::IsFloatPointNum() const {
     if (TypeC == TypeClass::AliasType){
         auto alias_type = dynamic_cast<const AliasType *>(this);
-        return alias_type ->Base->IsFloatNum();
+        return alias_type->Base->IsFloatPointNum();
     }
     if (TypeC == TypeClass::BInType){
         auto build_in_type = dynamic_cast<const BuildInType *>(this);
@@ -237,6 +238,10 @@ bool Type::IsAliasType() const {
     return TypeC == TypeClass::AliasType;
 }
 
+bool Type::IsBoolType() const {
+    return TypeC == TypeClass::BInType;
+}
+
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
     for(auto &field:fields){
@@ -250,6 +255,8 @@ std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
 
 std::shared_ptr<Type> BuildInType::GetBaseType() {
     switch (Knd) {
+        case Kind::Bool:
+            return BoolType;
         case Kind::Char:
             return CharType;
         case Kind::UChar:
@@ -281,6 +288,8 @@ std::shared_ptr<BuildInType> BuildInType::GetBuildInType(BuildInType::Kind kind)
             return VoidType;
         case Char:
             return CharType;
+        case Bool:
+            return BoolType;
         case Short:
             return ShortType;
         case Int:

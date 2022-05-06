@@ -18,6 +18,9 @@ void ConstantNode::Accept(AstVisitor *visitor) {
 
 
 std::string ConstantNode::GetValue() {
+    if (isChange){
+        return std::to_string(Value);
+    }
     auto s_num = std::string(Token->Content).c_str();
     if (is_contains_str(std::string(Token->Content),"0x")){
         return s_num;

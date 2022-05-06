@@ -18,10 +18,55 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     CurAssignType = nullptr;
     node ->Lhs->Accept(this);
     node ->Rhs ->Accept(this);
-    node -> Type =  node -> Lhs -> Type;
+    //if lhs is 4 bytes rhs is 8 bytes convert lhs to 8bytes , always  convert to maxSize bytes size between lhs and rhs
+    auto maxBitSize = node -> Lhs ->Type ->Size;
+    if (node -> Rhs ->Type ->Size > maxBitSize){
+        node->Rhs->Type->IsFloatPointNum();
+    }
+    //if express lhs or rhs is floatType ,convert  express to floatPoint operation
+    bool hasFloatPoint = false;
+    if (node->Lhs->Type->IsFloatPointNum() || node->Rhs->Type->IsFloatPointNum()){
+        hasFloatPoint = true;
+    }
+
+    //if express lhs or rhs is unsigned ,convert express  to unsigned  operation
+    bool hasUnsigned = false;
+    if (node->Lhs->Type->IsUnsignedNum() || node->Rhs->Type->IsUnsignedNum()){
+        hasUnsigned = true;
+    }
+
+    //auto convert if lhs type not equal to rhs type,set type to same
+    if (node -> Lhs ->Type != node ->Rhs ->Type){
+        if (hasFloatPoint){
+            if (!node->Lhs->Type->IsFloatPointNum()){
+                auto castNode = std::make_shared<CastNode>();
+                castNode ->CstNode = node->Lhs;
+                castNode ->Type = node->Rhs->Type;
+                node->Lhs  = castNode;
+            }else if (!node->Rhs->Type->IsFloatPointNum()){
+                auto castNode = std::make_shared<CastNode>();
+                castNode ->CstNode = node->Rhs;
+                castNode ->Type = node->Lhs->Type;
+                node->Rhs  = castNode;
+            }
+        }else if(hasUnsigned){
+        }else {
+                if (node->Lhs->Type->Size < maxBitSize){
+                    auto castNode = std::make_shared<CastNode>();
+                    castNode ->CstNode = node->Lhs;
+                    castNode ->Type = node->Rhs->Type;
+                    node->Lhs  = castNode;
+                }else if (node->Rhs->Type->Size < maxBitSize) {
+                    auto castNode = std::make_shared<CastNode>();
+                    castNode->CstNode = node->Rhs;
+                    castNode->Type = node->Lhs->Type;
+                    node->Rhs = castNode;
+                }
+        }
+    }
     switch (node ->BinOp) {
         case BinaryOperator::Assign:
-            if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+            if (node->Lhs->Type->IsFloatPointNum() && node->Rhs->Type->IsFloatPointNum()){
                 if (node -> Lhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleAssign;
                     if (node -> Rhs -> Type -> Size == 4){
@@ -63,7 +108,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node->Rhs = temp;
                 node->BinOp = BinaryOperator::PointerAdd;
                 node ->Type = std::make_shared<PointerType>(node->Rhs->Type);
-            }else if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+            }else if (node->Lhs->Type->IsFloatPointNum() && node->Rhs->Type->IsFloatPointNum()){
                 if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleAdd;
                     if (node -> Lhs -> Type -> Size == 4 ){
@@ -82,7 +127,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 }else{
                     assert(0);
                 }
-            }else if (node->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+            }else if (node->Type->IsFloatPointNum() && node->Rhs->Type->IsFloatPointNum()){
                 node -> BinOp = BinaryOperator::FloatAdd;
             }else if (node-> Lhs-> Type->IsULongType() || node->Rhs->Type->IsULongType()){
                 if (!node -> Lhs ->Type->IsULongType()){
@@ -128,7 +173,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 node->Rhs = temp;
                 node->BinOp = BinaryOperator::PointerSub;
                 node ->Type = std::make_shared<PointerType>(node->Rhs->Type);
-            }else if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+            }else if (node->Lhs->Type->IsFloatPointNum() && node->Rhs->Type->IsFloatPointNum()){
                 if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleSub;
                     if (node -> Lhs -> Type -> Size == 4 ){
@@ -175,12 +220,26 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 assert(0);
             }
             break;
+        case BinaryOperator::Incr:
+        case BinaryOperator::Decr:
+        {
+            //i++ when i is char* pointer incr 1 int * incr 4  when i is struct incr struct size
+            // when i is array incr array element size
+            auto ConstNode =  std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
+            auto  size = 1;
+            if (node -> Lhs -> Type ->IsPointerType() || node -> Lhs -> Type ->IsStructType() || node -> Lhs -> Type ->IsArrayType()){
+                size = node -> Lhs -> Type ->GetBaseType() ->Size;
+            }
+            ConstNode -> isChange = true;
+            ConstNode ->Value *= size;
+        }
+            break;
         case BinaryOperator::PointerAdd:
             node ->Type = std::make_shared<PointerType>(node->Rhs->Type);;
         case BinaryOperator::PointerSub:
             node ->Type = std::make_shared<PointerType>(node->Rhs->Type);
         case BinaryOperator::Mul:
-            if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+            if (node->Lhs->Type->IsFloatPointNum() && node->Rhs->Type->IsFloatPointNum()){
                 if (node -> Lhs -> Type -> Size == 8 || node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleMul;
                     if (node -> Lhs -> Type -> Size == 4 ){
@@ -204,7 +263,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             }
             break;
         case BinaryOperator::IDiv:
-            if (node->Lhs->Type->IsFloatNum() && node->Rhs->Type->IsFloatNum()){
+            if (node->Lhs->Type->IsFloatPointNum() && node->Rhs->Type->IsFloatPointNum()){
                 if (node -> Lhs -> Type -> Size == 8 && node -> Rhs -> Type -> Size == 8){
                     node ->BinOp = BinaryOperator::DoubleDiv;
                     if (node -> Lhs -> Type -> Size == 4 ){
@@ -270,9 +329,31 @@ void TypeVisitor::Visitor(BinaryNode *node) {
             }
             node->Type = toConvertType;
         }
+        break;
+        case BinaryOperator::Greater:
+            if (hasFloatPoint){
+                node ->BinOp = BinaryOperator::FloatGreater;
+            }
+            node ->Type = Type::BoolType;
             break;
-
-
+        case BinaryOperator::GreaterEqual:
+            if (hasFloatPoint){
+                node ->BinOp = BinaryOperator::FloatGreaterEqual;
+            }
+            node ->Type = Type::BoolType;
+            break;
+        case BinaryOperator::Lesser:
+            if (hasFloatPoint){
+                node ->BinOp = BinaryOperator::FloatLesser;
+            }
+            node ->Type = Type::BoolType;
+            break;
+        case BinaryOperator::LesserEqual:
+            if (hasFloatPoint){
+                node ->BinOp = BinaryOperator::FloatLesserEqual;
+            }
+            node ->Type = Type::BoolType;
+            break;
         default:
             break;
     }
@@ -452,6 +533,13 @@ void TypeVisitor::Visitor(CastNode *node) {
 void TypeVisitor::Visitor(ArefNode *node) {
     node -> Lhs ->Accept(this);
     node -> Offset ->Accept(this);
+    //set the varName[index] index must greater eq then 4  to load by eax
+    if (node ->Offset ->Type ->Size < Type::IntType->Size){
+        auto castNode = std::make_shared<CastNode>();
+        castNode ->CstNode = node ->Offset;
+        castNode ->Type = Type::IntType;
+        node ->Offset= castNode;
+    }
     if (auto leftArrayType = std::dynamic_pointer_cast<ArrayType>(node -> Lhs->Type)){
         node -> Type = leftArrayType -> ElementType;
         return;

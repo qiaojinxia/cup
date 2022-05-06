@@ -312,7 +312,7 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
         node -> Args.push_back(ParseExpr());
         while(Lex.CurrentToken -> Kind == TokenKind::Comma){
             Lex.GetNextToken();
-            node -> Args.push_back(ParseCastExpr());
+            node -> Args.push_back(ParseExpr());
         }
     }
     Lex.ExceptToken(TokenKind::RParent);

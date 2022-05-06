@@ -103,17 +103,29 @@ int testCode(){
 //    testStruct();
 //    testTypeDef();
 //    testString();
-    testFuncCall();
+//    testFuncCall();
+    testFloatCmp();
     return 0;
 }
 
 
-int testFuncCall(){
-    
-    int* m = malloc (sizeof (2 + 3) * 100);
-    m[0] = 100;
-    assert(100,m[0]);
+int testFloatCmp(){
+    float a = 1.0;
+    int b = 2;
+    int  x = a >= b;
+    assert(1,x);
 }
+
+//int testFuncCall(){
+//    int* m = malloc (sizeof (int) * 100);
+//    char j = 0;
+//    for(int i =0;i<100;i++){
+//        m[j] = 77;
+//        printf("memory:%p value:%d\n",&m[j],m[j]);
+//        j ++;
+//    }
+//    assert(77,m[99]);
+//}
 
 //int testString(){
 //    char m[30] = "hello,world!";
