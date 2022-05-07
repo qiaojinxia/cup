@@ -236,6 +236,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::UNSIGNED;
             }else if(content == "typedef"){
                 kind = TokenKind::TypeDef;
+            }else if(content == "_Bool"){
+                kind = TokenKind::_Bool;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);

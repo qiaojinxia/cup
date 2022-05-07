@@ -92,3 +92,5 @@ a toy c compailer
   - optimization code fix sizeof support (type|expr) | varExpr 
 - 2022-5-6
     - Support Float compare compare case:`float a =1.0; float b = 2.0; int c = a > b `
+- 2022-5-7
+  - Support _Bool type case:`_Bool a =1;  `

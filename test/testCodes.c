@@ -103,29 +103,34 @@ int testCode(){
 //    testStruct();
 //    testTypeDef();
 //    testString();
-//    testFuncCall();
+    testFuncCall();
     testFloatCmp();
     return 0;
 }
 
+//int testEnum(){
+//    enum
+//}
 
 int testFloatCmp(){
     float a = 1.0;
     int b = 2;
-    int  x = a >= b;
-    assert(1,x);
+    _Bool x = a <= b;
+    assert(1,(int)x);
 }
 
-//int testFuncCall(){
-//    int* m = malloc (sizeof (int) * 100);
-//    char j = 0;
-//    for(int i =0;i<100;i++){
-//        m[j] = 77;
-//        printf("memory:%p value:%d\n",&m[j],m[j]);
-//        j ++;
-//    }
-//    assert(77,m[99]);
-//}
+
+int testFuncCall(){
+    int* m = malloc (sizeof (int) * 100);
+    char j = 0;
+    for(int i =0;i<100;i++){
+        m[j] = 77;
+        printf("memory:%p value:%d\n",&m[j],m[j]);
+        j ++;
+    }
+    assert(77,m[99]);
+    free(m);
+}
 
 //int testString(){
 //    char m[30] = "hello,world!";

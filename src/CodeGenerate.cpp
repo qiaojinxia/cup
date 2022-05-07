@@ -985,7 +985,7 @@ const std::string CodeGenerate::GetRax(int size) {
 
 std::string BDD::CodeGenerate::GetCastCode(std::string fromTo) {
     if (CastMap.empty()){
-        CastMap["i8->i32"] = "movsbl %al, %eax";
+        CastMap["i8->i32"] = "movsx %al, %eax";
         CastMap["u8->i32"] = "movzbl %al, %eax";
         CastMap["bool->i32"] = "movzbl %al, %eax";
         CastMap["u8->u32"] =  "movzbl %al, %eax";
@@ -1000,8 +1000,8 @@ std::string BDD::CodeGenerate::GetCastCode(std::string fromTo) {
         CastMap["u32->u64"] = "NULL";
 
 
-        CastMap["i32->i8"] =  "movsb %al, %rax";
-        CastMap["i32->i16"] =  "movsw %ax, %rax";
+        CastMap["i32->i8"] =  "movsx %al, %rax";
+        CastMap["i32->i16"] =  "movsx %ax, %rax";
         CastMap["i32->u32"] =  "NULL";
 
         CastMap["i32->u64"] =  "NULL";

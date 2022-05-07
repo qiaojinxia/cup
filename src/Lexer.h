@@ -45,6 +45,7 @@ namespace BDD{
         Long,
         Float,
         Double,
+        _Bool,
         Struct,
         Union,
         TypeDef,

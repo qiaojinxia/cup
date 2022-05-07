@@ -355,6 +355,10 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Double;
             continue;
+        }else if(Lex.CurrentToken -> Kind == TokenKind::_Bool){
+            Lex.GetNextToken();
+            baseType += (int) BuildInType::Kind::Bool;
+            continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Asterisk){
             Lex.GetNextToken();
             std::shared_ptr<PointerType> pointerType;
@@ -435,6 +439,9 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             break;
         case BuildInType::Kind::Double:
             type = Type::DoubleType;
+            break;
+        case BuildInType::Kind::Bool:
+            type = Type::BoolType;
             break;
         default:
             DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"invalid type!");
@@ -724,7 +731,8 @@ const bool Parser::IsTypeName() {
         || Lex.CurrentToken -> Kind == TokenKind::Short || Lex.CurrentToken -> Kind == TokenKind::Long
         || Lex.CurrentToken -> Kind == TokenKind::Float || Lex.CurrentToken -> Kind == TokenKind::Double
         || Lex.CurrentToken -> Kind == TokenKind::Struct || Lex.CurrentToken -> Kind == TokenKind::Union
-        || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED){
+        || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED
+        || Lex.CurrentToken -> Kind == TokenKind::_Bool){
         return true;
     }
     if(Scope::GetInstance() -> FindTagInCurrentScope(Lex.CurrentToken->Content)){
