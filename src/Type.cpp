@@ -234,6 +234,15 @@ bool Type::IsULongType() const {
     return false;
 }
 
+bool Type::IsBInType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsBInType();
+    }
+    return TypeC == TypeClass::BInType;
+    return false;
+}
+
 bool Type::IsAliasType() const {
     return TypeC == TypeClass::AliasType;
 }
@@ -277,6 +286,8 @@ std::shared_ptr<Type> BuildInType::GetBaseType() {
             return FloatType;
         case Kind::Double:
             return DoubleType;
+        case Kind::Void:
+            return VoidType;
         default :
             assert(0);
     }

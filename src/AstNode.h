@@ -63,17 +63,12 @@ namespace BDD{
         Incr,
         Decr,
         PointerAdd,
-        FloatAdd,
-        FloatSub,
-        FloatMul,
-        FloatDiv,
-        DoubleAdd,
-        DoubleSub,
-        DoubleMul,
-        DoubleDiv,
-        DoubleAssign,
+        FloatPointAdd,
+        FloatPointMinus,
+        FloatPointMul,
+        FloatPointDiv,
         Div,
-        Sub,
+        Minus,
         PointerSub,
         PointerDiff,
         Mul,
@@ -86,17 +81,18 @@ namespace BDD{
         Sal,
         Sar,
         Assign,
-        FloatAssign,
         Equal,
+        FloatPointEqual,
         NotEqual,
+        FloatPointNotEqual,
         Greater,
-        FloatGreater,
+        FloatPointGreater,
         GreaterEqual,
-        FloatGreaterEqual,
+        FloatPointGreaterEqual,
         Lesser,
-        FloatLesser,
+        FloatPointLesser,
         LesserEqual,
-        FloatLesserEqual,
+        FloatPointLesserEqual,
         Eof,
     };
     static std::map<TokenKind,int> TOpPrecedence = {
@@ -172,6 +168,7 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+
     class WhileStmtNode :public AstNode{
     public:
         std::shared_ptr<AstNode> Cond{nullptr};
@@ -218,11 +215,7 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
-    class DeclarationAssignmentStmtNode: public AstNode{
-    public:
-        std::list<std::shared_ptr<BinaryNode>> AssignNodes;
-        void Accept(AstVisitor *visitor) override;
-    };
+
 
     class StmtExprNode : public AstNode{
     public:
@@ -259,12 +252,6 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
-    class AssignNode : public AstNode{
-    public:
-        std::shared_ptr<AstNode> Lhs;
-        std::shared_ptr<AstNode> Rhs;
-        void Accept(AstVisitor *visitor) override;
-    };
 
     class CastNode : public AstNode{
     public:
@@ -272,9 +259,64 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+
+
     //when parse no effect statement return empty node such as: typedef
     class EmptyNode : public AstNode{
     public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+
+
+    class AssignNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+    class AddNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+    class MinusNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+    class MulNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+    class DivNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+    class ModNode : public DivNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class IncrNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class DecrNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class CmpNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class BitOpNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class DeclarationAssignmentStmtNode: public AstNode{
+    public:
+        std::list<std::shared_ptr<AssignNode>> AssignNodes;
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -305,6 +347,17 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(ContinueStmtNode *node){};
         virtual void Visitor(ArefNode *node){};
         virtual void Visitor(EmptyNode *node){};
+        //BinaryNode
+        virtual void Visitor(AssignNode *node){};
+        virtual void Visitor(AddNode *node){};
+        virtual void Visitor(MinusNode *node){};
+        virtual void Visitor(MulNode *node){};
+        virtual void Visitor(DivNode *node){};
+        virtual void Visitor(ModNode *node){};
+        virtual void Visitor(IncrNode *node){};
+        virtual void Visitor(DecrNode *node){};
+        virtual void Visitor(CmpNode *node){};
+        virtual void Visitor(BitOpNode *node){};
     };
 }
 

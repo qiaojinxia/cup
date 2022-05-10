@@ -18,11 +18,14 @@ void ConstantNode::Accept(AstVisitor *visitor) {
 
 
 std::string ConstantNode::GetValue() {
-    if (isChange){
+    if (isChange || Token == nullptr){
         return std::to_string(Value);
     }
     auto s_num = std::string(Token->Content).c_str();
     if (is_contains_str(std::string(Token->Content),"0x")){
+        return s_num;
+    }
+    if (is_contains_str(std::string(Token->Content),"0b")){
         return s_num;
     }
     if (this->Type->Alias == Type::CharType->Alias){
@@ -40,7 +43,7 @@ std::string ConstantNode::GetValue() {
     }else if(this->Type->Alias == Type::LongType->Alias){
         return string_format("%ld",atol(s_num));
     }else if(this->Type->Alias == Type::ULongType->Alias){
-        return  string_format("%lu",(unsigned long ) atol(s_num));
+        return  string_format("%s",s_num);
     }else if(this->Type->Alias == Type::FloatType->Alias){
         float d_num = atof(s_num);
         int *lp_num = (int *) &d_num;
@@ -145,3 +148,44 @@ void ArefNode::Accept(AstVisitor *visitor) {
 void EmptyNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void AssignNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void AddNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void MinusNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void MulNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void DivNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void ModNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void IncrNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void DecrNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void CmpNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void BitOpNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+

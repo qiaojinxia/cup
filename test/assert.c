@@ -25,10 +25,10 @@ void assert_u(long  excepted, long actual){
 
 
 void assert_f(float  excepted,float actual){
-    if(excepted  - actual <= 0.000001 ){
+    if(excepted  - actual <= 0.000001 && excepted  - actual >= -0.000001 ){
         printf("code test pass (%d) => %f\n",codeId ++ ,actual);
     }else{
-        printf("code test pass (%d) expected %f,but got %f\n",codeId++,excepted,actual);
+        printf("code test  (%d) expected %f,but got %f\n",codeId++,excepted,actual);
         exit(-1);
     }
 }
@@ -43,7 +43,7 @@ void assert_char(char  excepted,char actual){
 }
 
 
-void assert_fd(float  excepted,double actual){
+void assert_fd(double  excepted,double actual){
     if(excepted  - actual <= 0.000001 &&  excepted  - actual >=  -0.000001){
         printf("code test pass (%d) => %lf\n",codeId ++ ,actual);
     }else{

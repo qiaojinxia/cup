@@ -46,6 +46,8 @@ namespace BDD{
 
         std::shared_ptr<Type> ParseStructDeclaration();
 
+        std::shared_ptr<AstNode> ParseEnumDeclaration();
+
         std::shared_ptr<RecordType> ParseRecord(RecordType::TagKind recordeType);
 
         std::shared_ptr<Var> FindLocalVar(std::string_view varName);
@@ -61,7 +63,6 @@ namespace BDD{
         std::shared_ptr<ConstantNode> ParseInitListExpr();
 
         std::shared_ptr<AstNode> ParseDeclarationExpr();
-
 
 
     private:

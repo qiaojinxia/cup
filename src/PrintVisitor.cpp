@@ -17,7 +17,7 @@ void PrintVisitor::Visitor(BinaryNode *node) {
         case BinaryOperator::Add:
             printf(" + ");
             break;
-        case BinaryOperator::Sub:
+        case BinaryOperator::Minus:
             printf(" - ");
             break;
         case BinaryOperator::Mul:

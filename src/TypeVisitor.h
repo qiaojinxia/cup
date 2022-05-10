@@ -32,6 +32,18 @@ namespace BDD{
         void Visitor(ContinueStmtNode *node) override;
         void Visitor(ArefNode *node) override;
         void Visitor(EmptyNode *node) override;
+
+        void Visitor(AssignNode *node) override;
+        void Visitor(AddNode *node) override;
+        void Visitor(MinusNode *node) override;
+        void Visitor(MulNode *node) override;
+        void Visitor(DivNode *node) override;
+        void Visitor(ModNode *node) override;
+
+        void Visitor(IncrNode *node) override;
+        void Visitor(DecrNode *node) override;
+        void Visitor(CmpNode *node) override;
+        void Visitor(BitOpNode *node) override;
     private:
         std::shared_ptr<Type> CurAssignType;
     };

@@ -58,6 +58,7 @@ namespace BDD{
         bool IsIntType() const;
         bool IsCharType() const;
         bool IsBoolType() const;
+        bool IsBInType() const;
         bool IsShortType() const;
         bool IsFloatType() const;
         bool IsDoubleType() const;
@@ -169,6 +170,11 @@ namespace BDD{
         std::shared_ptr<Type> GetBaseType();
         AliasType(std::shared_ptr<Type> typ,std::shared_ptr<Token> tk) : Type(TypeClass::AliasType,typ ->Size,typ->Align,typ->Alias) ,Base(typ),token(tk){}
     };
+
+    struct EnumType : public  AliasType{
+        EnumType(std::shared_ptr<Token> tk) : AliasType(Type::IntType,tk) {}
+    };
+
 }
 
 #endif //BODDY_TYPE_H

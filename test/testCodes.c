@@ -103,34 +103,114 @@ int testCode(){
 //    testStruct();
 //    testTypeDef();
 //    testString();
-    testFuncCall();
-    testFloatCmp();
+//    testFuncCall();
+//    testFloatCmp();
+    testEnum();
     return 0;
 }
 
-//int testEnum(){
-//    enum
+int testEnum(){
+//    float m[3] = {3.0,1.0,2.0};
+//    print_float(m[2]);
+//    float x = 5.0;
+//    print_float(x);
+//    int b = 7;
+//    assert(7,b);
+//    char * my = "hello,world!\n";
+//    printf("%s",my);
+//    float m1 = m[2];
+//    assert_f(m[1] + 1.0 ,2.0);
+//    assert_f(m[2] - m[1] ,1.0);
+//    int x1 = 3;
+//      int x2 = 2;
+//    assert(1,x1-x2);
+//    double d1 = 4.0;
+//    double d2 = 5.0;
+//    assert_fd((double)-1.0 ,d1 - d2);
+//    double d3 = d1 * d2;
+//    int x3 = -4;
+//      char u1 = 123;
+//      int m = 3;
+//    assert_fd((double)20.0 ,d3);
+//    assert(-8 ,x2 * x3);
+//    assert_u((unsigned long)4262462462462464646 ,u1 * x2);
+//    unsigned  long x6 = 18446744073709551615;
+//    int m = 2;
+//    assert_u((unsigned  long)9223372036854775807,x6/m);
+//    long m = c;
+//    assert(1,({2147483647 + 2147483647 + 2;}));
+//    float x = 1.3243244;
+//    double max_d = 0;
+//    assert_f(0.6621622,({x/2;}));
+//    assert_fd((double)-1.0,({max_d-1;}));
+//    long m1 = 985;
+
+    typedef struct User
+    {
+        char *  name;
+        int  age;
+        int  sex;
+        int height;
+        int width;
+    } user ;
+//    float f22 = 1.0;
+//    float f23 = 1.0;
+//    int mmmx = f22 != f23;
+//    assert(0,mmmx);
+    user a = {"caomaoboya",10,1,190,140};
+    user b = {"caomaoboyb",11,0,190,140};
+    typedef int zhengshu;
+    zhengshu i = 0;
+    zhengshu mi = 11;
+    zhengshu ma[3] ={1,2,3};
+    assert(3,({(i++)+(i++)+(i++);}));
+    assert(3,({i;}));
+    zhengshu b1 = 0b00001111;
+    zhengshu b2 = 0b11110001;
+    zhengshu b3 = b1 & b2;
+    assert(1,b3);
+    zhengshu b5 = 0b00000010;
+    zhengshu b6 = b2 | b5;
+    assert(243,b6);
+    assert(15,b2 >> 4);
+    assert(240,b1 << 4);
+    assert(12,b1 ^ 3);
+    zhengshu *p1 = &i;
+    assert(11,*(p1 +1));
+    zhengshu *pa = &ma;
+    assert(2,*(pa +1));
+    struct User *pa = &a;
+    assert(11,(pa +1)->age);
+    print_s((pa+1)->name);
+    float m1[3] = {3.0,1.0,2.0};
+    float * cm = &m1[3];
+    float * dm = &m1[2];
+    assert(1,cm-dm);
+    enum Caomao {hahahah = 1};
+    int m = hahahah;
+    assert(1,m);
+
+}
+
+//int testFloatCmp(){
+//    float a = 1.0;
+//    int b = 2;
+//    _Bool x = a <= b;
+//    assert(1,(int)x);
 //}
-
-int testFloatCmp(){
-    float a = 1.0;
-    int b = 2;
-    _Bool x = a <= b;
-    assert(1,(int)x);
-}
-
-
-int testFuncCall(){
-    int* m = malloc (sizeof (int) * 100);
-    char j = 0;
-    for(int i =0;i<100;i++){
-        m[j] = 77;
-        printf("memory:%p value:%d\n",&m[j],m[j]);
-        j ++;
-    }
-    assert(77,m[99]);
-    free(m);
-}
+//
+//
+//int testFuncCall(){
+//    int* m = malloc (sizeof (int) * 100);
+//    char j = 0;
+//    for(int i =0;i<100;i++){
+//        m[j] = 77;
+//        printf("memory:%p value:%d\n",&m[j],m[j]);
+//        j ++;
+//    }
+//    assert(77,m[99]);
+//    free(m);
+//}
 
 //int testString(){
 //    char m[30] = "hello,world!";

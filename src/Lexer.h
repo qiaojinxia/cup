@@ -68,6 +68,7 @@ namespace BDD{
         Continue,
         SIGNED,
         UNSIGNED,
+        Enum,
     };
     class SourceLocation{
     public:
@@ -113,6 +114,7 @@ namespace BDD{
         void GetNextChar();
         void SkipToken(TokenKind  kind);
         void ExceptToken(TokenKind  kind);
+        void ExceptedNextToken(TokenKind kind);
         void BeginPeekToken();
         void EndPeekToken();
     private:
@@ -127,6 +129,8 @@ namespace BDD{
 
 
         bool IsHex();
+
+
     };
 
 

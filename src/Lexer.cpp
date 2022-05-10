@@ -238,6 +238,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::TypeDef;
             }else if(content == "_Bool"){
                 kind = TokenKind::_Bool;
+            }else if(content == "enum"){
+                kind = TokenKind::Enum;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);
@@ -305,6 +307,8 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return ",";
         case TokenKind::Continue:
             return "continue";
+        case TokenKind::Enum:
+            return "enum";
         default:
             assert(0);
     }
@@ -354,7 +358,7 @@ void Lexer::SkipWhiteSpace() {
 void Lexer::SkipComment() {
     if(CurChar == '/' && PeekChar(1) == '/'){
         while (CurChar != '\n'){
-            LineHead = Cursor -1;
+            LineHead = Cursor + 1;
             GetNextChar();
         }
     }else{
@@ -376,7 +380,7 @@ SourceLocation Lexer::GetLocation(){
     Location.LineHead = LineHead;
     int offset = 0;
     int cur = Cursor;
-    while(SourceCode[cur + offset] != '\n'){
+    while(cur + offset <SourceCode.size() && SourceCode[cur + offset] != '\n' ){
        offset += 1;
     }
     Location.LineEnd = offset;
@@ -390,6 +394,14 @@ void Lexer::SkipToken(TokenKind kind) {
         return;
     }
 }
+
+void Lexer::ExceptedNextToken(TokenKind kind) {
+    GetNextToken();
+    if (CurrentToken->Kind != kind){
+        DiagLoc(SourceCode,CurrentToken->Location,"'%s' excepted",GetTokenName(kind));
+    }
+}
+
 
 
 

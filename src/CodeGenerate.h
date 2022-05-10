@@ -26,6 +26,8 @@ namespace BDD{
         const int MaxBit {8};
         const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
         int XmmCount{0};
+
+        int XmmPrevDepth;
         int Depth{0};
         Scope * scope;
 
@@ -62,6 +64,16 @@ namespace BDD{
         void Visitor(ContinueStmtNode *node) override;
         void Visitor(ArefNode *node) override;
         void Visitor(EmptyNode *node) override;
+        void Visitor(AssignNode *node) override;
+        void Visitor(AddNode *node) override;
+        void Visitor(MinusNode *node) override;
+        void Visitor(MulNode *node) override;
+        void Visitor(DivNode *node) override;
+        void Visitor(ModNode *node) override;
+        void Visitor(IncrNode *node) override;
+        void Visitor(DecrNode *node)override;
+        void Visitor(CmpNode *node)override;
+        void Visitor(BitOpNode *node)override;
 
         void PushBreak(std::string_view label);
         void PopBreak();
@@ -71,6 +83,8 @@ namespace BDD{
         void PopContinue();
         std::string_view currentContinueTarget();
 
+        void USeXmm();
+        void ReleaseXmm();
 
         void Push(std::shared_ptr<Type> ty);
         void Pop(std::shared_ptr<Type> ty);
@@ -80,7 +94,7 @@ namespace BDD{
         void Load(AstNode *node);
         void Store(std::shared_ptr<AstNode> node);
 
-        void GenerateAddress(AstNode *node);
+        void GenerateAddress(AstNode *node,std::string targetReg);
 
         const std::string GetMoveCode(std::shared_ptr<Type> type);
         const std::string GetMoveCode2(std::shared_ptr<Type>  type);
@@ -91,6 +105,7 @@ namespace BDD{
         const std::string GetRcx(std::shared_ptr<Type> type);
         const std::string GetRcx(int size);
         const std::string GetRax(int size);
+        const std::string GetAdd(std::shared_ptr<Type> type);
 
         std::string GetCastCode(std::string fromTo);
 
@@ -101,6 +116,16 @@ namespace BDD{
         void Load(std::shared_ptr<Type> type);
 
         const std::string GetMoveCode(int size);
+
+        const std::string GetMinus(std::shared_ptr<Type> type);
+
+        const std::string GetMul(std::shared_ptr<Type> type);
+
+        const std::string GetDiv(std::shared_ptr<Type> type);
+
+        const std::string GetRdx(std::shared_ptr<Type> type);
+
+        const std::string GetSet(BinaryOperator op);
     };
 }
 
