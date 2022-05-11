@@ -95,6 +95,9 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == '^'){
         kind = TokenKind::Caret;
         GetNextChar();
+    }else if(CurChar == '~'){
+        kind = TokenKind::Tilde;
+        GetNextChar();
     }else if(CurChar == '='){
         if (PeekChar(1)=='='){
             GetNextChar();

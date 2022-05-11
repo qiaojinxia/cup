@@ -96,3 +96,5 @@
   - Support _Bool type case:`_Bool a =1;  `
 - 2022-5-8 ~ 2022-5-10
   - Support Enum fix bug add testcase and  code refactoring rename project to cup
+- 2022-5-11
+  - Add  ~  case: `int a = ～2; `

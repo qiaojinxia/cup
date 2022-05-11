@@ -69,6 +69,7 @@ namespace BDD{
         SIGNED,
         UNSIGNED,
         Enum,
+        Tilde,
     };
     class SourceLocation{
     public:

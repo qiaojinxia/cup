@@ -205,6 +205,9 @@ void TypeVisitor::Visitor(UnaryNode *node) {
         case UnaryOperator::Addr:
             node -> Type = std::make_shared<PointerType>(node -> Lhs ->Type);
             break;
+        case UnaryOperator::BitNot:
+            node -> Type = node -> Lhs -> Type;
+            break;
     }
 }
 

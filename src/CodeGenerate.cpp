@@ -74,6 +74,8 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
             return;
         }
         printf("\t  mov $%s, %%rax   #Constant %s\n",node->GetValue().c_str(),node->GetValue().c_str());
+    }else if (node->Type->IsPtrCharType()){
+        printf("\t  lea %s(%%rip),%%rax\n", node->Name.data());
     }
 }
 
@@ -385,6 +387,10 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             break;
         case UnaryOperator::Addr:
             GenerateAddress(node -> Lhs.get(),"%rax");
+            break;
+        case UnaryOperator::BitNot:
+            node -> Lhs ->Accept(this);
+            printf("\t  xor $-1,%s\n", GetRax(node -> Lhs->Type).data());
             break;
     }
 }

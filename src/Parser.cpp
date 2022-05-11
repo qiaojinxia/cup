@@ -508,32 +508,31 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     return ParseTypeSuffix(type);
 }
 
-//ParseUnaryExpr ::= (+ | - | * | & )? ParseCastExpr | ParsePostFixExpr
+//ParseUnaryExpr ::= (+ | - | * | & | ～ )? ParseCastExpr | ParsePostFixExpr
 std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
-    if (Lex.CurrentToken -> Kind == TokenKind::Plus || Lex.CurrentToken->Kind  == TokenKind::Minus
-        || Lex.CurrentToken->Kind  == TokenKind::Asterisk || Lex.CurrentToken->Kind == TokenKind::Amp ){
-        auto node = std::make_shared<UnaryNode>();
-        switch (Lex.CurrentToken -> Kind){
-            case TokenKind::Plus:
-                node -> Uop = UnaryOperator::Plus;
-                break;
-            case TokenKind::Minus:
+    auto node = std::make_shared<UnaryNode>();
+    switch (Lex.CurrentToken -> Kind){
+        case TokenKind::Plus:
+            node -> Uop = UnaryOperator::Plus;
+            break;
+        case TokenKind::Minus:
                 node -> Uop = UnaryOperator::Minus;
                 break;
-            case TokenKind::Asterisk:
+        case TokenKind::Asterisk:
                 node -> Uop = UnaryOperator::Deref;
                 break;
-            case TokenKind::Amp:
+        case TokenKind::Amp:
                 node -> Uop = UnaryOperator::Addr;
                 break;
-            default:
-                break;
-        }
-        Lex.GetNextToken();
-        node -> Lhs = ParseCastExpr();
-        return node;
+        case TokenKind::Tilde:
+                node -> Uop = UnaryOperator::BitNot;
+            break;
+        default:
+            return ParsePostFixExpr();
     }
-    return ParsePostFixExpr();
+    Lex.GetNextToken();
+    node -> Lhs = ParseCastExpr();
+    return node;
 }
 
 

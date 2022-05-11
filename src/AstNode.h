@@ -50,6 +50,7 @@ namespace BDD{
         Minus,
         Deref,
         Addr,
+        BitNot,
     };
 
     class UnaryNode : public AstNode{
