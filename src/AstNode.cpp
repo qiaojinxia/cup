@@ -189,3 +189,10 @@ void BitOpNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
 
+void TernaryNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void SwitchCaseSmtNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}

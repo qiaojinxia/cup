@@ -51,6 +51,7 @@ namespace BDD{
         Deref,
         Addr,
         BitNot,
+        Not,
     };
 
     class UnaryNode : public AstNode{
@@ -210,6 +211,14 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class TernaryNode: public AstNode{
+    public:
+        std::shared_ptr<AstNode> Cond{nullptr};
+        std::shared_ptr<AstNode> Then{nullptr};
+        std::shared_ptr<AstNode> Else{nullptr};
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class DeclarationStmtNode: public AstNode{
     public:
         std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
@@ -321,6 +330,14 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class SwitchCaseSmtNode: public AstNode{
+    public:
+        std::shared_ptr<AstNode> Value;
+        std::list<std::shared_ptr<AstNode>> DefaultBranch;
+        std::unordered_map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>> CaseBranch;
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class AstVisitor{
     public:
         virtual ~AstVisitor(){};
@@ -329,14 +346,19 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(ConstantNode *node){};
         virtual void Visitor(ExprStmtNode *node){};
         virtual void Visitor(ExprVarNode *node){};
+
+        //statement
         virtual void Visitor(IfStmtNode *node){};
         virtual void Visitor(BlockStmtNode *node){};
         virtual void Visitor(WhileStmtNode *node){};
         virtual void Visitor(DoWhileStmtNode *node){};
         virtual void Visitor(ForStmtNode *node){};
+        virtual void Visitor(SwitchCaseSmtNode *node){};
+
         virtual void Visitor(FunctionNode *node){};
         virtual void Visitor(FuncCallNode *node){};
         virtual void Visitor(ReturnStmtNode *node){};
+        virtual void Visitor(TernaryNode *node){};
         virtual void Visitor(DeclarationStmtNode *node){};
         virtual void Visitor(DeclarationAssignmentStmtNode *node){};
         virtual void Visitor(StmtExprNode *node){};
@@ -348,6 +370,8 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(ContinueStmtNode *node){};
         virtual void Visitor(ArefNode *node){};
         virtual void Visitor(EmptyNode *node){};
+
+
         //BinaryNode
         virtual void Visitor(AssignNode *node){};
         virtual void Visitor(AddNode *node){};

@@ -392,6 +392,11 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             node -> Lhs ->Accept(this);
             printf("\t  xor $-1,%s\n", GetRax(node -> Lhs->Type).data());
             break;
+        case UnaryOperator::Not:
+            node -> Lhs ->Accept(this);
+            printf("\t  cmp $0,%s\n", GetRax(node -> Lhs->Type).data());
+            printf("\t  sete %%al\n");
+            break;
     }
 }
 
@@ -539,6 +544,8 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         type = funcCallNode->Type;
     }else if(auto arefNode = std::dynamic_pointer_cast<ArefNode>(cursor)){
         type = arefNode->Type;
+    }else if(auto ternaryNode = std::dynamic_pointer_cast<TernaryNode>(cursor)){
+        type = ternaryNode->Type;
     }
     if (type -> IsPointerType()){
         printf("\t  mov %%rax,(%%rdi)\n");
@@ -1149,5 +1156,45 @@ void CodeGenerate::Visitor(BitOpNode *node) {
         default:
             assert(0);
     }
+}
+
+void CodeGenerate::Visitor(TernaryNode *node) {
+    int n = Sequence ++;
+    node ->Cond->Accept(this);
+    printf("\t  jz .LT.else%d\n",n);
+    node ->Then->Accept(this);
+    if (node ->Else){
+        printf(".LT.else%d:\n",n);
+        node ->Else->Accept(this);
+    }
+    printf(".LT.end_%d:\n",n);
+}
+
+void CodeGenerate::Visitor(SwitchCaseSmtNode *node) {
+    int n = Sequence ++;
+    int index = 0;
+    std::string EndLabel= string_format(".Ls%d_end\n",n);
+    PushBreak(EndLabel);
+    node->Value ->Accept(this);
+    for (auto &branch:node->CaseBranch){
+        printf("\t  mov %s,%s\n", GetRax(node->Value->Type).data(), GetRcx(node->Value->Type).data());
+        branch.first->Accept(this);
+        printf("\t  cmp %s,%s\n", GetRax(node->Value->Type).data(), GetRcx(node->Value->Type).data());
+        printf("\t  je .Ls%d_%d\n",n,index++);
+    }
+    printf("\t  jmp .Ls%d_d\n",n);
+    index = 0;
+    for (auto &branch:node->CaseBranch){
+        printf(".Ls%d_%d:\n",n,index++);
+        for (auto &statement:branch.second){
+            statement ->Accept(this);
+        }
+    }
+    printf(".Ls%d_d:\n",n);
+    for (auto &statement:node ->DefaultBranch){
+        statement ->Accept(this);
+    }
+    printf(".Ls%d_end:\n",n);
+    PopBreak();
 }
 

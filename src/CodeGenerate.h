@@ -42,10 +42,12 @@ namespace BDD{
     private:
         void Visitor(ExprStmtNode *node) override;
         void Visitor(BinaryNode *node) override;
+        void Visitor(TernaryNode *node) override;
         void Visitor(ConstantNode *node) override;
         void Visitor(ExprVarNode *node) override;
         void Visitor(ProgramNode *node) override;
         void Visitor(IfStmtNode *node) override;
+        void Visitor(SwitchCaseSmtNode *node) override;
         void Visitor(BlockStmtNode *node) override;
         void Visitor(WhileStmtNode *node) override;
         void Visitor(DoWhileStmtNode *node) override;

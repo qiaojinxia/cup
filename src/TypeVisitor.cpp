@@ -208,6 +208,9 @@ void TypeVisitor::Visitor(UnaryNode *node) {
         case UnaryOperator::BitNot:
             node -> Type = node -> Lhs -> Type;
             break;
+        case UnaryOperator::Not:
+            node -> Type = Type::BoolType;
+            break;
     }
 }
 
@@ -270,6 +273,9 @@ void TypeVisitor::Visitor(AssignNode *node) {
     CurAssignType = node->Lhs->Type;
     if (CurAssignType ->IsAliasType()){
         CurAssignType = std::dynamic_pointer_cast<AliasType>(CurAssignType)->Base;
+    }
+    if(auto ternaryNode = std::dynamic_pointer_cast<TernaryNode>(node->Rhs)){
+        ternaryNode ->Type = node->Lhs->Type;
     }
     node ->Rhs ->Accept(this);
     //cast rhs type same as lhs
@@ -457,4 +463,32 @@ void TypeVisitor::Visitor(BitOpNode *node) {
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     node ->Type = node ->Lhs ->Type;
+}
+
+void TypeVisitor::Visitor(TernaryNode *node) {
+    node ->Cond ->Accept(this);
+    node ->Then ->Accept(this);
+    if (node ->Then ->Type != node->Type){
+        auto castNode = std::make_shared<CastNode>();
+        castNode -> Type = node ->Type;
+        castNode ->CstNode = node ->Then;
+        node ->Then = castNode;
+    }
+    node ->Else ->Accept(this);
+    if (node ->Else ->Type != node->Type){
+        auto castNode = std::make_shared<CastNode>();
+        castNode -> Type = node ->Type;
+        castNode ->CstNode = node ->Then;
+        node ->Else = castNode;
+    }
+}
+
+void TypeVisitor::Visitor(SwitchCaseSmtNode *node) {
+    node ->Value ->Accept(this);
+    for (auto &branch:node->CaseBranch){
+        branch.first->Accept(this);
+        for (auto &statement:branch.second){
+            statement ->Accept(this);
+        }
+    }
 }

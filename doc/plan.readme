@@ -98,3 +98,5 @@
   - Support Enum fix bug add testcase and  code refactoring rename project to cup
 - 2022-5-11
   - Add  ~  case: `int a = ～2; `
+- 2022-5-12
+  - Support ! operation ternaryExpr  switchCaseStateMent case`int m = !3; a < 3?a=2:a=7; switch(xxx){case:xxx default:xxx} `

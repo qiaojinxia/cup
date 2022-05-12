@@ -145,6 +145,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
     return node;
 }
 
+//ParseExpr ::= ParseBinaryExpr | ParseTernaryExpr ｜ ParseDeclarationExpr
 std::shared_ptr<AstNode> Parser::ParseExpr() {
     auto declarationNode = ParseDeclarationExpr();
     if (declarationNode){
@@ -153,6 +154,10 @@ std::shared_ptr<AstNode> Parser::ParseExpr() {
     auto binaryNode = ParseBinaryExpr(16);
     if (Lex.CurrentToken ->Kind == TokenKind::Semicolon ){
         return binaryNode;
+    }
+    if (Lex.CurrentToken ->Kind == TokenKind::QuestionMark){
+        auto ternaryNode = ParseTernaryExpr(binaryNode);
+        return ternaryNode;
     }
     return binaryNode;
 }
@@ -187,6 +192,8 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
             Lex.ExceptToken(TokenKind::RBrace);
         }
         return node;
+    }else if(Lex.CurrentToken -> Kind == TokenKind::Switch){
+        return ParseSwitchCaseStmt();
     }else if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
         Scope::GetInstance() -> PushScope();
         auto node = std::make_shared<BlockStmtNode>();
@@ -508,7 +515,7 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     return ParseTypeSuffix(type);
 }
 
-//ParseUnaryExpr ::= (+ | - | * | & | ～ )? ParseCastExpr | ParsePostFixExpr
+//ParseUnaryExpr ::= (+ | - | * | & | ～ ｜ ! )? ParseCastExpr | ParsePostFixExpr
 std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     auto node = std::make_shared<UnaryNode>();
     switch (Lex.CurrentToken -> Kind){
@@ -526,6 +533,9 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
                 break;
         case TokenKind::Tilde:
                 node -> Uop = UnaryOperator::BitNot;
+            break;
+        case TokenKind::ExclamationMark:
+            node -> Uop = UnaryOperator::Not;
             break;
         default:
             return ParsePostFixExpr();
@@ -912,8 +922,8 @@ std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
     return root;
 }
 
-//example enum CaoMao { Caomao1 = 1, Caomao2 = 2, Caomao3 }
-// ParseEnumDeclaration ::= "enum" TagName "{" ( enumName ( "=" value )* "," )+ "}"
+//exampleCode ` enum CaoMao { Caomao1 = 1, Caomao2 = 2, Caomao3 }`
+// ParseEnumDeclaration ::= "enum" TgName "{" ( enumName ( "=" value )* "," )+ "}"
 std::shared_ptr<AstNode> Parser::ParseEnumDeclaration() {
     if (Lex.CurrentToken ->Kind != TokenKind::Enum){
         return nullptr;
@@ -951,4 +961,56 @@ std::shared_ptr<AstNode> Parser::ParseEnumDeclaration() {
     return std::make_shared<EmptyNode>();
 }
 
+//exampleCode  `a < 7 ? a = 1 : a = 0;`
+//ParseTernaryExpr ::= condition "?" ParseExpr ":" ParseExpr;
+std::shared_ptr<AstNode> Parser::ParseTernaryExpr(std::shared_ptr<AstNode> condition) {
+    auto ternaryNode = std::make_shared<TernaryNode>();
+    ternaryNode -> Cond = condition;
+    Lex.ExceptToken(TokenKind::QuestionMark);
+    ternaryNode->Then = ParseExpr();
+    Lex.ExceptToken(TokenKind::Colon);
+    ternaryNode->Else = ParseExpr();
+    return ternaryNode;
+}
 
+//example switch (7) { case 7: xxxx; break; case 6: xxxx;break;}
+//ParseSwitchCaseStmt ::= "switch" "(" num ")" "{" (("case" | "default") ":" )+ statements  （"break")?  +  "}"
+std::shared_ptr<AstNode> Parser::ParseSwitchCaseStmt() {
+    bool isEmpty = true;
+    Lex.ExceptToken(TokenKind::Switch);
+    Lex.ExceptToken(TokenKind::LParent);
+    auto switchCaseNode = std::make_shared<SwitchCaseSmtNode>();
+    switchCaseNode ->Value = ParseCastExpr();
+    Lex.ExceptToken(TokenKind::RParent);
+    Lex.ExceptToken(TokenKind::LBrace);
+    auto branchMap = std::unordered_map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>>();
+    while (Lex.CurrentToken->Kind == TokenKind::Case || Lex.CurrentToken->Kind == TokenKind::Default ){
+        auto statementsNode = std::list<std::shared_ptr<AstNode>>();
+        std::shared_ptr<AstNode> branchCond;
+        if (Lex.CurrentToken->Kind ==TokenKind::Case){
+            Lex.GetNextToken();
+            branchCond = ParseCastExpr();
+        }else if(Lex.CurrentToken->Kind ==TokenKind::Default){
+            Lex.GetNextToken();
+        }
+        Lex.ExceptToken(TokenKind::Colon);
+        while(Lex.CurrentToken->Kind != TokenKind::Case && Lex.CurrentToken->Kind != TokenKind::Default
+        &&  Lex.CurrentToken->Kind != TokenKind::RBrace){
+            statementsNode.push_back(ParseStatement());
+        }
+        if (!statementsNode.empty() && isEmpty)
+            isEmpty = false;
+        if(branchCond){
+            branchMap[branchCond] = statementsNode;
+        }else{
+            switchCaseNode ->DefaultBranch = statementsNode;
+        }
+    }
+    if (isEmpty){
+        auto emptyNode = std::make_shared<EmptyNode>();
+        return emptyNode;
+    }
+    switchCaseNode ->CaseBranch = branchMap;
+    Lex.ExceptToken(TokenKind::RBrace);
+    return switchCaseNode;
+}

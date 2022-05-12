@@ -64,6 +64,9 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseDeclarationExpr();
 
+        std::shared_ptr<AstNode> ParseTernaryExpr(std::shared_ptr<AstNode> condition);
+
+        std::shared_ptr<AstNode> ParseSwitchCaseStmt();
 
     private:
         const bool IsTypeName();

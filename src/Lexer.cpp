@@ -98,6 +98,12 @@ void BDD::Lexer::GetNextToken() {
     }else if(CurChar == '~'){
         kind = TokenKind::Tilde;
         GetNextChar();
+    }else if(CurChar == ':'){
+        kind = TokenKind::Colon;
+        GetNextChar();
+    }else if(CurChar == '?'){
+        kind = TokenKind::QuestionMark;
+        GetNextChar();
     }else if(CurChar == '='){
         if (PeekChar(1)=='='){
             GetNextChar();
@@ -111,7 +117,7 @@ void BDD::Lexer::GetNextToken() {
             GetNextChar();
             kind = TokenKind::NotEqual;
         }else{
-            DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);
+            kind = TokenKind::ExclamationMark;
         }
         GetNextChar();
     }else if(isdigit(CurChar)){
@@ -243,6 +249,12 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::_Bool;
             }else if(content == "enum"){
                 kind = TokenKind::Enum;
+            }else if(content == "switch"){
+                kind = TokenKind::Switch;
+            }else if(content == "case"){
+                kind = TokenKind::Case;
+            }else if(content == "default"){
+                kind = TokenKind::Default;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);

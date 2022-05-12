@@ -1,8 +1,24 @@
 int testCode(){
-    testEnum();
+//    testEnum();
+    testSwitch();
     return 0;
 }
 
+int testSwitch(){
+    int a = 9;
+    switch (a) {
+        case 1:
+            a = a +1;
+            break;
+        case 2:
+            a = a + 2;
+        case 3:
+            a = a + 3;
+        default:
+            a = 5;
+    }
+    assert(2,a);
+}
 int testEnum(){
 //    float m[3] = {3.0,1.0,2.0};
 //    print_float(m[2]);
@@ -39,48 +55,54 @@ int testEnum(){
 //    assert_fd((double)-1.0,({max_d-1;}));
 //    long m1 = 985;
 
-    typedef struct User
-    {
-        char *  name;
-        int  age;
-        int  sex;
-        int height;
-        int width;
-    } user ;
-    user a = {"caoMaoBoy_a",10,1,190,140};
-    user b = {"caoMaoBoy_b",11,0,190,140};
-    typedef int zhengShu;
-    zhengShu i = 0;
-    zhengShu mi = 11;
-    zhengShu ma[3] ={1,2,3};
-    float f22 = 1.0;
-    float f23 = 1.0;
-    int mmmx = f22 != f23;
-    zhengShu b1 = 0b00001111;
-    zhengShu b2 = 0b11110001;
-    zhengShu b3 = b1 & b2;
-    zhengShu b5 = 0b00000010;
-    zhengShu b6 = b2 | b5;
-    zhengShu *p1 = &i;
-    zhengShu *pi = &ma;
-    struct User *pa = &a;
-    printf("Hello, %s!\n",(pa+1)->name);
-    float m1[3] = {3.0,1.0,2.0};
-    float * cm = &m1[3];
-    float * dm = &m1[2];
-    enum Bool {true = 1,false = 0};
-    int m = true;
-    assert(3,({(i++)+(i++)+(i++);}));
-    assert(0,mmmx);
-    assert(12,b1 ^ 3);
-    assert(240,b1 << 4);
-    assert(15,b2 >> 4);
-    assert(1,b3);
-    assert(243,b6);
-    assert(11,(pa +1)->age);
-    assert(11,*(p1 +1));
-    assert(2,*(pi +1));
-    assert(1,cm-dm);
-    assert(-2,~m);
+//    typedef struct User
+//    {
+//        char *  name;
+//        int  age;
+//        int  sex;
+//        int height;
+//        int width;
+//    } user ;
+//    user a = {"caoMaoBoy_a",10,1,190,140};
+//    user b = {"caoMaoBoy_b",11,0,190,140};
+//    typedef int zhengShu;
+//    zhengShu i = 0;
+//    zhengShu mi = 11;
+//    zhengShu ma[3] ={1,2,3};
+//    float f22 = 1.0;
+//    float f23 = 1.0;
+//    int mmmx = f22 != f23;
+//    zhengShu b1 = 0b00001111;
+//    zhengShu b2 = 0b11110001;
+//    zhengShu b3 = b1 & b2;
+//    zhengShu b5 = 0b00000010;
+//    zhengShu b6 = b2 | b5;
+//    zhengShu *p1 = &i;
+//    zhengShu *pi = &ma;
+//    struct User *pa = &a;
+//    printf("Hello, %s!\n",(pa+1)->name);
+//    float m1[3] = {3.0,1.0,2.0};
+//    float * cm = &m1[3];
+//    float * dm = &m1[2];
+//    enum Bool {true = 1,false = 0};
+//    int m = true;
+//    assert(3,({(i++)+(i++)+(i++);}));
+//    assert(0,mmmx);
+//    assert(12,b1 ^ 3);
+//    assert(240,b1 << 4);
+//    assert(15,b2 >> 4);
+//    assert(1,b3);
+//    assert(243,b6);
+//    assert(11,(pa +1)->age);
+//    assert(11,*(p1 +1));
+//    assert(2,*(pi +1));
+//    assert(1,cm-dm);
+//    assert(-2,~m);
+//     int m = 3;
+//     int z = 4;
+//     int  y = m > z ? m * 3:(m-1) * 2;
+//     assert(4,y);
+//     int mx = !y;
+//     assert(0,mx);
 }
 

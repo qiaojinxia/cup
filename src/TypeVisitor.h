@@ -14,6 +14,7 @@ namespace BDD{
         void Visitor(ExprVarNode *node) override;
         void Visitor(ProgramNode *node) override;
         void Visitor(IfStmtNode *node) override;
+        void Visitor(SwitchCaseSmtNode *node) override;
         void Visitor(BlockStmtNode *node) override;
         void Visitor(WhileStmtNode *node) override;
         void Visitor(DoWhileStmtNode *node) override;
@@ -28,6 +29,7 @@ namespace BDD{
         void Visitor(CastNode *node) override;
         void Visitor(SizeOfExprNode *node) override;
         void Visitor(MemberAccessNode *node) override;
+        void Visitor(TernaryNode *node) override;
         void Visitor(BreakStmtNode *node) override;
         void Visitor(ContinueStmtNode *node) override;
         void Visitor(ArefNode *node) override;

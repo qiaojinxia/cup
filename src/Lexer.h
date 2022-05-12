@@ -70,6 +70,12 @@ namespace BDD{
         UNSIGNED,
         Enum,
         Tilde,
+        QuestionMark,
+        Colon,
+        ExclamationMark,
+        Switch,
+        Case,
+        Default,
     };
     class SourceLocation{
     public:
