@@ -100,3 +100,5 @@
   - Add  ~  case: `int a = ～2; `
 - 2022-5-12
   - Support ! operation ternaryExpr  switchCaseStateMent case`int m = !3; a < 3?a=2:a=7; switch(xxx){case:xxx default:xxx} `
+- 2022-5-13
+  - Support const keyword case `int const *  a = 3;`

@@ -1,23 +1,31 @@
 int testCode(){
 //    testEnum();
-    testSwitch();
+//    testSwitch();
+    testConstant();
     return 0;
 }
 
+//int testConstant(){
+//    int  b = 3;
+//    int * const  pointer=3;
+//    pointer = &b;
+//}
+
 int testSwitch(){
-    int a = 9;
+    int a = 1;
     switch (a) {
         case 1:
-            a = a +1;
-            break;
-        case 2:
             a = a + 2;
+        case 2:
+            a = a + 5;
+            break;
         case 3:
-            a = a + 3;
+            a = a + 1;
+            break;
         default:
             a = 5;
     }
-    assert(2,a);
+    assert(3,a);
 }
 int testEnum(){
 //    float m[3] = {3.0,1.0,2.0};

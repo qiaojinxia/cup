@@ -157,6 +157,7 @@ class BinaryNode :public  AstNode{
     public:
         std::string_view Name;
         std::shared_ptr<Var> VarObj;
+        bool IsConstant;
         int Offset;
         void Accept(AstVisitor *visitor) override;
     };
@@ -334,7 +335,7 @@ class BinaryNode :public  AstNode{
     public:
         std::shared_ptr<AstNode> Value;
         std::list<std::shared_ptr<AstNode>> DefaultBranch;
-        std::unordered_map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>> CaseBranch;
+        std::map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>> CaseBranch;
         void Accept(AstVisitor *visitor) override;
     };
 

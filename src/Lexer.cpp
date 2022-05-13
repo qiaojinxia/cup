@@ -255,6 +255,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Case;
             }else if(content == "default"){
                 kind = TokenKind::Default;
+            }else if(content == "const"){
+                kind = TokenKind::Const;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);

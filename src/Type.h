@@ -51,7 +51,7 @@ namespace BDD{
         bool IsIntegerNum() const;
         bool IsFloatPointNum() const;
         virtual std::shared_ptr<Type> GetBaseType(){return nullptr;};
-
+        bool IsConstant;
         bool IsFunctionType() const;
         bool IsPointerType() const;
         bool IsArrayType() const;

@@ -512,7 +512,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
                 }
             }else{
                 if (constNode-> Type-> IsPointerType()){
-                    assert(0);
+                    printf("\t  movq $%s,(%%rdi)\n",constNode->GetValue().data());
                 }else if (constNode->Type->IsFloatPointNum()){
                     printf("\t  mov $%s,%s\n",constNode->GetValue().data(), GetRax(constNode->Type).data());
                     printf("\t  mov %s,%d(%%rdi)\n" ,GetRax(constNode->Type).data(),constNode->Offset);
@@ -1176,10 +1176,10 @@ void CodeGenerate::Visitor(SwitchCaseSmtNode *node) {
     std::string EndLabel= string_format(".Ls%d_end\n",n);
     PushBreak(EndLabel);
     node->Value ->Accept(this);
+    printf("\t  mov %s,%s\n", GetRax(node->Value->Type).data(), GetRcx(node->Value->Type).data());
     for (auto &branch:node->CaseBranch){
-        printf("\t  mov %s,%s\n", GetRax(node->Value->Type).data(), GetRcx(node->Value->Type).data());
-        branch.first->Accept(this);
-        printf("\t  cmp %s,%s\n", GetRax(node->Value->Type).data(), GetRcx(node->Value->Type).data());
+        auto constantNode = std::dynamic_pointer_cast<ConstantNode>(branch.first);
+        printf("\t  cmp $%s,%s\n", constantNode->GetValue().data(), GetRcx(node->Value->Type).data());
         printf("\t  je .Ls%d_%d\n",n,index++);
     }
     printf("\t  jmp .Ls%d_d\n",n);

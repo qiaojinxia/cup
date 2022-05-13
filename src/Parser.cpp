@@ -7,6 +7,7 @@
 #include "Lexer.h"
 #include "AstNode.h"
 #include "Diag.h"
+#include "TypeVisitor.h"
 
 using namespace BDD;
 
@@ -74,7 +75,6 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
 
             auto exprVarNode = std::make_shared<ExprVarNode>();
             exprVarNode -> Name = Lex.CurrentToken->Content;
-
             auto nodeName = std::string (Lex.CurrentToken -> Content);
             auto varObj = FindLocalVar(Lex.CurrentToken -> Content);
             if (!varObj){
@@ -83,7 +83,9 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                     DiagLoc(Lex.SourceCode, Lex.GetLocation(), "undefined variable|enum %s ", nodeName.data());
                 }
                 node = constObj;
+                exprVarNode -> Type = constObj->Type;
             }else{
+                exprVarNode -> Type = varObj-> Type;
                 exprVarNode ->VarObj = varObj;
                 node = exprVarNode;
             }
@@ -124,7 +126,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             if (Lex.CurrentToken ->Kind == TokenKind::LParent){
                 if (IsTypeName()){
                     Lex.GetNextToken();
-                    auto type = ParseDeclarationSpec(0);
+                    auto type = ParseDeclarationSpec();
                     auto emptyNode= std::make_shared<EmptyNode>();
                     emptyNode ->Type = type;
                     sizeOfNode -> Lhs = emptyNode;
@@ -257,7 +259,7 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
         //"typedef" ("char" | "short" | "int" | "long" | "float" | "double" | "struct{" (field1,)+ "}")+ aliasName
         Lex.GetNextToken();
         auto tokens = std::list<std::shared_ptr<Token>>();
-        auto type = ParseDeclarator(ParseDeclarationSpec(0),&tokens);
+        auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
         if(Scope::GetInstance() -> FindTag( Lex.CurrentToken->Content)){
             DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"typedef repeated!");
         }
@@ -294,7 +296,7 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     auto node =std::make_shared<FunctionNode>();
     LocalVars = &node -> Locals;
     Scope::GetInstance() -> PushScope();
-    auto type = ParseDeclarationSpec(0);
+    auto type = ParseDeclarationSpec();
     std::list<std::shared_ptr<Token>> nameTokens;
     node -> FuncName = Lex.CurrentToken->Content;
 
@@ -334,11 +336,18 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
     return node;
 }
 
-//ParseDeclarationSpec :=  ( int ｜ char | short | long | union | struct | union | float | double | *)  ParseDeclarationSpec |  ε
-std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
+//ParseDeclarationSpec :=  ( int ｜ char | short | long | union | struct | union | float | double | const | *)  ParseDeclarationSpec |  ε
+std::shared_ptr<Type> Parser::ParseDeclarationSpec() {
+    bool isConstant = false;
+    int baseType = 0;
     std::shared_ptr<Type> sType;
+    std::shared_ptr<Type> type;
     while(true){
-        if (Lex.CurrentToken -> Kind == TokenKind::Int){
+        if (Lex.CurrentToken -> Kind == TokenKind::Const){
+            isConstant = true;
+            Lex.GetNextToken();
+            continue;
+        }else if (Lex.CurrentToken -> Kind == TokenKind::Int){
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Int;
             continue;
@@ -376,13 +385,14 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Asterisk){
             Lex.GetNextToken();
-            std::shared_ptr<PointerType> pointerType;
             if (sType){
-                pointerType = std::make_shared<PointerType>(sType);
+                sType ->IsConstant = isConstant;
+                sType = std::make_shared<PointerType>(sType);
             }else{
-                pointerType = std::make_shared<PointerType>(ParseDeclarationSpec(baseType));
+                sType = std::make_shared<PointerType>(GenerateType(baseType, isConstant));
             }
-           return pointerType;
+            isConstant = false;
+            continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::SIGNED){
             Lex.GetNextToken();
             baseType |= (int) BuildInType::Kind::Signed;
@@ -398,6 +408,7 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
         }else{
             auto type = Scope::GetInstance() -> FindTag(Lex.CurrentToken ->Content);
             if (type){
+                sType ->IsConstant= isConstant;
                 sType = type;
                 Lex.GetNextToken();
                 continue;
@@ -405,8 +416,15 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
             break;
         }
     }
-    if (sType)
+    if (sType){
+        sType ->IsConstant = isConstant;
         return sType;
+    }
+    type = GenerateType(baseType,isConstant);
+    return type;
+}
+
+std::shared_ptr<Type> Parser::GenerateType(int baseType,bool isConstant) {
     std::shared_ptr<Type> type;
     switch ((BuildInType::Kind)baseType) {
         case BuildInType::Kind::Void:
@@ -466,9 +484,9 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(int baseType) {
         default:
             DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"invalid type!");
     }
+    type ->IsConstant = isConstant;
     return type;
 }
-
 //ParseTypeSuffix ::=  "(" (ParseDeclarationSpec,ParseDeclarator)? ")" |  ("[" ParseTypeSuffix "]")* | ε
 std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
     if (Lex.CurrentToken -> Kind == TokenKind::LParent){
@@ -476,13 +494,13 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
         Lex.GetNextToken();
         if (Lex.CurrentToken -> Kind != TokenKind::RParent){
             std::list<std::shared_ptr<Token>> tokens;
-            auto type = ParseDeclarator(ParseDeclarationSpec(0),&tokens);
+            auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
             auto param = std::make_shared<Param>();
             param -> Type = type;
             param -> TToken = tokens.back();
             funcType -> Params.push_back(param);
             while (Lex.CurrentToken -> Kind != TokenKind::RParent){
-                auto type = ParseDeclarator(ParseDeclarationSpec(0),&tokens);
+                auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
                 auto param = std::make_shared<Param>();
                 param ->Type = type;
                 param ->TToken = tokens.back();
@@ -585,6 +603,9 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
         }else if(Lex.CurrentToken -> Kind == TokenKind::PPlus){
             Lex.GetNextToken();
             auto incrNode = std::make_shared<IncrNode>();
+            if (left ->Type ->IsConstant){
+                DiagLoc(Lex.SourceCode, Lex.GetLocation(), "constant can't change!");
+            }
             incrNode -> Lhs = left;
             auto constNode  =  std::make_shared<ConstantNode>(nullptr);
             constNode -> Value = 1;
@@ -650,7 +671,7 @@ std::shared_ptr<RecordType> Parser::ParseRecord(RecordType::TagKind recordeType)
     if (Lex.CurrentToken -> Kind ==  TokenKind::LBrace){
         Lex.GetNextToken();
         while(Lex.CurrentToken  -> Kind != TokenKind::RBrace){
-            auto type = ParseDeclarationSpec(0);
+            auto type = ParseDeclarationSpec();
             std::list<std::shared_ptr<Token>> nameTokens;
             type = ParseDeclarator(type,&nameTokens);
             for(auto &tk:nameTokens){
@@ -673,6 +694,7 @@ std::shared_ptr<RecordType> Parser::ParseRecord(RecordType::TagKind recordeType)
 }
 
 std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
+    TypeVisitor typeVisitor;
     auto leftNode  = ParseCastExpr();
     while(true){
         if (TOpPrecedence[Lex.CurrentToken->Kind] >= priority){
@@ -692,6 +714,10 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::IDiv);
                 break;
             case TokenKind::Assign:
+                leftNode->Accept(&typeVisitor);
+                if (leftNode->Type->IsConstant){
+                    DiagLoc(Lex.SourceCode, Lex.GetLocation(), "constant  can't change!");
+                }
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Assign);
                 break;
             case TokenKind::Mod:
@@ -834,7 +860,8 @@ const bool Parser::IsTypeName() {
         || Lex.CurrentToken -> Kind == TokenKind::Float || Lex.CurrentToken -> Kind == TokenKind::Double
         || Lex.CurrentToken -> Kind == TokenKind::Struct || Lex.CurrentToken -> Kind == TokenKind::Union
         || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED
-        || Lex.CurrentToken -> Kind == TokenKind::_Bool || Lex.CurrentToken -> Kind == TokenKind::Enum){
+        || Lex.CurrentToken -> Kind == TokenKind::_Bool || Lex.CurrentToken -> Kind == TokenKind::Enum
+        || Lex.CurrentToken -> Kind == TokenKind::Const){
         return true;
     }
     if(Scope::GetInstance() -> FindTagInCurrentScope(Lex.CurrentToken->Content)){
@@ -850,7 +877,7 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
         auto castNode = std::make_shared<CastNode>();
         Lex.GetNextToken();
         if (IsTypeName()){
-            auto type = ParseDeclarationSpec(0);
+            auto type = ParseDeclarationSpec();
             castNode -> Type  = type;
             Lex.SkipToken(TokenKind::RParent);
             castNode -> CstNode = ParseCastExpr();
@@ -869,7 +896,7 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
     }else if (IsTypeName()){
         std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
         auto tokens = std::list<std::shared_ptr<Token>>();
-        auto type = ParseDeclarator(ParseDeclarationSpec(0),&tokens);
+        auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
         for (auto &tk:tokens) {
             auto newVarNode = std::make_shared<ExprVarNode>();
             newVarNode -> Name = tk -> Content;
@@ -983,7 +1010,7 @@ std::shared_ptr<AstNode> Parser::ParseSwitchCaseStmt() {
     switchCaseNode ->Value = ParseCastExpr();
     Lex.ExceptToken(TokenKind::RParent);
     Lex.ExceptToken(TokenKind::LBrace);
-    auto branchMap = std::unordered_map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>>();
+    auto branchMap = std::map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>>();
     while (Lex.CurrentToken->Kind == TokenKind::Case || Lex.CurrentToken->Kind == TokenKind::Default ){
         auto statementsNode = std::list<std::shared_ptr<AstNode>>();
         std::shared_ptr<AstNode> branchCond;
