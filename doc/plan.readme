@@ -102,3 +102,5 @@
   - Support ! operation ternaryExpr  switchCaseStateMent case`int m = !3; a < 3?a=2:a=7; switch(xxx){case:xxx default:xxx} `
 - 2022-5-13
   - Support const keyword case `int const *  a = 3;`
+- 2022-5-13
+    - Support || &&  case `int a = 1; int b =0; int b =2;if(a<1&&b>1 || a ==0){}else{}`

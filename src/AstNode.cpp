@@ -72,7 +72,7 @@ void ExprVarNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
 
-void IfStmtNode::Accept(AstVisitor *visitor) {
+void IfElseStmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
 
@@ -196,3 +196,12 @@ void TernaryNode::Accept(AstVisitor *visitor) {
 void SwitchCaseSmtNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
+
+void AndNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+
+void OrNode::Accept(AstVisitor *visitor) {
+    visitor->Visitor(this);
+}
+

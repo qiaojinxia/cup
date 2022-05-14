@@ -18,7 +18,7 @@ namespace BDD{
         void Visitor(ExprVarNode *node) override;
         void Visitor(BinaryNode *node) override;
         void Visitor(ConstantNode *node) override;
-        void Visitor(IfStmtNode *node) override;
+        void Visitor(IfElseStmtNode *node) override;
         void Visitor(BlockStmtNode *node) override;
         void Visitor(WhileStmtNode *node) override;
         void Visitor(DoWhileStmtNode *node) override;

@@ -77,11 +77,11 @@ namespace BDD{
         IDiv,
         Mod,
         IMod,
-        And,
-        Or,
-        Xor,
-        Sal,
-        Sar,
+        BitAnd,
+        BitOr,
+        BitXor,
+        BitSal,
+        BitSar,
         Assign,
         Equal,
         FloatPointEqual,
@@ -96,6 +96,8 @@ namespace BDD{
         LesserEqual,
         FloatPointLesserEqual,
         Eof,
+        And,
+        Or,
     };
     static std::map<TokenKind,int> TOpPrecedence = {
 
@@ -117,6 +119,8 @@ namespace BDD{
             {TokenKind::Caret, 9},
             {TokenKind::Amp, 8},
             {TokenKind::Eof,      13},
+            {TokenKind::And,      11},
+            {TokenKind::Or,      12},
     };
 
 class BinaryNode :public  AstNode{
@@ -162,7 +166,7 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
-    class IfStmtNode :public AstNode{
+    class IfElseStmtNode : public AstNode{
     public:
         std::shared_ptr<AstNode> Cond{nullptr};
         std::shared_ptr<AstNode> Then{nullptr};
@@ -331,6 +335,16 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class AndNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
+    class OrNode : public BinaryNode{
+    public:
+        void Accept(AstVisitor *visitor) override;
+    };
+
     class SwitchCaseSmtNode: public AstNode{
     public:
         std::shared_ptr<AstNode> Value;
@@ -349,7 +363,7 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(ExprVarNode *node){};
 
         //statement
-        virtual void Visitor(IfStmtNode *node){};
+        virtual void Visitor(IfElseStmtNode *node){};
         virtual void Visitor(BlockStmtNode *node){};
         virtual void Visitor(WhileStmtNode *node){};
         virtual void Visitor(DoWhileStmtNode *node){};
@@ -384,6 +398,8 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(DecrNode *node){};
         virtual void Visitor(CmpNode *node){};
         virtual void Visitor(BitOpNode *node){};
+        virtual void Visitor(AndNode *node){};
+        virtual void Visitor(OrNode *node){};
     };
 }
 

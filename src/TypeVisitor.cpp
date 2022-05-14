@@ -125,9 +125,11 @@ void TypeVisitor::Visitor(ProgramNode *node) {
     }
 }
 
-void TypeVisitor::Visitor(IfStmtNode *node) {
+void TypeVisitor::Visitor(IfElseStmtNode *node) {
     node ->Cond ->Accept(this);
-    node ->Then ->Accept(this);
+    if (node -> Else){
+        node ->Then ->Accept(this);
+    }
     if (node -> Else){
         node ->Else->Accept(this);
     }
@@ -443,7 +445,7 @@ void TypeVisitor::Visitor(CmpNode *node) {
         }else if (node -> BinOp == BinaryOperator::Greater){
             node -> BinOp = BinaryOperator::FloatPointGreater;
         }else if (node -> BinOp == BinaryOperator::GreaterEqual){
-            node -> BinOp = BinaryOperator::FloatPointGreater;
+            node -> BinOp = BinaryOperator::FloatPointGreaterEqual;
         }else if (node -> BinOp == BinaryOperator::Equal){
             node -> BinOp = BinaryOperator::FloatPointEqual;
         }else if (node -> BinOp == BinaryOperator::NotEqual){
@@ -491,4 +493,16 @@ void TypeVisitor::Visitor(SwitchCaseSmtNode *node) {
             statement ->Accept(this);
         }
     }
+}
+
+void TypeVisitor::Visitor(OrNode *node) {
+    node ->Lhs ->Accept(this);
+    node ->Rhs ->Accept(this);
+    node ->Type = Type::BoolType;
+}
+
+void TypeVisitor::Visitor(AndNode *node) {
+    node ->Lhs ->Accept(this);
+    node ->Rhs ->Accept(this);
+    node ->Type = Type::BoolType;
 }

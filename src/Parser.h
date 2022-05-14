@@ -70,6 +70,24 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseSwitchCaseStmt();
 
+        std::shared_ptr<AstNode> ParseIfElseStmt();
+
+        std::shared_ptr<AstNode> ParseWhileStmt();
+
+        std::shared_ptr<AstNode> ParseForStmt();
+
+        std::shared_ptr<AstNode> ParseDoWhileStmt();
+
+        std::shared_ptr<AstNode> ParseBreakStmt();
+
+        std::shared_ptr<AstNode> ParseReturnStmt();
+
+        std::shared_ptr<AstNode> ParseContinueStmt();
+
+        std::shared_ptr<AstNode> ParseTypeDef();
+
+        std::shared_ptr<AstNode> ParseBlock();
+
     private:
         const bool IsTypeName();
     };

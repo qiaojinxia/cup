@@ -1,7 +1,8 @@
 int testCode(){
 //    testEnum();
 //    testSwitch();
-    testConstant();
+//    testConstant();
+    testIf();
     return 0;
 }
 
@@ -11,23 +12,23 @@ int testCode(){
 //    pointer = &b;
 //}
 
-int testSwitch(){
-    int a = 1;
-    switch (a) {
-        case 1:
-            a = a + 2;
-        case 2:
-            a = a + 5;
-            break;
-        case 3:
-            a = a + 1;
-            break;
-        default:
-            a = 5;
+int testIf(){
+    float a = 300.0;
+    float b = 400.0;
+    if (b >= 399.0 && a > 300.0 ){
+        a = a + 1.0;
+    }else{
+        a = a - 3.0;
     }
-    assert(3,a);
+    assert(0,(int)(a > 300.0));
+    assert_f(297.0,a);
 }
-int testEnum(){
+//int testSwitch(){
+//    int a = 1;
+//    switch (a) {case 1:a = a + 2;case 2:a = a + 5;break;case 3:a = a + 1;break;default:a = 5;}
+//    assert(3,a);
+//}
+//int testEnum(){
 //    float m[3] = {3.0,1.0,2.0};
 //    print_float(m[2]);
 //    float x = 5.0;
@@ -40,7 +41,7 @@ int testEnum(){
 //    assert_f(m[1] + 1.0 ,2.0);
 //    assert_f(m[2] - m[1] ,1.0);
 //    int x1 = 3;
-//      int x2 = 2;
+//    int x2 = 2;
 //    assert(1,x1-x2);
 //    double d1 = 4.0;
 //    double d2 = 5.0;
@@ -112,5 +113,5 @@ int testEnum(){
 //     assert(4,y);
 //     int mx = !y;
 //     assert(0,mx);
-}
+//}
 

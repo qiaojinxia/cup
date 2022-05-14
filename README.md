@@ -4,7 +4,7 @@ Now support
 - Support data type` _Bool char short int long float double  array string Literal and unsigned symbol`
 - `>> <<  | & ^ Bit operation`
 - Support IfStatement 、 WhileStatement 、do WhileStatement 、 ForStatement 、 Return 、SwitchCaseStatement
-- Support Relational operator `> 、 < 、 >= 、 <= 、  != 、 == `
+- Support Relational operator `> 、 < 、 >= 、 <= 、  != 、 ==  && ||`
 - Support Binary Operater `+ 、 - 、 * 、 / 、 ++ 、 -- 、 % `
 - Support Unary Operator ` + 、 - 、 ～ , & , * , !`
 - Support Ternary Operator `int a = b < c ? b : c;`

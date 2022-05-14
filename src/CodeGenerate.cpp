@@ -186,15 +186,16 @@ void CodeGenerate::Visitor(ProgramNode *node) {
         s->Accept(this);
 }
 
-void CodeGenerate::Visitor(IfStmtNode *node) {
+void CodeGenerate::Visitor(IfElseStmtNode *node) {
+    IsReverseJmpModule = true;
     int n = Sequence ++;
-    node -> Cond ->Accept(this);
-    printf("\t  cmp $0,%%rax\n");
-    if (node -> Else){
-        printf("\t  je .L.else_%d\n",n);
+    if (node ->Else){
+        PushJmpLabel(string_format(".L.else_%d",n));
     }else{
-        printf("\t  je .L.end_%d\n",n);
+        PushJmpLabel(string_format(".L.end_%d",n));
     }
+    node -> Cond ->Accept(this);
+    IsReverseJmpModule = false;
     node -> Then->Accept(this);
     printf("\t jmp .L.end_%d\n",n);
     if (node -> Else){
@@ -203,6 +204,7 @@ void CodeGenerate::Visitor(IfStmtNode *node) {
         printf("\t jmp .L.end_%d\n",n);
     }
     printf(".L.end_%d:\n",n);
+    PopJmpLabel();
 }
 
 void CodeGenerate::Visitor(BlockStmtNode *node) {
@@ -526,7 +528,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
                         offset += outPutIntNode .Size;
                     }
                 }else if (!cursor -> Type -> IsStringType() && !cursor -> Type -> IsStructType() && !cursor -> Type -> IsArrayType()){
-                    printf("\t  mov %s,(%%rdi)\n",GetRax(constNode-> Type).data());
+                    printf("\t  %s $%s,(%%rdi)\n", GetMoveCode2(constNode->Type).data(),constNode->GetValue().data());
                 }else{
                     printf("\t  %s  $%s,%d(%%rdi)\n", GetMoveCode2(constNode->Type).data(), constNode->GetValue().c_str(), constNode -> Offset);
                 }
@@ -929,13 +931,15 @@ const std::string CodeGenerate::GetSet(BinaryOperator op) {
         case BinaryOperator::Greater:
             return "setg";
         case BinaryOperator::FloatPointGreater:
-        case BinaryOperator::FloatPointLesser:
             return "seta";
+        case BinaryOperator::FloatPointLesser:
+            return "setb";
         case  BinaryOperator::GreaterEqual:
             return "setge";
         case  BinaryOperator::FloatPointGreaterEqual:
-        case BinaryOperator::FloatPointLesserEqual:
             return "setae";
+        case BinaryOperator::FloatPointLesserEqual:
+            return "setbe";
         case BinaryOperator::Lesser:
             return "setl";
         case BinaryOperator::LesserEqual:
@@ -957,7 +961,10 @@ void CodeGenerate::Visitor(EmptyNode *node) {}
 
 void CodeGenerate::Visitor(AssignNode *node) {
     USeXmm();
-    node -> Rhs -> Accept(this);
+    auto constantNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
+    if (!constantNode){
+        node -> Rhs -> Accept(this);
+    }
     GenerateAddress(node ->Lhs.get(),"%rdi");
     Store(node -> Rhs);
     ReleaseXmm();
@@ -1113,20 +1120,23 @@ void CodeGenerate::Visitor(DecrNode *node) {
 }
 
 void CodeGenerate::Visitor(CmpNode *node) {
-    node -> Lhs -> Accept(this);
-    node -> Rhs -> Accept(this);
-    if (node -> BinOp == BinaryOperator::FloatPointGreater || node -> BinOp == BinaryOperator::FloatPointGreaterEqual){
-        printf("\t  ucomiss %s, %s\n", Xmm[Depth - 1],Xmm[Depth - 2]);
-        printf("\t  %s  %%al\n", GetSet(node -> BinOp).data());
-        Depth -=2;
-    }else if(node -> BinOp == BinaryOperator::FloatPointLesser ||   node -> BinOp == BinaryOperator::FloatPointLesserEqual
-    || node -> BinOp == BinaryOperator::FloatPointEqual || node -> BinOp == BinaryOperator::FloatPointNotEqual){
-        printf("\t  ucomiss %s, %s\n", Xmm[Depth - 2],Xmm[Depth - 1]);
-        printf("\t  %s  %%al\n", GetSet(node -> BinOp).data());
+    if (node->Lhs->Type->IsFloatPointNum() || node->Rhs->Type->IsFloatPointNum()){
+        node -> Lhs -> Accept(this);
+        node -> Rhs -> Accept(this);
+        printf("\t  ucomiss %s, %s\n",Xmm[Depth - 1] ,Xmm[Depth - 2]);
         Depth -=2;
     }else{
+        node -> Rhs -> Accept(this);
+        Push(node -> Rhs->Type);
+        node -> Lhs -> Accept(this);
+        Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
         printf("\t  cmp %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
-        printf("\t  %s %%al\n", GetSet(node ->BinOp).data());
+    }
+    if(!IsReverseJmpModule){
+            printf("\t  %s  %%al\n", GetSet(node -> BinOp).data());
+            printf("\t  movzx %%al,%%eax\n");
+    }else {
+        printf("\t  %s %s\n", GetReverseJmp(node->BinOp).data(), GetJmpLabel().data());
     }
 }
 
@@ -1136,21 +1146,21 @@ void CodeGenerate::Visitor(BitOpNode *node) {
     node -> Lhs -> Accept(this);
     Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
     switch (node ->BinOp) {
-        case BinaryOperator::And:
+        case BinaryOperator::BitAnd:
             printf("\t  and %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
             break;
-        case BinaryOperator::Or:
+        case BinaryOperator::BitOr:
             printf("\t  or %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
             break;
-        case BinaryOperator::Sar:
+        case BinaryOperator::BitSar:
             printf("\t  mov %%dil,%%cl\n");
             printf("\t  sar %%cl,%s\n",GetRax(node -> Lhs->Type).data());
             break;
-        case BinaryOperator::Sal:
+        case BinaryOperator::BitSal:
             printf("\t  mov %%dil,%%cl\n");
             printf("\t  sal %%cl,%s\n",GetRax(node -> Lhs->Type).data());
             break;
-        case BinaryOperator::Xor:
+        case BinaryOperator::BitXor:
             printf("\t  xor %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
             break;
         default:
@@ -1198,3 +1208,65 @@ void CodeGenerate::Visitor(SwitchCaseSmtNode *node) {
     PopBreak();
 }
 
+void CodeGenerate::Visitor(AndNode *node) {
+    node ->Lhs ->Accept(this);
+    node ->Rhs ->Accept(this);
+}
+
+void CodeGenerate::Visitor(OrNode *node) {
+    int n = Sequence ++;
+    auto label = string_format(".LI%d\n",n);
+    auto endLabel = string_format(".LI%d_End\n",n);
+    PushJmpLabel(label);
+    node -> Lhs -> Accept(this);
+    printf("\t  jmp %s\n",endLabel.data());
+    printf(".LI%d:\n",n);
+    PopJmpLabel();
+    node -> Rhs -> Accept(this);
+    printf(".LI%d_End:\n",n);
+}
+
+
+const void CodeGenerate::PushJmpLabel(std::string labelName) {
+    JmpStack.push_back(labelName);
+}
+
+const std::string CodeGenerate::PopJmpLabel() {
+    auto backLabel = GetJmpLabel();
+    JmpStack.pop_back();
+    return std::string(backLabel);
+}
+
+const std::string CodeGenerate::GetJmpLabel() {
+    auto backLabel = JmpStack.back();
+    return std::string(backLabel);
+}
+
+std::string CodeGenerate::GetReverseJmp(BinaryOperator anOperator) {
+    switch (anOperator) {
+        case BinaryOperator::Greater:
+            return "jle";
+        case BinaryOperator::FloatPointGreater:
+            return "jbe";
+        case BinaryOperator::FloatPointLesser:
+            return "jae";
+        case BinaryOperator::GreaterEqual:
+            return "jl";
+        case BinaryOperator::FloatPointGreaterEqual:
+            return "jb";
+        case BinaryOperator::FloatPointLesserEqual:
+            return "ja";
+        case BinaryOperator::Lesser:
+            return "jge";
+        case BinaryOperator::LesserEqual:
+            return "jg";
+        case BinaryOperator::Equal:
+        case BinaryOperator::FloatPointEqual:
+            return "jne";
+        case BinaryOperator::NotEqual:
+        case BinaryOperator::FloatPointNotEqual:
+            return "je";
+        default:
+            assert(0);
+    }
+}

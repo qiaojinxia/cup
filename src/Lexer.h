@@ -77,6 +77,8 @@ namespace BDD{
         Case,
         Default,
         Const,
+        And,
+        Or,
     };
     class SourceLocation{
     public:

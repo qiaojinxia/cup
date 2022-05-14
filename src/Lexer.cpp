@@ -66,7 +66,12 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::LParent;
         GetNextChar();
     }else if(CurChar == '&'){
-        kind = TokenKind::Amp;
+        if (PeekChar(1)=='&'){
+            GetNextChar();
+            kind = TokenKind::And;
+        }else{
+            kind = TokenKind::Amp;
+        }
         GetNextChar();
     }else if(CurChar == ')'){
         kind = TokenKind::RParent;
@@ -90,7 +95,12 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::Period;
         GetNextChar();
     }else if(CurChar == '|'){
-        kind = TokenKind::VerticalBar;
+        if (PeekChar(1)=='|'){
+            GetNextChar();
+            kind = TokenKind::Or;
+        }else{
+            kind = TokenKind::VerticalBar;
+        }
         GetNextChar();
     }else if(CurChar == '^'){
         kind = TokenKind::Caret;

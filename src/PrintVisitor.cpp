@@ -77,7 +77,7 @@ void PrintVisitor::Visitor(ExprVarNode *node) {
     printf("%.*s", static_cast<int>(node -> Name.size()), node ->Name.data());
 }
 
-void PrintVisitor::Visitor(IfStmtNode *node) {
+void PrintVisitor::Visitor(IfElseStmtNode *node) {
     printf("if");
     printf("(");
     node -> Cond ->Accept(this);
