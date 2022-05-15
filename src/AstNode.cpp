@@ -18,14 +18,14 @@ void ConstantNode::Accept(AstVisitor *visitor) {
 
 
 std::string ConstantNode::GetValue() {
-    if (isChange || Token == nullptr){
+    if (isChange || Tk == nullptr){
         return std::to_string(Value);
     }
-    auto s_num = std::string(Token->Content).c_str();
-    if (is_contains_str(std::string(Token->Content),"0x")){
+    auto s_num = std::string(Tk->Content).c_str();
+    if (is_contains_str(std::string(Tk->Content),"0x")){
         return s_num;
     }
-    if (is_contains_str(std::string(Token->Content),"0b")){
+    if (is_contains_str(std::string(Tk->Content),"0b")){
         return s_num;
     }
     if (this->Type->Alias == Type::CharType->Alias){

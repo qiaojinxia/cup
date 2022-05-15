@@ -139,7 +139,6 @@ class BinaryNode :public  AstNode{
     };
 
     class ConstantNode : public AstNode{
-    private:
     public:
         explicit ConstantNode(std::shared_ptr<Token> tk): AstNode(std::move(tk)){};
         std::shared_ptr<ConstantNode> Next;
@@ -148,7 +147,6 @@ class BinaryNode :public  AstNode{
         bool isRoot{};
         bool isStore{};
         int Offset{};
-        std::shared_ptr<Token> Token;
         unsigned long Value{};
         bool isChange{};
         std::string GetValue();

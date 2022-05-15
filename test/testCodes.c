@@ -15,7 +15,7 @@ int testIf(){
     int d = 1;
     int * e = &d;
     if(c || *e){
-        assert(10.0,2);
+        assert(10,2);
     }
 }
 

@@ -185,7 +185,7 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
         if (node -> Sub){
             ParseInit(node ->Sub);
         }else{
-            printConstant(size,isFloat , isString,node ->Token);
+            printConstant(size,isFloat , isString,node -> Tk);
         }
         node -> isStore = true;
         node = node ->Next;
@@ -538,7 +538,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
                     printf("\t  mov $%s,%s\n",constNode->GetValue().data(), GetRax(constNode->Type).data());
                     printf("\t  mov %s,%d(%%rdi)\n" ,GetRax(constNode->Type).data(),constNode->Offset);
                 }else if(constNode->Type->IsStringType()){
-                    auto iter =  Str2IntArrayIterator(constNode->Token->Content);
+                    auto iter =  Str2IntArrayIterator(constNode->Tk->Content);
                     auto offset = 0;
                     while(iter.has_next()){
                         auto outPutIntNode = iter.next();
