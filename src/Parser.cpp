@@ -647,7 +647,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
     TypeVisitor typeVisitor;
     auto leftNode  = ParseCastExpr();
     while(true){
-        if (TOpPrecedence[Lex.CurrentToken->Kind] >= priority){
+        if (TopPrecedence[Lex.CurrentToken->Kind] >= priority){
             break;
         }
         switch (Lex.CurrentToken->Kind) {
@@ -720,7 +720,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
 }
 
 std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNode> left, BinaryOperator op) {
-    auto curPriority =  TOpPrecedence[Lex.CurrentToken->Kind];
+    auto curPriority =  TopPrecedence[Lex.CurrentToken->Kind];
     Lex.GetNextToken();
     std::shared_ptr<BinaryNode> binaryNode;
     switch (op){

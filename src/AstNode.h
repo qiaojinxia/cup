@@ -105,7 +105,7 @@ namespace BDD{
         And,
         Or,
     };
-    static std::map<TokenKind,int> TOpPrecedence = {
+    static std::map<TokenKind,int> TopPrecedence = {
 
             {TokenKind::Assign, 14},
             {TokenKind::Plus,     4},
@@ -145,12 +145,12 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<ConstantNode> Next;
         std::shared_ptr<ConstantNode> Sub;
         std::string Name;
-        bool isRoot;
-        bool isStore;
-        int Offset;
+        bool isRoot{};
+        bool isStore{};
+        int Offset{};
         std::shared_ptr<Token> Token;
-        unsigned long Value;
-        bool isChange;
+        unsigned long Value{};
+        bool isChange{};
         std::string GetValue();
         void Accept(AstVisitor *visitor) override;
     };
@@ -169,8 +169,6 @@ class BinaryNode :public  AstNode{
         explicit ExprVarNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::string_view Name;
         std::shared_ptr<Var> VarObj;
-        bool IsConstant{};
-        int Offset{};
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -274,7 +272,6 @@ class BinaryNode :public  AstNode{
     class BreakStmtNode : public AstNode{
     public:
         explicit BreakStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
-        std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
     };
     
@@ -397,7 +394,7 @@ class BinaryNode :public  AstNode{
 
     class AstVisitor{
     public:
-        virtual ~AstVisitor(){};
+        virtual ~AstVisitor()= default;;
         virtual void Visitor(ProgramNode *node){};
         virtual void Visitor(BinaryNode *node){};
         virtual void Visitor(ConstantNode *node){};
