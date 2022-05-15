@@ -9,5 +9,5 @@ Now support
 - Support Unary Operator ` + 、 - 、 ～ , & , * , !`
 - Support Ternary Operator `int a = b < c ? b : c;`
 - Support Pointer operation ` + 、 - 、diff`
-- Support KeyWord `enum typedef struct union const`
+- Support KeyWord `enum typedef struct union const extern`
 - Support type auto cast 

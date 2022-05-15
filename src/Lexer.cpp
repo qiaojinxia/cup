@@ -267,6 +267,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Default;
             }else if(content == "const"){
                 kind = TokenKind::Const;
+            }else if(content == "extern"){
+                kind = TokenKind::Extern;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);
@@ -275,6 +277,7 @@ void BDD::Lexer::GetNextToken() {
     CurrentToken = std::make_shared<Token>();
     CurrentToken->Kind = kind;
     CurrentToken->Value = value;
+    StartPos = startPos;
     CurrentToken -> Location = GetLocation();
     CurrentToken->Content = SourceCode.substr(startPos,Cursor - 1 -startPos);
 }
@@ -404,6 +407,7 @@ SourceLocation Lexer::GetLocation(){
     SourceLocation Location;
     Location.Line = Line;
     Location.Col = Cursor - 1 -LineHead;
+    Location.ColBegin = StartPos - 1 -LineHead;
     Location.LineHead = LineHead;
     int offset = 0;
     int cur = Cursor;

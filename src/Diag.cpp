@@ -21,7 +21,7 @@ namespace BDD{
         va_list ap;
         va_start(ap,fmt);
         std::cerr << code.substr(location.LineHead, location.Col + location.LineEnd ) << std::endl;
-        fprintf(stderr,"%*s^",location.Col -1,"");
+        fprintf(stderr,"%*s^",location.ColBegin+1,"");
         vfprintf(stderr,fmt,ap);
         fprintf(stderr,"\n");
         va_end(ap);

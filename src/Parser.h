@@ -88,6 +88,8 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseBlock();
 
+        bool ParseExtern();
+
     private:
         const bool IsTypeName();
     };

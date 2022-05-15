@@ -30,7 +30,7 @@ namespace BDD{
         int XmmPrevDepth;
         int Depth{0};
         Scope * scope;
-        bool IsReverseJmpModule{false};
+        bool IsCmpJmpModule{false};
         std::string CurrentFuncName;
         std::list<std::string_view> BreakStack;
         std::list<std::string_view> JmpStack;
@@ -137,6 +137,8 @@ namespace BDD{
         const std::string GetJmpLabel();
 
         std::string GetReverseJmp(BinaryOperator anOperator);
+
+        void CmpZero(std::shared_ptr<AstNode> node);
     };
 }
 

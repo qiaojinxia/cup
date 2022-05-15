@@ -12,7 +12,15 @@
 namespace BDD{
     class Scope;
     static std::shared_ptr<Scope> m_scopeInstance;
+    class FuncSign{
+    public:
+        FuncSign(std::shared_ptr<FunctionType> funcType) : FuncType(funcType) {};
+        std::string_view  FuncName;
+        std::shared_ptr<FunctionType> FuncType;
+    };
     class Scope {
+    public:
+        std::unordered_map<std::string_view,std::shared_ptr<FuncSign>> FuncTable = {};
     private:
         std::unordered_map<std::string,std::shared_ptr<ConstantNode>> ConstTable = {};
         int countConstant{0};
@@ -35,6 +43,8 @@ namespace BDD{
         std::shared_ptr<Var> FindVar(std::string_view varName);
         std::shared_ptr<Var> FindVarInCurrentScope(std::string_view varName);
 
+        void PushFuncSign(std::shared_ptr<FuncSign>);
+        std::shared_ptr<FuncSign> GetFuncSign(std::string_view funcName);
 
         void PushTag(std::string_view tagName, std::shared_ptr<Type> tag);
         std::shared_ptr<Type> FindTag(std::string_view tagName);
@@ -51,6 +61,7 @@ namespace BDD{
     };
 
 }
+
 
 
 #endif //BODDY_SCOPE_H

@@ -8,7 +8,7 @@
 #include <string_view>
 #include <memory>
 #include <unordered_map>
-
+#include <vector>
 
 
 namespace BDD{
@@ -77,6 +77,7 @@ namespace BDD{
         Case,
         Default,
         Const,
+        Extern,
         And,
         Or,
     };
@@ -84,6 +85,7 @@ namespace BDD{
     public:
         int Line;
         int Col;
+        int ColBegin;
         int LineHead;
         int LineEnd;
         int FilePath;
@@ -103,13 +105,12 @@ namespace BDD{
         int Cursor{0};
         int Line{0};
         int LineHead{0};
-
         char PeekPointCurChar;
         int PeekPointCursor;
         int PeekPointLine;
         int PeekPointLineHead;
+        int StartPos;
         std::shared_ptr<Token> PeekPointCurrentToken;
-
     public:
         std::shared_ptr<Token> CurrentToken;
         std::string_view SourceCode;

@@ -85,6 +85,25 @@ void BDD::CodeGenerate::Visitor(BDD::ExprStmtNode *node) {
     }
 }
 
+void CodeGenerate::CmpZero(std::shared_ptr<AstNode> node){
+    if (auto cmpNode = std::dynamic_pointer_cast<CmpNode>(node)){
+        return;
+    }else if (auto andNode = std::dynamic_pointer_cast<AndNode>(node)){
+        return;
+    }else if (auto orNode = std::dynamic_pointer_cast<OrNode>(node)){
+        return;
+    }else if (node->Type ->IsFloatType()){
+        printf("\t  xorps %s, %s\n",Xmm[Depth],Xmm[Depth]);
+        printf("\t  ucomiss %s, %s\n",Xmm[Depth],Xmm[Depth-1]);
+    }else if (node->Type ->IsDoubleType()){
+        printf("\t  xorpd %s, %s\n",Xmm[Depth],Xmm[Depth]);
+        printf("\t  ucomisd %s, %s\n",Xmm[Depth],Xmm[Depth-1]);
+    }else{
+        printf("\t  cmp $0, %s\n", GetRax(node->Type).data());
+    }
+    printf("\t  je  %s\n",GetJmpLabel().data());
+}
+
 void CodeGenerate::Visitor(ExprVarNode *node) {
     if (node -> Type -> IsPointerType()){
         printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
@@ -187,7 +206,7 @@ void CodeGenerate::Visitor(ProgramNode *node) {
 }
 
 void CodeGenerate::Visitor(IfElseStmtNode *node) {
-    IsReverseJmpModule = true;
+    IsCmpJmpModule = true;
     int n = Sequence ++;
     if (node ->Else){
         PushJmpLabel(string_format(".L.else_%d",n));
@@ -195,7 +214,7 @@ void CodeGenerate::Visitor(IfElseStmtNode *node) {
         PushJmpLabel(string_format(".L.end_%d",n));
     }
     node -> Cond ->Accept(this);
-    IsReverseJmpModule = false;
+    IsCmpJmpModule = false;
     node -> Then->Accept(this);
     printf("\t jmp .L.end_%d\n",n);
     if (node -> Else){
@@ -1132,7 +1151,7 @@ void CodeGenerate::Visitor(CmpNode *node) {
         Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
         printf("\t  cmp %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
     }
-    if(!IsReverseJmpModule){
+    if(!IsCmpJmpModule){
             printf("\t  %s  %%al\n", GetSet(node -> BinOp).data());
             printf("\t  movzx %%al,%%eax\n");
     }else {
@@ -1210,7 +1229,9 @@ void CodeGenerate::Visitor(SwitchCaseSmtNode *node) {
 
 void CodeGenerate::Visitor(AndNode *node) {
     node ->Lhs ->Accept(this);
+    CmpZero(node->Lhs);
     node ->Rhs ->Accept(this);
+    CmpZero(node ->Rhs);
 }
 
 void CodeGenerate::Visitor(OrNode *node) {
@@ -1219,10 +1240,12 @@ void CodeGenerate::Visitor(OrNode *node) {
     auto endLabel = string_format(".LI%d_End\n",n);
     PushJmpLabel(label);
     node -> Lhs -> Accept(this);
+    CmpZero(node ->Lhs);
     printf("\t  jmp %s\n",endLabel.data());
     printf(".LI%d:\n",n);
     PopJmpLabel();
     node -> Rhs -> Accept(this);
+    CmpZero(node -> Rhs);
     printf(".LI%d_End:\n",n);
 }
 

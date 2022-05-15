@@ -92,3 +92,14 @@ void Scope::PutToConstantTable(std::shared_ptr<ConstantNode> constantNode) {
     ConstTable[constantNode->Name] = constantNode;
 }
 
+void Scope::PushFuncSign(std::shared_ptr<FuncSign> funcSign) {
+    FuncTable[funcSign->FuncName] = funcSign;
+}
+
+std::shared_ptr<FuncSign> Scope::GetFuncSign(std::string_view funcName) {
+    if (FuncTable.find(funcName) == FuncTable.end()){
+        return nullptr;
+    }
+    return FuncTable.find(funcName)->second;
+}
+

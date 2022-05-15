@@ -1,7 +1,28 @@
+extern int  assert(int  excepted,int actual);
+extern int  assert_f(float  excepted,float actual);
+
+int testIf(){
+    float a = 300.0;
+    float b = 400.0;
+    if (b >= 399.0 && a > 300.0 || b < 10){
+        a = a + 1.0;
+    }else{
+        a = a - 3.0;
+    }
+    assert(0,(int)(a > 300.0));
+    assert_f(297.0,a);
+    int c = 0;
+    int d = 1;
+    int * e = &d;
+    if(c || *e){
+        assert(10.0,2);
+    }
+}
+
 int testCode(){
 //    testEnum();
 //    testSwitch();
-//    testConstant();
+//    testConstant();-
     testIf();
     return 0;
 }
@@ -12,17 +33,8 @@ int testCode(){
 //    pointer = &b;
 //}
 
-int testIf(){
-    float a = 300.0;
-    float b = 400.0;
-    if (b >= 399.0 && a > 300.0 ){
-        a = a + 1.0;
-    }else{
-        a = a - 3.0;
-    }
-    assert(0,(int)(a > 300.0));
-    assert_f(297.0,a);
-}
+
+
 //int testSwitch(){
 //    int a = 1;
 //    switch (a) {case 1:a = a + 2;case 2:a = a + 5;break;case 3:a = a + 1;break;default:a = 5;}

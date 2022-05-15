@@ -7,6 +7,7 @@
 #include <memory>
 #include "Lexer.h"
 #include <list>
+#include <vector>
 
 
 namespace BDD{
@@ -125,7 +126,7 @@ namespace BDD{
     private:
         std::shared_ptr<Type> ReturnType;
     public:
-        std::list<std::shared_ptr<Param>> Params;
+        std::vector<std::shared_ptr<Param>> Params{} ;
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8,"func"), ReturnType(returnType) {}
 
         std::shared_ptr<Type> GetBaseType();

@@ -8,6 +8,7 @@
 #include "AstNode.h"
 #include "Diag.h"
 #include "TypeVisitor.h"
+#include "Common.h"
 
 using namespace BDD;
 
@@ -22,7 +23,7 @@ using namespace BDD;
 //         | num
 //
 std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
-    auto node = std::make_shared<AstNode>();
+    std::shared_ptr<AstNode> node ;
     switch (Lex.CurrentToken -> Kind){
         case TokenKind::LParent:
         {
@@ -33,7 +34,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                 Lex.EndPeekToken();
                 Lex.ExceptToken(TokenKind::LParent);
                 Lex.ExceptToken(TokenKind::LBrace);
-                auto node = std::make_shared<StmtExprNode>();
+                auto node = std::make_shared<StmtExprNode>(Lex.CurrentToken);
                 while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
                     node -> Stmts.push_back(ParseStatement());
                 }
@@ -72,7 +73,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             }
             Lex.EndPeekToken();
 
-            auto exprVarNode = std::make_shared<ExprVarNode>();
+            auto exprVarNode = std::make_shared<ExprVarNode>(Lex.CurrentToken);
             exprVarNode -> Name = Lex.CurrentToken->Content;
             auto nodeName = std::string (Lex.CurrentToken -> Content);
             auto varObj = FindLocalVar(Lex.CurrentToken -> Content);
@@ -120,13 +121,13 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         }
         case TokenKind::SizeOf:
         {   //Accept type or var sizeof(int) |sizeof a
+            auto sizeOfNode = std::make_shared<SizeOfExprNode>(Lex.CurrentToken);
             Lex.GetNextToken();
-            auto sizeOfNode = std::make_shared<SizeOfExprNode>();
             if (Lex.CurrentToken ->Kind == TokenKind::LParent){
                 if (IsTypeName()){
                     Lex.GetNextToken();
                     auto type = ParseDeclarationSpec();
-                    auto emptyNode= std::make_shared<EmptyNode>();
+                    auto emptyNode= std::make_shared<EmptyNode>(nullptr);
                     emptyNode ->Type = type;
                     sizeOfNode -> Lhs = emptyNode;
                     Lex.ExceptToken(TokenKind::RParent);
@@ -165,8 +166,9 @@ std::shared_ptr<AstNode> Parser::ParseExpr() {
 
 std::shared_ptr<ProgramNode> Parser::Parse() {
     Scope::GetInstance() -> PushScope();
-    auto node = std::make_shared<ProgramNode>();
+    auto node = std::make_shared<ProgramNode>(Lex.CurrentToken);
     while (Lex.CurrentToken -> Kind != TokenKind::Eof){
+        while (ParseExtern()){}
         node ->Funcs.push_back(ParseFunc());
     }
     Scope::GetInstance() -> PopScope();
@@ -197,7 +199,7 @@ std::shared_ptr<AstNode> Parser::ParseStatement() {
             return ParseTypeDef();
         default:
         {
-            auto exprNode = std::make_shared<ExprStmtNode>();
+            auto exprNode = std::make_shared<ExprStmtNode>(Lex.CurrentToken);
             if (Lex.CurrentToken -> Kind != TokenKind::Semicolon)
                 exprNode -> Lhs = ParseExpr();
             Lex.ExceptToken(TokenKind::Semicolon);
@@ -221,17 +223,14 @@ std::shared_ptr<Var> Parser::NewLocalVar(std::string_view varName,std::shared_pt
 }
 
 std::shared_ptr<AstNode> Parser::ParseFunc() {
-    auto node =std::make_shared<FunctionNode>();
+    auto node =std::make_shared<FunctionNode>(Lex.CurrentToken);
     LocalVars = &node -> Locals;
     Scope::GetInstance() -> PushScope();
     auto type = ParseDeclarationSpec();
     std::list<std::shared_ptr<Token>> nameTokens;
     node -> FuncName = Lex.CurrentToken->Content;
-
     type = ParseDeclarator(type,&nameTokens);
-
     node -> Type = type;
-
     std::shared_ptr<FunctionType> funcType = std::dynamic_pointer_cast<FunctionType>(type);
     if (funcType != nullptr){
         for(auto it = funcType -> Params.rbegin();it != funcType -> Params.rend();++it){
@@ -239,27 +238,48 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
         }
     }
     Lex.ExceptToken(TokenKind::LBrace);
-
     while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
         node -> Stmts.push_back(ParseStatement());
     }
+
+    auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(type));
+    funcSign ->FuncName = node ->FuncName;
+    Scope::GetInstance() ->PushFuncSign(funcSign);
+
     Scope::GetInstance() -> PopScope();
     Lex.ExceptToken(TokenKind::RBrace);
     return node;
 }
 //ParseFuncCallNode ::=
 std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
-    auto node=std::make_shared<FuncCallNode>();
+    auto node = std::make_shared<FuncCallNode>(Lex.CurrentToken);
     node -> FuncName = Lex.CurrentToken -> Content;
+
+    //check func already declared
+    auto funcSign = Scope::GetInstance() ->GetFuncSign(node -> FuncName);
+    if (!funcSign){
+        DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"func must declare first !");
+    }
     Lex.ExceptToken(TokenKind::Identifier);
     Lex.ExceptToken(TokenKind::LParent);
+    int i = 0;
     if (Lex.CurrentToken -> Kind!= TokenKind::RParent){
-        node -> Args.push_back(ParseExpr());
+        auto arg = ParseExpr();
+        auto argType = funcSign ->FuncType->Params[i];
+        if (arg->Type != argType->Type){
+            auto tips =  string_format("Input type of parameter is incorrect. It should be %s "
+                                       "instead of %s. Please check!",argType->Type->Alias,arg->Type->Alias);
+            DiagLoc(Lex.SourceCode, arg->Tk->Location,tips.c_str());
+        }
+        node -> Args.push_back(arg);
         while(Lex.CurrentToken -> Kind == TokenKind::Comma){
             Lex.GetNextToken();
             node -> Args.push_back(ParseExpr());
         }
     }
+
+    //Check Func args
+
     Lex.ExceptToken(TokenKind::RParent);
     return node;
 }
@@ -454,8 +474,10 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     if (Lex.CurrentToken->Kind != TokenKind::Identifier){
         DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except variable name!");
     }
-    while(Lex.CurrentToken -> Kind == TokenKind::Identifier){
-        (*nameTokens).push_back(Lex.CurrentToken);
+    while(Lex.CurrentToken -> Kind == TokenKind::Identifier ){
+        if (nameTokens){
+            (*nameTokens).push_back(Lex.CurrentToken);
+        }
         Lex.SkipToken(TokenKind::Comma);
     }
     return ParseTypeSuffix(type);
@@ -463,7 +485,7 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
 
 //ParseUnaryExpr ::= (+ | - | * | & | ～ ｜ ! )? ParseCastExpr | ParsePostFixExpr
 std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
-    auto node = std::make_shared<UnaryNode>();
+    auto node = std::make_shared<UnaryNode>(Lex.CurrentToken);
     switch (Lex.CurrentToken -> Kind){
         case TokenKind::Plus:
             node -> Uop = UnaryOperator::Plus;
@@ -502,15 +524,15 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
         if (Lex.CurrentToken -> Kind == TokenKind::LParent){
             return ParseFuncCallNode();
         }else if (Lex.CurrentToken -> Kind == TokenKind::LBracket){
+            auto starNode = std::make_shared<ArefNode>(Lex.CurrentToken);
             Lex.GetNextToken();
-            auto starNode = std::make_shared<ArefNode>();
             starNode -> Offset = ParseExpr();
             starNode -> Lhs = left;
             Lex.ExceptToken(TokenKind::RBracket);
             left = starNode;
             continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Period){
-            auto memberNode = std::make_shared<MemberAccessNode>();
+            auto memberNode = std::make_shared<MemberAccessNode>(Lex.CurrentToken);
             Lex.GetNextToken();
             memberNode -> Lhs = left;
             memberNode -> fieldName = Lex.CurrentToken -> Content;
@@ -518,19 +540,19 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             Lex.ExceptToken(TokenKind::Identifier);
             continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::PointerTo){
+            auto deferNode = std::make_shared<UnaryNode>(Lex.CurrentToken);
             Lex.GetNextToken();
-            auto deferNode = std::make_shared<UnaryNode>();
             deferNode -> Uop = UnaryOperator::Deref;
             deferNode -> Lhs = left;
-            auto memberNode = std::make_shared<MemberAccessNode>();
+            auto memberNode = std::make_shared<MemberAccessNode>(Lex.CurrentToken);
             memberNode -> Lhs = deferNode;
             memberNode -> fieldName = Lex.CurrentToken->Content;
             Lex.ExceptToken(TokenKind::Identifier);
             left = memberNode;
             break;
         }else if(Lex.CurrentToken -> Kind == TokenKind::PPlus){
+            auto incrNode = std::make_shared<IncrNode>(Lex.CurrentToken);
             Lex.GetNextToken();
-            auto incrNode = std::make_shared<IncrNode>();
             if (left ->Type ->IsConstant){
                 DiagLoc(Lex.SourceCode, Lex.GetLocation(), "constant can't change!");
             }
@@ -543,8 +565,8 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             left = incrNode;
             break;
         }else if(Lex.CurrentToken -> Kind == TokenKind::MMinus){
+            auto decrNode = std::make_shared<DecrNode>(Lex.CurrentToken);
             Lex.GetNextToken();
-            auto decrNode = std::make_shared<DecrNode>();
             decrNode -> Lhs = left;
             auto constNode  =  std::make_shared<ConstantNode>(nullptr);
             constNode -> Value = -1;
@@ -704,7 +726,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
     switch (op){
         case BinaryOperator::Assign:
         {
-            auto assignNode = std::make_shared<AssignNode>();
+            auto assignNode = std::make_shared<AssignNode>(Lex.CurrentToken);
             assignNode -> Lhs = left;
             assignNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = assignNode;
@@ -712,7 +734,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::Add:
         {
-            auto addNode = std::make_shared<AddNode>();
+            auto addNode = std::make_shared<AddNode>(Lex.CurrentToken);
             addNode -> Lhs = left;
             addNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = addNode;
@@ -721,7 +743,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::Minus:
         {
-            auto minusNode = std::make_shared<MinusNode>();
+            auto minusNode = std::make_shared<MinusNode>(Lex.CurrentToken);
             minusNode -> Lhs = left;
             minusNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = minusNode;
@@ -730,7 +752,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::Mul:
         {
-            auto mulNode = std::make_shared<MulNode>();
+            auto mulNode = std::make_shared<MulNode>(Lex.CurrentToken);
             mulNode -> Lhs = left;
             mulNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = mulNode;
@@ -739,7 +761,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::IDiv:
         {
-            auto divNode = std::make_shared<DivNode>();
+            auto divNode = std::make_shared<DivNode>(Lex.CurrentToken);
             divNode -> Lhs = left;
             divNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = divNode;
@@ -748,7 +770,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::Mod:
         {
-            auto modNode = std::make_shared<ModNode>();
+            auto modNode = std::make_shared<ModNode>(Lex.CurrentToken);
             modNode -> Lhs = left;
             modNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = modNode;
@@ -762,7 +784,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         case BinaryOperator::Equal:
         case BinaryOperator::NotEqual:
         {
-            auto cmpNode = std::make_shared<CmpNode>();
+            auto cmpNode = std::make_shared<CmpNode>(Lex.CurrentToken);
             cmpNode -> Lhs = left;
             cmpNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = cmpNode;
@@ -774,7 +796,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         case BinaryOperator::BitSal:
         case BinaryOperator::BitSar:
         {
-            auto bitOpNode = std::make_shared<BitOpNode>();
+            auto bitOpNode = std::make_shared<BitOpNode>(Lex.CurrentToken);
             bitOpNode -> Lhs = left;
             bitOpNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = bitOpNode;
@@ -782,7 +804,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::And:
         {
-            auto andNode = std::make_shared<AndNode>();
+            auto andNode = std::make_shared<AndNode>(Lex.CurrentToken);
             andNode -> Lhs = left;
             andNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = andNode;
@@ -790,7 +812,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
         }
         case BinaryOperator::Or:
         {
-            auto orNode = std::make_shared<OrNode>();
+            auto orNode = std::make_shared<OrNode>(Lex.CurrentToken);
             orNode -> Lhs = left;
             orNode -> Rhs = ParseBinaryExpr(curPriority);
             binaryNode = orNode;
@@ -824,7 +846,7 @@ const bool Parser::IsTypeName() {
 std::shared_ptr<AstNode> Parser::ParseCastExpr() {
     Lex.BeginPeekToken();
     if (Lex.CurrentToken -> Kind == TokenKind::LParent){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(Lex.CurrentToken);
         Lex.GetNextToken();
         if (IsTypeName()){
             auto type = ParseDeclarationSpec();
@@ -848,21 +870,21 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
         auto tokens = std::list<std::shared_ptr<Token>>();
         auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
         for (auto &tk:tokens) {
-            auto newVarNode = std::make_shared<ExprVarNode>();
+            auto newVarNode = std::make_shared<ExprVarNode>(Lex.CurrentToken);
             newVarNode -> Name = tk -> Content;
             newVarNode -> VarObj =  NewLocalVar(newVarNode ->Name, type);
             declarationNodes.push_back(newVarNode);
         }
         if (Lex.CurrentToken -> Kind == TokenKind::Semicolon){
-            auto multiDeclarationStmtNode = std::make_shared<DeclarationStmtNode>();
+            auto multiDeclarationStmtNode = std::make_shared<DeclarationStmtNode>(Lex.CurrentToken);
             multiDeclarationStmtNode -> declarationNodes = declarationNodes;
             multiDeclarationStmtNode ->Type = type;
             return multiDeclarationStmtNode;
         }
-        auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>();
+        auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>(Lex.CurrentToken);
         std::list<std::shared_ptr<AssignNode>> assignNodes;
         for (auto &dn:declarationNodes) {
-            auto assignNode = std::make_shared<AssignNode>();
+            auto assignNode = std::make_shared<AssignNode>(Lex.CurrentToken);
             assignNode -> Lhs = dn;
             assignNodes.push_back(assignNode);
         }
@@ -935,13 +957,13 @@ std::shared_ptr<AstNode> Parser::ParseEnumDeclaration() {
     }
     Scope::GetInstance() ->PushTag(enumType->token->Content,enumType);
     Lex.ExceptToken(TokenKind::RBrace);
-    return std::make_shared<EmptyNode>();
+    return std::make_shared<EmptyNode>(Lex.CurrentToken);
 }
 
 //exampleCode  `a < 7 ? a = 1 : a = 0;`
 //ParseTernaryExpr ::= condition "?" ParseExpr ":" ParseExpr;
 std::shared_ptr<AstNode> Parser::ParseTernaryExpr(std::shared_ptr<AstNode> condition) {
-    auto ternaryNode = std::make_shared<TernaryNode>();
+    auto ternaryNode = std::make_shared<TernaryNode>(Lex.CurrentToken);
     ternaryNode -> Cond = condition;
     Lex.ExceptToken(TokenKind::QuestionMark);
     ternaryNode->Then = ParseExpr();
@@ -954,9 +976,9 @@ std::shared_ptr<AstNode> Parser::ParseTernaryExpr(std::shared_ptr<AstNode> condi
 //ParseSwitchCaseStmt ::= "switch" "(" num ")" "{" (("case" | "default") ":" )+ statements  （"break")?  +  "}"
 std::shared_ptr<AstNode> Parser::ParseSwitchCaseStmt() {
     bool isEmpty = true;
+    auto switchCaseNode = std::make_shared<SwitchCaseSmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::Switch);
     Lex.ExceptToken(TokenKind::LParent);
-    auto switchCaseNode = std::make_shared<SwitchCaseSmtNode>();
     switchCaseNode ->Value = ParseCastExpr();
     Lex.ExceptToken(TokenKind::RParent);
     Lex.ExceptToken(TokenKind::LBrace);
@@ -984,7 +1006,7 @@ std::shared_ptr<AstNode> Parser::ParseSwitchCaseStmt() {
         }
     }
     if (isEmpty){
-        auto emptyNode = std::make_shared<EmptyNode>();
+        auto emptyNode = std::make_shared<EmptyNode>(Lex.CurrentToken);
         return emptyNode;
     }
     switchCaseNode ->CaseBranch = branchMap;
@@ -995,7 +1017,7 @@ std::shared_ptr<AstNode> Parser::ParseSwitchCaseStmt() {
 //exampleCode: if( a < num ){}else{}
 //ParseIfElseStmt ::= "if" "(" ( ParseExpr() ("||","&&")* )+ ")"
 std::shared_ptr<AstNode> Parser::ParseIfElseStmt() {
-    auto node = std::make_shared<IfElseStmtNode>();
+    auto node = std::make_shared<IfElseStmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::If);
     Lex.ExceptToken(TokenKind::LParent);
     node ->Cond = ParseExpr();
@@ -1014,13 +1036,13 @@ std::shared_ptr<AstNode> Parser::ParseIfElseStmt() {
         Lex.ExceptToken(TokenKind::RBrace);
     }
     if (node ->Then == nullptr && node ->Else == nullptr){
-        return std::make_shared<EmptyNode>();
+        return std::make_shared<EmptyNode>(Lex.CurrentToken);
     }
     return node;
 }
 
 std::shared_ptr<AstNode> Parser::ParseDoWhileStmt() {
-    auto doWhileNode = std::make_shared<DoWhileStmtNode>();
+    auto doWhileNode = std::make_shared<DoWhileStmtNode>(Lex.CurrentToken);
     Lex.GetNextToken();
     doWhileNode -> Stmt = ParseStatement();
     Lex.ExceptToken(TokenKind::While);
@@ -1031,7 +1053,7 @@ std::shared_ptr<AstNode> Parser::ParseDoWhileStmt() {
 }
 
 std::shared_ptr<AstNode> Parser::ParseForStmt() {
-    auto forNode = std::make_shared<ForStmtNode>();
+    auto forNode = std::make_shared<ForStmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::For);
     Lex.ExceptToken(TokenKind::LParent);
     if (Lex.CurrentToken->Kind != TokenKind::Semicolon){
@@ -1049,14 +1071,14 @@ std::shared_ptr<AstNode> Parser::ParseForStmt() {
 }
 
 std::shared_ptr<AstNode> Parser::ParseBreakStmt() {
-    auto breakNode = std::make_shared<BreakStmtNode>();
+    auto breakNode = std::make_shared<BreakStmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::Break);
     Lex.ExceptToken(TokenKind::Semicolon);
     return breakNode;
 }
 
 std::shared_ptr<AstNode> Parser::ParseReturnStmt() {
-    auto returnNode = std::make_shared<ReturnStmtNode>();
+    auto returnNode = std::make_shared<ReturnStmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::Return);
     returnNode -> Lhs = ParseExpr();
     Lex.ExceptToken(TokenKind::Semicolon);
@@ -1064,7 +1086,7 @@ std::shared_ptr<AstNode> Parser::ParseReturnStmt() {
 }
 
 std::shared_ptr<AstNode> Parser::ParseContinueStmt() {
-    auto continueNode = std::make_shared<ContinueStmtNode>();
+    auto continueNode = std::make_shared<ContinueStmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::Continue);
     Lex.ExceptToken(TokenKind::Semicolon);
     return continueNode;
@@ -1072,6 +1094,7 @@ std::shared_ptr<AstNode> Parser::ParseContinueStmt() {
 
 //"typedef" ("char" | "short" | "int" | "long" | "float" | "double" | "struct{" (field1,)+ "}")+ aliasName
 std::shared_ptr<AstNode> Parser::ParseTypeDef() {
+    auto emptyNode = std::make_shared<EmptyNode>(Lex.CurrentToken);
     Lex.GetNextToken();
     auto tokens = std::list<std::shared_ptr<Token>>();
     auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
@@ -1083,11 +1106,11 @@ std::shared_ptr<AstNode> Parser::ParseTypeDef() {
         Scope::GetInstance() ->PushTag(token->Content,newType);
     }
     Lex.ExceptToken(TokenKind::Semicolon);
-    return std::make_shared<EmptyNode>();
+    return emptyNode;
 }
 
 std::shared_ptr<AstNode> Parser::ParseWhileStmt() {
-    auto whileNode = std::make_shared<WhileStmtNode>();
+    auto whileNode = std::make_shared<WhileStmtNode>(Lex.CurrentToken);
     Lex.GetNextToken();
     Lex.ExceptToken(TokenKind::LParent);
     whileNode -> Cond = ParseExpr();
@@ -1098,7 +1121,7 @@ std::shared_ptr<AstNode> Parser::ParseWhileStmt() {
 
 std::shared_ptr<AstNode> Parser::ParseBlock() {
     Scope::GetInstance() -> PushScope();
-    auto blockNode = std::make_shared<BlockStmtNode>();
+    auto blockNode = std::make_shared<BlockStmtNode>(Lex.CurrentToken);
     Lex.GetNextToken();
     while (Lex.CurrentToken->Kind != TokenKind::RBrace){
         blockNode -> Stmts.push_back(ParseStatement());
@@ -1106,4 +1129,20 @@ std::shared_ptr<AstNode> Parser::ParseBlock() {
     Lex.ExceptToken(TokenKind::RBrace);
     Scope::GetInstance() -> PopScope();
     return blockNode;
+}
+
+//exampleCode : extern int add(int a,int b);
+bool Parser::ParseExtern() {
+    if (Lex.CurrentToken -> Kind == TokenKind::Extern){
+        Lex.GetNextToken();
+        auto returnType =  ParseDeclarationSpec();
+        auto funcName = Lex.CurrentToken->Content;
+        auto funcType = ParseDeclarator(returnType, nullptr);
+        auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(funcType));
+        funcSign ->FuncName = funcName;
+        Scope::GetInstance() ->PushFuncSign(funcSign);
+        Lex.ExceptToken(TokenKind::Semicolon);
+        return true;
+    }
+    return false;
 }

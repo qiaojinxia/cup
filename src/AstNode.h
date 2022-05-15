@@ -8,6 +8,7 @@
 #include <memory>
 #include <list>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "Type.h"
 #include <map>
@@ -19,9 +20,11 @@ namespace BDD{
     class Field;
     class AstNode {
     public:
-        virtual ~AstNode(){};
+        virtual ~AstNode() = default;
+        explicit AstNode(std::shared_ptr<Token> tk):Tk(std::move(tk)){};
         virtual void Accept(AstVisitor *visitor) {};
         std::shared_ptr<Type> Type;
+        std::shared_ptr<Token> Tk;
     };
     class Var{
     public:
@@ -31,12 +34,14 @@ namespace BDD{
     };
     class ProgramNode:public  AstNode{
     public:
+        explicit ProgramNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
         std::list<std::shared_ptr<AstNode>> Funcs;
     };
 
     class FunctionNode: public AstNode{
     public:
+        explicit FunctionNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::string_view FuncName;
         std::list<std::shared_ptr<Var>> Params;
         std::list<std::shared_ptr<Var>> Locals;
@@ -56,6 +61,7 @@ namespace BDD{
 
     class UnaryNode : public AstNode{
     public:
+        explicit UnaryNode(std::shared_ptr<Token> tk):AstNode(tk){};
         UnaryOperator Uop;
         std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
@@ -125,6 +131,7 @@ namespace BDD{
 
 class BinaryNode :public  AstNode{
     public:
+        explicit BinaryNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         BinaryOperator BinOp;
         std::shared_ptr<AstNode> Lhs;
         std::shared_ptr<AstNode> Rhs;
@@ -134,7 +141,7 @@ class BinaryNode :public  AstNode{
     class ConstantNode : public AstNode{
     private:
     public:
-        ConstantNode(std::shared_ptr<Token> tk):Token(tk){};
+        explicit ConstantNode(std::shared_ptr<Token> tk): AstNode(std::move(tk)){};
         std::shared_ptr<ConstantNode> Next;
         std::shared_ptr<ConstantNode> Sub;
         std::string Name;
@@ -152,22 +159,24 @@ class BinaryNode :public  AstNode{
 
     class ExprStmtNode: public AstNode{
     public:
+        explicit ExprStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs;
-
         void Accept(AstVisitor *visitor) override;
     };
 
     class ExprVarNode:public AstNode{
     public:
+        explicit ExprVarNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::string_view Name;
         std::shared_ptr<Var> VarObj;
-        bool IsConstant;
-        int Offset;
+        bool IsConstant{};
+        int Offset{};
         void Accept(AstVisitor *visitor) override;
     };
 
     class IfElseStmtNode : public AstNode{
     public:
+        explicit IfElseStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Cond{nullptr};
         std::shared_ptr<AstNode> Then{nullptr};
         std::shared_ptr<AstNode> Else{nullptr};
@@ -178,24 +187,28 @@ class BinaryNode :public  AstNode{
 
     class WhileStmtNode :public AstNode{
     public:
+        explicit WhileStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Cond{nullptr};
         std::shared_ptr<AstNode> Then{nullptr};
         void Accept(AstVisitor *visitor) override;
     };
     class BlockStmtNode :public AstNode{
     public:
+        explicit BlockStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::list<std::shared_ptr<AstNode>> Stmts;
         void Accept(AstVisitor *visitor) override;
     };
 
     class DoWhileStmtNode :public AstNode{
     public:
+        explicit DoWhileStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Stmt{nullptr};
         std::shared_ptr<AstNode> Cond{nullptr};
         void Accept(AstVisitor *visitor) override;
     };
     class ForStmtNode : public AstNode{
     public:
+        explicit ForStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Init{nullptr};
         std::shared_ptr<AstNode> Cond{nullptr};
         std::shared_ptr<AstNode> Inc{nullptr};
@@ -205,6 +218,7 @@ class BinaryNode :public  AstNode{
 
     class FuncCallNode:public AstNode{
     public:
+        explicit FuncCallNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::string_view FuncName;
         std::vector<std::shared_ptr<AstNode>> Args;
         void Accept(AstVisitor *visitor) override;
@@ -212,12 +226,14 @@ class BinaryNode :public  AstNode{
 
     class ReturnStmtNode:public AstNode{
     public:
+        explicit ReturnStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
     };
 
     class TernaryNode: public AstNode{
     public:
+        explicit TernaryNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Cond{nullptr};
         std::shared_ptr<AstNode> Then{nullptr};
         std::shared_ptr<AstNode> Else{nullptr};
@@ -226,6 +242,7 @@ class BinaryNode :public  AstNode{
 
     class DeclarationStmtNode: public AstNode{
     public:
+        explicit DeclarationStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
         void Accept(AstVisitor *visitor) override;
     };
@@ -234,34 +251,43 @@ class BinaryNode :public  AstNode{
 
     class StmtExprNode : public AstNode{
     public:
+        explicit StmtExprNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::list<std::shared_ptr<AstNode>> Stmts;
         void Accept(AstVisitor *visitor) override;
     };
 
     class SizeOfExprNode : public  AstNode{
     public:
+        explicit SizeOfExprNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs {nullptr};
         void Accept(AstVisitor *visitor) override;
     };
 
     class MemberAccessNode : public AstNode{
     public:
+        explicit MemberAccessNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs;
         std::string_view fieldName;
         void Accept(AstVisitor *visitor) override;
     };
 
     class BreakStmtNode : public AstNode{
+    public:
+        explicit BreakStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs;
         void Accept(AstVisitor *visitor) override;
     };
     
     class ContinueStmtNode : public AstNode{
+    public:
+    public:
+        explicit ContinueStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class ArefNode : public AstNode{
     public:
+        explicit ArefNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs; //expr node
         std::shared_ptr<AstNode> Offset ;
         void Accept(AstVisitor *visitor) override;
@@ -270,6 +296,7 @@ class BinaryNode :public  AstNode{
 
     class CastNode : public AstNode{
     public:
+        explicit CastNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> CstNode;
         void Accept(AstVisitor *visitor) override;
     };
@@ -279,6 +306,7 @@ class BinaryNode :public  AstNode{
     //when parse no effect statement return empty node such as: typedef
     class EmptyNode : public AstNode{
     public:
+        explicit EmptyNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -286,67 +314,81 @@ class BinaryNode :public  AstNode{
 
     class AssignNode : public BinaryNode{
     public:
+        explicit AssignNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
     class AddNode : public BinaryNode{
     public:
+        explicit AddNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
     class MinusNode : public BinaryNode{
     public:
+        explicit MinusNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
     class MulNode : public BinaryNode{
     public:
+        explicit MulNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
     class DivNode : public BinaryNode{
     public:
+        explicit DivNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
     class ModNode : public DivNode{
     public:
+        explicit ModNode(std::shared_ptr<Token> tk):DivNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class IncrNode : public BinaryNode{
     public:
+        explicit IncrNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class DecrNode : public BinaryNode{
     public:
+        explicit DecrNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class CmpNode : public BinaryNode{
     public:
+        explicit CmpNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class BitOpNode : public BinaryNode{
     public:
+        explicit BitOpNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class DeclarationAssignmentStmtNode: public AstNode{
     public:
+        explicit DeclarationAssignmentStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::list<std::shared_ptr<AssignNode>> AssignNodes;
         void Accept(AstVisitor *visitor) override;
     };
 
     class AndNode : public BinaryNode{
     public:
+        explicit AndNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class OrNode : public BinaryNode{
     public:
+        explicit OrNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
 
     class SwitchCaseSmtNode: public AstNode{
     public:
+        explicit SwitchCaseSmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Value;
         std::list<std::shared_ptr<AstNode>> DefaultBranch;
         std::map<std::shared_ptr<AstNode>,std::list<std::shared_ptr<AstNode>>> CaseBranch;

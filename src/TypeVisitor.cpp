@@ -38,24 +38,24 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     if (node -> Lhs ->Type != node ->Rhs ->Type){
         if (hasFloatPoint){
             if (!(node->Lhs->Type->IsFloatPointNum() && node -> Lhs ->Type ->Size == maxBitSize)){
-                auto castNode = std::make_shared<CastNode>();
+                auto castNode = std::make_shared<CastNode>(nullptr);
                 castNode ->CstNode = node->Lhs;
                 castNode ->Type = node->Rhs->Type;
                 node->Lhs  = castNode;
             }else if (!(node->Rhs->Type->IsFloatPointNum() && node -> Rhs ->Type ->Size == maxBitSize)){
-                auto castNode = std::make_shared<CastNode>();
+                auto castNode = std::make_shared<CastNode>(nullptr);
                 castNode ->CstNode = node->Rhs;
                 castNode ->Type = node->Lhs->Type;
                 node->Rhs  = castNode;
             }
         }else {
                 if (node->Lhs->Type->Size < maxBitSize){
-                    auto castNode = std::make_shared<CastNode>();
+                    auto castNode = std::make_shared<CastNode>(nullptr);
                     castNode ->CstNode = node->Lhs;
                     castNode ->Type = node->Rhs->Type;
                     node->Lhs  = castNode;
                 }else if (node->Rhs->Type->Size < maxBitSize) {
-                    auto castNode = std::make_shared<CastNode>();
+                    auto castNode = std::make_shared<CastNode>(nullptr);
                     castNode->CstNode = node->Rhs;
                     castNode->Type = node->Lhs->Type;
                     node->Rhs = castNode;
@@ -250,7 +250,7 @@ void TypeVisitor::Visitor(ArefNode *node) {
     node -> Lhs ->Accept(this);
     node -> Type  = node ->Lhs ->Type->GetBaseType();
     if (CurAssignType && node -> Type != CurAssignType && CurAssignType ->IsBInType()){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(nullptr);
         castNode ->Type = CurAssignType;
         castNode ->CstNode = std::make_shared<ArefNode>(*node);
     }
@@ -258,7 +258,7 @@ void TypeVisitor::Visitor(ArefNode *node) {
     node -> Offset ->Accept(this);
     //set the varName[index] index must greater eq then 4  to load by eax
     if (node ->Offset ->Type ->Size < Type::IntType->Size){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(nullptr);
         castNode ->CstNode = node ->Offset;
         castNode ->Type = Type::IntType;
         node ->Offset= castNode;
@@ -283,7 +283,7 @@ void TypeVisitor::Visitor(AssignNode *node) {
     //cast rhs type same as lhs
     if (node ->Lhs ->Type != node ->Rhs ->Type  &&
         node -> Lhs -> Type -> Type::IsBInType()){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(nullptr);
         castNode ->Type = node ->Lhs ->Type;
         castNode ->CstNode = node ->Rhs;
     }
@@ -366,7 +366,7 @@ void TypeVisitor::Visitor(DivNode *node) {
 
     if (maxSize < node->Rhs->Type->Size ){
         if (node->Rhs->Type->Size < 4){
-            auto castNode = std::make_shared<CastNode>();
+            auto castNode = std::make_shared<CastNode>(nullptr);
             if (hasUnsigned){
                 castNode ->Type  = Type::UIntType;
             }else{
@@ -375,7 +375,7 @@ void TypeVisitor::Visitor(DivNode *node) {
             castNode ->CstNode = node->Rhs;
         }
     }else if (maxSize < 4){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(nullptr);
         if (hasUnsigned){
             castNode ->Type  = Type::UIntType;
         }else{
@@ -471,14 +471,14 @@ void TypeVisitor::Visitor(TernaryNode *node) {
     node ->Cond ->Accept(this);
     node ->Then ->Accept(this);
     if (node ->Then ->Type != node->Type){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(nullptr);
         castNode -> Type = node ->Type;
         castNode ->CstNode = node ->Then;
         node ->Then = castNode;
     }
     node ->Else ->Accept(this);
     if (node ->Else ->Type != node->Type){
-        auto castNode = std::make_shared<CastNode>();
+        auto castNode = std::make_shared<CastNode>(nullptr);
         castNode -> Type = node ->Type;
         castNode ->CstNode = node ->Then;
         node ->Else = castNode;
