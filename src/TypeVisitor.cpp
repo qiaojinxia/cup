@@ -116,7 +116,6 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 
 void TypeVisitor::Visitor(ExprVarNode *node) {
     node -> Type = node ->VarObj ->Type;
-    node ->Offset = node ->VarObj ->Offset;
 }
 
 void TypeVisitor::Visitor(ProgramNode *node) {
