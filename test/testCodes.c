@@ -1,28 +1,66 @@
 extern int  assert(int  excepted,int actual);
 extern int  assert_f(float  excepted,float actual);
 
+typedef struct user{
+    char *  name;
+    int  age;
+    int  sex;
+    int height;
+    int width;
+} User ;
+
+//int UserStructAdd(User a,User * b){
+//    b -> age = 30;
+//    a.age = 20;
+//    return a.age + b -> age ;
+//}
+//
+//int testFuncCallWithStruct(){
+//    User xiaozhang = {"zhangsan",10,1,190,140};
+//    int m = UserStructAdd(xiaozhang,&xiaozhang);
+//    assert(50,m);
+//    assert(30,xiaozhang.age);
+//}
+
+float testFloatAdd(float a,float b){
+    float x = 0.0;
+    for (int i = 0; i < 10 ; i++) {
+       x = x + 10.0;
+    }
+    return a + b + x;
+}
+int testIntAdd(int a,int b){
+    return a + b;
+}
+
 int testIf(){
-    float a = 300.0;
-    float b = 400.0;
-    if (b >= 399.0 && a > 300.0 || b < 10){
+    float a = 300.0;float b = 400.0;
+    int c = 100; int d = 200;
+    if (b >= 399.0 && a > 301.0 || b < 10){
         a = a + 1.0;
     }else{
         a = a - 3.0;
     }
+
     assert(0,(int)(a > 300.0));
     assert_f(297.0,a);
-    int c = 0;
-    int d = 1;
-    int * e = &d;
-    if(c || *e){
-        assert(10,2);
+    int e = 0;
+    int f = 1;
+    int * g = &f;
+    if(e || *g && e){
+        assert(1,0);
     }
+    assert_f(797.0,testFloatAdd(a,b));
+    assert(300,testIntAdd(c,d));
 }
+
+
 
 int testCode(){
 //    testEnum();
 //    testSwitch();
 //    testConstant();-
+//    testFuncCallWithStruct();
     testIf();
     return 0;
 }

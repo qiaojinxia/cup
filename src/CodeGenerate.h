@@ -35,8 +35,8 @@ namespace BDD{
         std::list<std::string_view> BreakStack;
         std::list<std::string_view> JmpStack;
         std::list<std::string_view> ContinueStack;
+        std::string curTargetReg;
     public:
-
         CodeGenerate(){
             Scope:Scope::GetInstance();
         }
@@ -90,6 +90,9 @@ namespace BDD{
 
         void USeXmm();
         void ReleaseXmm();
+        std::string GetCurTargetReg();
+        void SetCurTargetReg(std::string reg);
+        void ClearCurTargetReg();
 
         void Push(std::shared_ptr<Type> ty);
         void Pop(std::shared_ptr<Type> ty);
@@ -99,7 +102,7 @@ namespace BDD{
         void Load(AstNode *node);
         void Store(std::shared_ptr<AstNode> node);
 
-        void GenerateAddress(AstNode *node,std::string targetReg);
+        void GenerateAddress(AstNode *node);
 
         const std::string GetMoveCode(std::shared_ptr<Type> type);
         const std::string GetMoveCode2(std::shared_ptr<Type>  type);
@@ -139,6 +142,12 @@ namespace BDD{
         std::string GetReverseJmp(BinaryOperator anOperator);
 
         void CmpZero(std::shared_ptr<AstNode> node);
+
+        const std::string GetReg(int size, int n);
+
+        void PushStructOrUnion(std::shared_ptr<AstNode> node);
+
+        void Push(std::shared_ptr<Type> ty, const char *reg);
     };
 }
 

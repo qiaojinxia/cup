@@ -106,4 +106,5 @@
     - Support || &&  case `int a = 1; int b =0; int b =2;if(a<1&&b>1 || a ==0){}else{}`
 - 2022-5-14 ～ 2022-5-15
     - Support extern  func case `extern int add(int a,int b);`
-
+- 2022-05-16 ～ 2022～5-17
+     - Support func arg with struct

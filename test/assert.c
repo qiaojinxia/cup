@@ -56,6 +56,9 @@ void print_s(char * a){
 }
 
 
+
+
+
 void print_float(float a){
     printf("output:%f\n",a);
 }

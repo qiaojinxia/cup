@@ -54,7 +54,7 @@ namespace BDD{
 
         std::shared_ptr<Var> FindLocalVar(std::string_view varName);
 
-        std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type);
+        std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type,bool isParam);
 
         std::shared_ptr<AstNode> ParseBinaryExpr(int priority);
 
@@ -91,7 +91,7 @@ namespace BDD{
         bool ParseExtern();
 
     private:
-        const bool IsTypeName();
+        bool IsTypeName();
     };
 
 }

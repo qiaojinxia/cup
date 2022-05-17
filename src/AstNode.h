@@ -25,11 +25,14 @@ namespace BDD{
         virtual void Accept(AstVisitor *visitor) {};
         std::shared_ptr<Type> Type;
         std::shared_ptr<Token> Tk;
+        bool isTypeInit{false};
     };
     class Var{
     public:
         std::shared_ptr<Type> Type;
         std::string_view Name;
+        bool isInit{false};
+        bool  isParam{false};
         int Offset;
     };
     class ProgramNode:public  AstNode{
@@ -167,6 +170,7 @@ class BinaryNode :public  AstNode{
         explicit ExprVarNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::string_view Name;
         std::shared_ptr<Var> VarObj;
+        bool isParam{false};
         void Accept(AstVisitor *visitor) override;
     };
 

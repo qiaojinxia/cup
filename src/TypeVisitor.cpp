@@ -116,6 +116,7 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 
 void TypeVisitor::Visitor(ExprVarNode *node) {
     node -> Type = node ->VarObj ->Type;
+    node -> isParam = node ->VarObj ->isParam;
 }
 
 void TypeVisitor::Visitor(ProgramNode *node) {
@@ -434,6 +435,10 @@ void TypeVisitor::Visitor(DecrNode *node) {
 
 
 void TypeVisitor::Visitor(CmpNode *node) {
+    if (node -> isTypeInit){
+        return;
+    }
+    node -> isTypeInit = true;
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     if (node ->Lhs->Type->IsFloatPointNum() || node ->Lhs->Type->IsFloatPointNum()){
@@ -504,4 +509,16 @@ void TypeVisitor::Visitor(AndNode *node) {
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     node ->Type = Type::BoolType;
+}
+
+
+bool Type::IsTypeEqual(std::shared_ptr<Type>  tp1,std::shared_ptr<Type>  tp2){
+    if (tp1 -> IsAliasType() && tp2 -> IsAliasType()){
+        if (tp1->GetBaseType()  ==  tp2->GetBaseType() )
+            return true;
+    }else if(tp1 -> IsPointerType() && tp2 ->IsPointerType()){
+        return true;
+
+    }
+    return true;
 }

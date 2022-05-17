@@ -41,6 +41,12 @@ namespace BDD{
             RecordType,
             AliasType,
         };
+        enum class TypeSize{
+            Byte = 1,
+            Word = 2,
+            Long = 4,
+            Quad = 8,
+        };
         int Size;
         int Align;
         const char * Alias;
@@ -69,6 +75,8 @@ namespace BDD{
         bool IsLongType() const;
         bool IsStringType() const;
         bool IsUnsignedNum() const;
+
+        static bool IsTypeEqual(std::shared_ptr<Type> tp1, std::shared_ptr<Type> tp2);
 
         bool IsUIntType() const;
 
@@ -158,7 +166,7 @@ namespace BDD{
         };
         std::shared_ptr<Field> GetField(std::string_view fieldName);
         TagKind Kind;
-        std::list<std::shared_ptr<Field>> fields;
+        std::vector<std::shared_ptr<Field>> fields;
         RecordType() : Type(TypeClass::RecordType,1,1,"u64"){}
 
         std::shared_ptr<Type> GetBaseType();

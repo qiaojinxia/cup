@@ -41,6 +41,13 @@ const std::string CodeGenerate::GetMul(std::shared_ptr<Type> type) {
     return "imul";
 }
 
+const std::string CodeGenerate::GetReg(int size,int n){
+    if (size > 8 || n > 5){
+        assert(0);
+    }
+    return Regx64[size/2][n];
+}
+
 const std::string CodeGenerate::GetDiv(std::shared_ptr<Type> type) {
     if (type -> IsFloatType()){
         return "divss";
@@ -62,8 +69,7 @@ const std::string CodeGenerate::GetMinus(std::shared_ptr<Type> type) {
     return "sub";
 }
 
-void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {
-}
+void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {}
 
 //if constantNode is buildIntype load value rax else not load
 void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
@@ -108,9 +114,9 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
     if (node -> Type -> IsPointerType()){
         printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
     }else if(node -> Type -> IsStructType()){
-        GenerateAddress(node,"%rax");
+        GenerateAddress(node);
     }else{
-        GenerateAddress(node,"%rax");
+        GenerateAddress(node);
         Load(node);
     }
 }
@@ -305,7 +311,19 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     printf("_%s:\n",CurrentFuncName.data());
 #endif
     int offset = 0;
+    int s_offset = 16;
+
     for (auto &v: node -> Locals) {
+        if (v->Type ->IsStructType() && v ->isParam){
+            v -> Offset += s_offset;
+            v ->isInit = true;
+            s_offset += v->Type->GetBaseType()->Size;
+        }
+    }
+    for (auto &v: node -> Locals) {
+        if (v->isInit){
+            continue;
+        }
         offset += v ->Type ->Size;
         offset = AlignTo(offset,v -> Type -> Align);
         v -> Offset -= offset;
@@ -322,11 +340,17 @@ void CodeGenerate::Visitor(FunctionNode *node) {
         if (var->Type->IsFloatPointNum()){
             printf("\t %s %s, %d(%%rbp)\n", GetMoveCode(var->Type).data(), Xmm[Depth++], var -> Offset);
         }else if (var->Type->IsIntegerNum()){
-                printf("\t  mov %s, %d(%%rbp)\n",Regx64[var -> Type -> Size / 2][index++],var -> Offset );
+            printf("\t  mov %s, %d(%%rbp)\n",Regx64[var -> Type -> Size / 2][index++],var -> Offset );
+        }else if (var->Type->IsPointerType()){
+            printf("\t  mov %s, %d(%%rbp)\n", GetReg(Type::Pointer->Size,index).data(),var -> Offset );
+        }else if (var->Type->GetBaseType()->IsStructType() || var->Type->GetBaseType()->IsUnionType()){
+
         }else{
             assert(0);
         }
     }
+    //release use reg
+    Depth= 0;
     for (auto &s:node->Stmts) {
         s ->Accept(this);
         assert(StackLevel == 0);
@@ -339,25 +363,55 @@ void CodeGenerate::Visitor(FunctionNode *node) {
 
 
 void CodeGenerate::Visitor(FuncCallNode *node) {
-    for(auto &arg:node -> Args){
-        arg ->Accept(this);
-        if (!arg->Type->IsFloatPointNum()){
-            Push(arg->Type);
+    auto useReg = std::vector<std::string>();
+    int count_f = 0;
+    int count_i = 0;
+    int tmp_rsp =0;
+    //if arg is func need load first
+    for(int i = node->Args.size() -1;i>=0;i--){
+         if(node->Args[i] ->Type ->IsStructType() || node->Args[i] ->Type->IsUnionType()){
+            SetCurTargetReg("%rdi");
+            GenerateAddress(node->Args[i].get());
+            ClearCurTargetReg();
+            PushStructOrUnion(node->Args[i]);
+            tmp_rsp += node->Args[i] -> Type->Size;
         }
     }
-    for (int i = node-> Args.size() -1; i >= 0; --i) {
-        if (node->Args[i]->Type->IsFloatPointNum()){
-//            printf("\t  cvtss2sd %s,%s\n",Xmm[Depth],Xmm[Depth]);
-            if (Depth > 0){
-                Depth--;
-            }
-        }else if (node->Args[i]->Type->IsPointerType() || node->Args[i]->Type->IsStructType() || node->Args[i]->Type->IsArrayType()){
-            Pop(node ->Args[i]->Type, Regx64[4][i]);
+
+    for(int i = node->Args.size() -1;i>=0;i--){
+        Depth = 0;
+        auto  arg = node->Args[i];
+        bool loadToReg = false;
+        auto argType = arg ->Type;
+        if(arg ->Type ->IsStructType() || arg ->Type->IsUnionType()){
+            continue;
+        }
+        if(argType->IsFunctionType()){
+            arg ->Accept(this);
+            argType =  arg ->Type ->GetBaseType();
         }else{
-            Pop(node ->Args[i]->Type, Regx64[node ->Args[i]->Type->GetBaseType()->Size / 2][i]);
-            //todo push float to stack
+            arg ->Accept(this);
         }
 
+        if (argType->IsFloatPointNum()){
+            useReg.push_back(Xmm[count_f++]);
+        }else{
+            useReg.push_back(GetReg(argType->Size,count_i++));
+        }
+        if (argType ->IsFloatPointNum()){
+            Push(argType->GetBaseType(),Xmm[0]);
+        }else{
+            Push(argType, GetRax(argType).data());
+        }
+    }
+
+    int seq = 0;
+    for(auto &arg:node -> Args){
+        if (arg->Type->IsStructType() || arg->Type->IsUnionType()) {
+            continue;
+        }
+        Pop(arg ->Type->GetBaseType(),useReg[seq].data());
+        seq ++;
     }
     std::string FuncName(node->FuncName);
 #ifdef __linux__
@@ -365,6 +419,9 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 #else
     printf("\t  call _%s\n",FuncName.data());
 #endif
+    if (tmp_rsp)
+        printf("\t  add $%d,%%rsp\n",tmp_rsp);
+    Depth = 0;
 }
 
 void CodeGenerate::Visitor(ReturnStmtNode *node) {
@@ -407,7 +464,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             Load(node -> Lhs);
             break;
         case UnaryOperator::Addr:
-            GenerateAddress(node -> Lhs.get(),"%rax");
+            GenerateAddress(node -> Lhs.get());
             break;
         case UnaryOperator::BitNot:
             node -> Lhs ->Accept(this);
@@ -421,15 +478,15 @@ void CodeGenerate::Visitor(UnaryNode *node) {
     }
 }
 
-void CodeGenerate::GenerateAddress(AstNode *node,std::string targetReg) {
+void CodeGenerate::GenerateAddress(AstNode *node) {
     while (auto castNode = dynamic_cast<CastNode *>(node)){
         node = castNode->CstNode.get();
     }
     if (auto varNode = dynamic_cast<ExprVarNode *>(node)){
-        printf("\t  lea %d(%%rbp),%s\n",varNode -> VarObj -> Offset,targetReg.data());
+        printf("\t  lea %d(%%rbp),%s\n",varNode -> VarObj -> Offset,GetCurTargetReg().data());
     }else if(auto constNode = dynamic_cast<ConstantNode *>(node)){
         std::string constName =  std::string(constNode->Name);
-        printf("\t  lea %s(%%rip),%s\n",constName.data(),targetReg.data());
+        printf("\t  lea %s(%%rip),%s\n",constName.data(),GetCurTargetReg().data());
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         if (unaryNode -> Uop == UnaryOperator::Deref){
             unaryNode ->Lhs->Accept(this);
@@ -438,10 +495,10 @@ void CodeGenerate::GenerateAddress(AstNode *node,std::string targetReg) {
             assert(0);
         }
     }else if (auto memberAccessNode = dynamic_cast<MemberAccessNode *>(node)){
-        auto record = std::dynamic_pointer_cast<RecordType>(memberAccessNode ->Lhs -> Type);
+        auto record = std::dynamic_pointer_cast<RecordType>(memberAccessNode -> Lhs -> Type ->GetBaseType());
         memberAccessNode -> Lhs ->Accept(this);
         auto field = record -> GetField(memberAccessNode -> fieldName);
-        printf("\t  add  $%d,%s\n", field ->Offset,targetReg.data());
+        printf("\t  add  $%d,%s\n", field ->Offset,GetCurTargetReg().data());
     }else if (auto arefNode = dynamic_cast<ArefNode *>(node)){
         auto varNode = std::dynamic_pointer_cast<ExprVarNode>(arefNode ->Lhs);
         arefNode -> Offset ->Accept(this);
@@ -452,9 +509,9 @@ void CodeGenerate::GenerateAddress(AstNode *node,std::string targetReg) {
             Push(Type::LongType);
             arefNode ->Lhs ->Accept(this);
             Pop(Type::LongType, "%rcx");
-            printf("\t  lea (%%rax,%%rcx,%d),%s\n",node-> Type->GetBaseType()->Size,targetReg.data());
+            printf("\t  lea (%%rax,%%rcx,%d),%s\n",node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
         }else{
-            printf("\t  lea %d(%%rbp,%%rax,%d),%s\n",varNode ->VarObj ->Offset,node-> Type->GetBaseType()->Size,targetReg.data());
+            printf("\t  lea %d(%%rbp,%%rax,%d),%s\n",varNode ->VarObj ->Offset,node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
         }
     }else{
         printf("not a value\n");
@@ -587,7 +644,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
 
 void CodeGenerate::Visitor(MemberAccessNode *node) {
     auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs ->Type ->GetBaseType());
-    GenerateAddress(node->Lhs.get(),"%rax");
+    GenerateAddress(node->Lhs.get());
     auto field = record -> GetField(node -> fieldName);
     printf("\t  add  $%d,%%rax\n", field ->Offset);
     Load(field ->type);
@@ -683,6 +740,39 @@ const std::string CodeGenerate::GetMoveCode2(std::shared_ptr<Type>  type) {
     assert(0);
 }
 
+
+void CodeGenerate::PushStructOrUnion(std::shared_ptr<AstNode> node){
+    int surplus = node ->Type->Size;
+    int offset = 0;
+    int curSize = 0;
+    //set the struct start addr
+    auto recordType = std::dynamic_pointer_cast<RecordType>(node->Type->GetBaseType());
+    int index = 0;
+    printf("\t  sub $%d,%%rsp\n",node ->Type->Size);
+    if (recordType ->Size > 16){
+        while(surplus){
+            if (surplus / 8 > 0 ){
+                curSize = 8;
+            }else if (surplus / 4 > 0 ){
+                curSize = 4;
+            }else if (surplus / 2 > 0 ){
+                curSize = 2;
+            }else if (surplus == 1){
+                curSize = 1;
+            }else{
+                return;
+            }
+            printf("\t  %s %d(%%rdi),%s\n", GetMoveCode(curSize).data(), offset  , GetRax(curSize).data());
+            printf("\t  %s %s,%d(%%rsp)\n", GetMoveCode(curSize).data(), GetRax(curSize).data(),offset);
+            index ++;
+            offset += curSize;
+            surplus -= curSize;
+        }
+    }else{
+        assert(0);
+    }
+}
+
 void CodeGenerate::Visitor(CastNode *node) {
     node->CstNode->Accept(this);
     if (node ->Type == node ->CstNode ->Type || node ->Type ->Alias == node -> CstNode ->Type ->Alias ){
@@ -737,6 +827,23 @@ const std::string CodeGenerate::GetDivCode(std::shared_ptr<Type> type) {
     }
 }
 
+void CodeGenerate::Push(std::shared_ptr<Type> ty,const char * reg) {
+    auto size = ty ->Size;
+    if (ty ->IsAliasType()){
+        ty = std::dynamic_pointer_cast<AliasType>(ty)->Base;
+    }
+    if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
+        size = Type::VoidType->Size;
+    }
+    if(ty ->IsFloatPointNum()){
+        printf("\t  sub $%d, %%rsp          #Push %s\n",size,reg);
+        printf("\t  %s %s,(%%rsp)\n", GetMoveCode(ty).data(),reg);
+    }else{
+        printf("\t  sub $%d, %%rsp          #Push %s\n",size,reg);
+        printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
+    }
+    StackLevel ++;
+}
 
 void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     auto size = ty ->Size;
@@ -745,11 +852,11 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     }
     if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
         size = Type::VoidType->Size;
+    }else{
+        printf("\t  sub $%d, %%rsp          #Push %s\n",size,GetRax(ty).data());
+        printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
     }
-    printf("\t  sub $%d, %%rsp          #Push %s\n",size,GetRax(ty).data());
-    printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
     StackLevel ++;
-
 }
 
 void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
@@ -763,8 +870,17 @@ void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
 }
 
 
+
 void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
-    printf("\t  mov (%%rsp),%s           #Pop %s\n",std::string(reg).data(),std::string(reg).data());
+    if (ty ->IsFloatPointNum()){
+        if (reg){
+            printf("\t  movsd (%%rsp),%s \n",reg);
+        }else{
+            printf("\t  movsd (%%rsp),%s \n",Xmm[Depth]);
+        }
+    }else{
+        printf("\t  mov (%%rsp),%s           #Pop %s\n",std::string(reg).data(),std::string(reg).data());
+    }
     StackLevel --;
     if (!ty->IsBInType()){
         printf("\t  add $%d, %%rsp\n",Type::VoidType->Size);
@@ -984,7 +1100,9 @@ void CodeGenerate::Visitor(AssignNode *node) {
     if (!constantNode){
         node -> Rhs -> Accept(this);
     }
-    GenerateAddress(node ->Lhs.get(),"%rdi");
+    SetCurTargetReg("%rdi");
+    GenerateAddress(node ->Lhs.get());
+    ClearCurTargetReg();
     Store(node -> Rhs);
     ReleaseXmm();
 }
@@ -1292,4 +1410,19 @@ std::string CodeGenerate::GetReverseJmp(BinaryOperator anOperator) {
         default:
             assert(0);
     }
+}
+
+std::string CodeGenerate::GetCurTargetReg() {
+    if (curTargetReg == ""){
+        return "%rax";
+    }
+    return curTargetReg;
+}
+
+void CodeGenerate::SetCurTargetReg(std::string reg) {
+    curTargetReg = reg;
+}
+
+void CodeGenerate::ClearCurTargetReg(){
+    curTargetReg = "";
 }
