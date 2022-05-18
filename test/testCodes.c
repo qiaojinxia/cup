@@ -1,67 +1,77 @@
-extern int  assert(int  excepted,int actual);
-extern int  assert_f(float  excepted,float actual);
-
-typedef struct user{
+#宏 吧啦啦能量沙罗沙罗小魔仙全身变 enum 斗者临兵皆阵列前行
+#宏 吧啦啦能量沙罗沙罗小魔仙全身变 struct 道生一,一生二,二生三,三生万物
+#宏 吧啦啦能量沙罗沙罗小魔仙全身变 typedef 无名天地之始,有名万物之母
+#宏 吧啦啦能量沙罗沙罗小魔仙全身变 extern 天下万物生于有,有生于无
+天下万物生于有,有生于无 int  assert(int  excepted,int actual);
+天下万物生于有,有生于无 int  assert_f(float  excepted,float actual);
+无名天地之始,有名万物之母 道生一,一生二,二生三,三生万物 user{
     char *  name;
     int  age;
     int  sex;
     int height;
-    int width;
+    float width;
 } User ;
-
-//int UserStructAdd(User a,User * b){
-//    b -> age = 30;
-//    a.age = 20;
-//    return a.age + b -> age ;
+int UserStructAdd(User a,User * b){
+    b -> age = 30;
+    a.age = 20;
+    return a.age + b -> age ;
+}
+User UserStructReturn(User a,User * b){
+    User xiaoli;
+    b->height = 30;
+    if(a.height >= 190){ xiaoli.height = 99;}else{xiaoli.height = 77;}
+    return xiaoli;
+}
+int testFuncCallWithStruct(){
+    斗者临兵皆阵列前行 Sex {MALE = 1,FEMALE = 0};
+    User xiaozhang = {"zhangsan",10,MALE,190,140.0};
+    assert(50,UserStructAdd(xiaozhang,&xiaozhang));
+    User lisi = UserStructReturn(xiaozhang,&xiaozhang);
+    assert(190,xiaozhang.height);
+    assert(30,xiaozhang.age);
+    assert(99,lisi.height);
+}
+//
+//float testFloatAdd(float a,float b){
+//    float x = 0.0;
+//    for (int i = 0; i < 10 ; i++) {
+//       x = x + 10.0;
+//    }
+//    return a + b + x;
+//}
+//int testIntAdd(int a,int b){
+//    return a + b;
 //}
 //
-//int testFuncCallWithStruct(){
-//    User xiaozhang = {"zhangsan",10,1,190,140};
-//    int m = UserStructAdd(xiaozhang,&xiaozhang);
-//    assert(50,m);
-//    assert(30,xiaozhang.age);
+//int testIf(){
+//    float a = 300.0;float b = 400.0;
+//    int c = 100; int d = 200;
+//    if (b >= 399.0 && a > 301.0 || b < 10){
+//        a = a + 1.0;
+//    }else{
+//        a = a - 3.0;
+//    }
+//
+//    assert(0,(int)(a > 300.0));
+//    assert_f(297.0,a);
+//    int e = 0;
+//    int f = 1;
+//    int * g = &f;
+//    if(e || *g && e){
+//        assert(1,0);
+//    }
+//    assert_f(797.0,testFloatAdd(a,b));
+//    assert(300,testIntAdd(c,d));
 //}
-
-float testFloatAdd(float a,float b){
-    float x = 0.0;
-    for (int i = 0; i < 10 ; i++) {
-       x = x + 10.0;
-    }
-    return a + b + x;
-}
-int testIntAdd(int a,int b){
-    return a + b;
-}
-
-int testIf(){
-    float a = 300.0;float b = 400.0;
-    int c = 100; int d = 200;
-    if (b >= 399.0 && a > 301.0 || b < 10){
-        a = a + 1.0;
-    }else{
-        a = a - 3.0;
-    }
-
-    assert(0,(int)(a > 300.0));
-    assert_f(297.0,a);
-    int e = 0;
-    int f = 1;
-    int * g = &f;
-    if(e || *g && e){
-        assert(1,0);
-    }
-    assert_f(797.0,testFloatAdd(a,b));
-    assert(300,testIntAdd(c,d));
-}
-
+//
 
 
 int testCode(){
 //    testEnum();
 //    testSwitch();
 //    testConstant();-
-//    testFuncCallWithStruct();
-    testIf();
+    testFuncCallWithStruct();
+//    testIf();
     return 0;
 }
 

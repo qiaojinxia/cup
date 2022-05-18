@@ -5,6 +5,7 @@
 #include "PrintVisitor.h"
 #include "CodeGenerate.h"
 #include "TypeVisitor.h"
+#include "PreProcessing.h"
 
 using namespace BDD;
 
@@ -53,7 +54,11 @@ int main(int argc,char *argv[]) {
         source = argv[2];
     }
 
-    Lexer lex(source);
+
+    PreProcessing preProcess(source);
+    std::string afterPreProcessCode = preProcess.Scan();
+
+    Lexer lex(afterPreProcessCode.c_str());
     lex.GetNextToken();
 
     Parser parser(lex);

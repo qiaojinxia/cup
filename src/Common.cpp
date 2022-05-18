@@ -3,8 +3,8 @@
 //
 
 #include "Common.h"
-#include <stdio.h>
-#include <stdarg.h> // va_start va_end
+#include<vector>
+#include <sstream>      // std::istringstream
 #include <string>
 
 std::string  BDD::string_format(const char *format, ...)
@@ -99,6 +99,20 @@ bool BDD::is_contains_str(std::string str,std::string contains_str) {
     return false;
 }
 
+
+
+
+std::vector<std::string>  BDD::split_str(const std::string& s, char delimiter)
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream  tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter))
+    {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
 
 BDD::IteratorNode BDD::Str2IntArrayIterator::next() {
     auto maxSize =  Cursor + 8;

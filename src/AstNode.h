@@ -32,6 +32,7 @@ namespace BDD{
         std::shared_ptr<Type> Type;
         std::string_view Name;
         bool isInit{false};
+        bool isPointer{false};
         bool  isParam{false};
         int Offset;
     };
@@ -49,7 +50,6 @@ namespace BDD{
         std::list<std::shared_ptr<Var>> Params;
         std::list<std::shared_ptr<Var>> Locals;
         std::list<std::shared_ptr<AstNode>> Stmts;
-
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -221,6 +221,7 @@ class BinaryNode :public  AstNode{
         explicit FuncCallNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::string_view FuncName;
         std::vector<std::shared_ptr<AstNode>> Args;
+        int ReturnStructOffset;
         void Accept(AstVisitor *visitor) override;
     };
 

@@ -159,9 +159,11 @@ void TypeVisitor::Visitor(ForStmtNode *node) {
 }
 
 void TypeVisitor::Visitor(FunctionNode *node) {
+    CurFuncType = node ->Type;
     for(auto &stmt:node ->Stmts){
         stmt ->Accept(this);
     }
+    CurFuncType = nullptr;
 }
 
 void TypeVisitor::Visitor(FuncCallNode *node) {
@@ -173,6 +175,7 @@ void TypeVisitor::Visitor(FuncCallNode *node) {
 
 void TypeVisitor::Visitor(ReturnStmtNode *node) {
    node ->Lhs ->Accept(this);
+   node ->Type = node -> Lhs->Type;
 }
 
 void TypeVisitor::Visitor(DeclarationStmtNode *node) {
@@ -287,6 +290,7 @@ void TypeVisitor::Visitor(AssignNode *node) {
         castNode ->Type = node ->Lhs ->Type;
         castNode ->CstNode = node ->Rhs;
     }
+    node ->Type = node ->Lhs->Type;
     CurAssignType = nullptr;
 }
 

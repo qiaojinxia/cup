@@ -35,6 +35,7 @@ namespace BDD{
         std::list<std::string_view> BreakStack;
         std::list<std::string_view> JmpStack;
         std::list<std::string_view> ContinueStack;
+        int Return2OffsetStack;
         std::string curTargetReg;
     public:
         CodeGenerate(){
@@ -148,6 +149,9 @@ namespace BDD{
         void PushStructOrUnion(std::shared_ptr<AstNode> node);
 
         void Push(std::shared_ptr<Type> ty, const char *reg);
+
+        const int GetStructReturn2Offset();
+        const void SetStructReturn2Offset(int offset);
     };
 }
 

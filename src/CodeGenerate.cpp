@@ -313,6 +313,21 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     int offset = 0;
     int s_offset = 16;
 
+    for (auto &stmt : node ->Stmts) {
+        if (!stmt->Type)
+            continue;
+        if (auto stmtNode = std::dynamic_pointer_cast<ExprStmtNode>(stmt)){
+            auto funcCallNode = std::dynamic_pointer_cast<FuncCallNode>(stmtNode->Lhs);
+            if (!funcCallNode)
+                continue;
+            if(funcCallNode->Type->GetBaseType()->IsStructType()){
+                offset +=  funcCallNode->Type->GetBaseType()->Size;
+                offset = AlignTo(offset, funcCallNode->Type->GetBaseType() -> Align);
+                funcCallNode -> ReturnStructOffset = -offset;
+            }
+        }
+    }
+
     for (auto &v: node -> Locals) {
         if (v->Type ->IsStructType() && v ->isParam){
             v -> Offset += s_offset;
@@ -326,7 +341,7 @@ void CodeGenerate::Visitor(FunctionNode *node) {
         }
         offset += v ->Type ->Size;
         offset = AlignTo(offset,v -> Type -> Align);
-        v -> Offset -= offset;
+        v -> Offset = -offset;
     }
     offset = AlignTo(offset,16);
 
@@ -342,13 +357,14 @@ void CodeGenerate::Visitor(FunctionNode *node) {
         }else if (var->Type->IsIntegerNum()){
             printf("\t  mov %s, %d(%%rbp)\n",Regx64[var -> Type -> Size / 2][index++],var -> Offset );
         }else if (var->Type->IsPointerType()){
-            printf("\t  mov %s, %d(%%rbp)\n", GetReg(Type::Pointer->Size,index).data(),var -> Offset );
+            printf("\t  mov %s, %d(%%rbp)\n", GetReg(Type::Pointer->Size,index++).data(),var -> Offset );
         }else if (var->Type->GetBaseType()->IsStructType() || var->Type->GetBaseType()->IsUnionType()){
 
         }else{
             assert(0);
         }
     }
+
     //release use reg
     Depth= 0;
     for (auto &s:node->Stmts) {
@@ -378,6 +394,9 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         }
     }
 
+    if( node ->Type->GetBaseType()->IsStructType()){
+        useReg.push_back(GetReg(Type::Pointer->Size,count_i++));
+    }
     for(int i = node->Args.size() -1;i>=0;i--){
         Depth = 0;
         auto  arg = node->Args[i];
@@ -395,9 +414,14 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 
         if (argType->IsFloatPointNum()){
             useReg.push_back(Xmm[count_f++]);
+        }else if(argType -> IsStructType()){
+            //when func return struct
+            useReg.push_back(GetReg(Type::VoidType->Size,count_i++));
         }else{
             useReg.push_back(GetReg(argType->Size,count_i++));
         }
+        if (argType -> IsStructType() || argType -> IsUnionType())
+            continue;
         if (argType ->IsFloatPointNum()){
             Push(argType->GetBaseType(),Xmm[0]);
         }else{
@@ -405,7 +429,18 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         }
     }
 
+
     int seq = 0;
+    //if return struct set first addrss to %%rdi
+    if( node ->Type->GetBaseType()->IsStructType()){
+        int varOffset = GetStructReturn2Offset();
+        if (varOffset != 0){
+            printf("\t  lea %d(%%rbp),%s\n",varOffset,useReg[seq].data());
+        }else{
+            printf("\t  lea %d(%%rbp),%s\n",node->ReturnStructOffset,useReg[seq].data());
+        }
+        seq++;
+    }
     for(auto &arg:node -> Args){
         if (arg->Type->IsStructType() || arg->Type->IsUnionType()) {
             continue;
@@ -482,8 +517,13 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
     while (auto castNode = dynamic_cast<CastNode *>(node)){
         node = castNode->CstNode.get();
     }
-    if (auto varNode = dynamic_cast<ExprVarNode *>(node)){
-        printf("\t  lea %d(%%rbp),%s\n",varNode -> VarObj -> Offset,GetCurTargetReg().data());
+    if (auto varExprNode = dynamic_cast<ExprVarNode *>(node)){
+        //if var use to return and return type is struct that's actually a pointer ,point to caller  reserve stack
+        if(varExprNode ->VarObj ->isPointer){
+            printf("\t  mov %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());
+        }else{
+            printf("\t  lea %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());
+        }
     }else if(auto constNode = dynamic_cast<ConstantNode *>(node)){
         std::string constName =  std::string(constNode->Name);
         printf("\t  lea %s(%%rip),%s\n",constName.data(),GetCurTargetReg().data());
@@ -500,7 +540,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         auto field = record -> GetField(memberAccessNode -> fieldName);
         printf("\t  add  $%d,%s\n", field ->Offset,GetCurTargetReg().data());
     }else if (auto arefNode = dynamic_cast<ArefNode *>(node)){
-        auto varNode = std::dynamic_pointer_cast<ExprVarNode>(arefNode ->Lhs);
+        auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(arefNode ->Lhs);
         arefNode -> Offset ->Accept(this);
         if (arefNode ->Offset ->Type ->Size == Type::IntType ->Size){
             printf("\t  cdqe\n");
@@ -511,7 +551,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
             Pop(Type::LongType, "%rcx");
             printf("\t  lea (%%rax,%%rcx,%d),%s\n",node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
         }else{
-            printf("\t  lea %d(%%rbp,%%rax,%d),%s\n",varNode ->VarObj ->Offset,node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
+            printf("\t  lea %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size, GetCurTargetReg().data());
         }
     }else{
         printf("not a value\n");
@@ -612,8 +652,8 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
             constNode = constNode->Next;
         }
         return;
-    }else if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(cursor)){
-        type = exprNode->Type;
+    }else if (auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(cursor)){
+        type = varExprNode->Type;
     }else if(auto binaryNode = std::dynamic_pointer_cast<BinaryNode>(cursor)){
         type = binaryNode->Type;
     }else if(auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(cursor)){
@@ -948,7 +988,7 @@ const std::string CodeGenerate::GetRcx(std::shared_ptr<Type> type) {
 
 
 void CodeGenerate::Visitor(ArefNode *node) {
-    auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
+    auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
     node -> Offset ->Accept(this);
     if (node ->Offset ->Type ->Size == Type::IntType ->Size){
         printf("\t  cdqe\n");
@@ -961,7 +1001,7 @@ void CodeGenerate::Visitor(ArefNode *node) {
         Load(node);
         return;
     }
-    printf("\t  lea %d(%%rbp,%%rax,%d),%%rax\n",varNode ->VarObj ->Offset,node-> Type->GetBaseType()->Size);
+    printf("\t  lea %d(%%rbp,%%rax,%d),%%rax\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size);
     Load(node);
 }
 
@@ -1096,11 +1136,15 @@ void CodeGenerate::Visitor(EmptyNode *node) {}
 
 void CodeGenerate::Visitor(AssignNode *node) {
     USeXmm();
+    auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node->Lhs);
+    if (varExprNode)
+        SetStructReturn2Offset(varExprNode->VarObj->Offset);
     auto constantNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
     if (!constantNode){
         node -> Rhs -> Accept(this);
     }
     SetCurTargetReg("%rdi");
+    SetStructReturn2Offset(0);
     GenerateAddress(node ->Lhs.get());
     ClearCurTargetReg();
     Store(node -> Rhs);
@@ -1240,20 +1284,20 @@ void CodeGenerate::Visitor(ModNode *node) {
 
 void CodeGenerate::Visitor(IncrNode *node) {
    node -> Lhs -> Accept(this);
-   auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
+   auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
    auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
    printf("\t  mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
-   printf("\t  add $%s,%s\n",constNode->GetValue().data(), GetRcx(varNode ->Type).data());
-   printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varNode ->Type).data(), varNode->VarObj -> Offset);
+   printf("\t  add $%s,%s\n",constNode->GetValue().data(), GetRcx(varExprNode ->Type).data());
+   printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varExprNode ->Type).data(), varExprNode->VarObj -> Offset);
 }
 
 void CodeGenerate::Visitor(DecrNode *node) {
     node -> Lhs -> Accept(this);
-    auto varNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
+    auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
     auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
     printf("\t mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
     printf("\t  sub $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
-    printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varNode ->Type).data(), varNode-> VarObj -> Offset);
+    printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varExprNode ->Type).data(), varExprNode-> VarObj -> Offset);
 }
 
 void CodeGenerate::Visitor(CmpNode *node) {
@@ -1425,4 +1469,12 @@ void CodeGenerate::SetCurTargetReg(std::string reg) {
 
 void CodeGenerate::ClearCurTargetReg(){
     curTargetReg = "";
+}
+
+const int CodeGenerate::GetStructReturn2Offset() {
+    return Return2OffsetStack ;
+}
+
+const void CodeGenerate::SetStructReturn2Offset(int offset) {
+    Return2OffsetStack = offset;
 }

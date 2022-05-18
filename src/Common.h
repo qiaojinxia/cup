@@ -24,6 +24,8 @@ namespace BDD{
         bool has_next();
     };
 
+    std::vector<std::string> split_str(const std::string& s, char delimiter);
+
     std::string string_format(const char* fmt, ...);
     std::string convert_to_hex(long num);
     char hexToDec(char hex);

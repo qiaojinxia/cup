@@ -236,17 +236,40 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     std::shared_ptr<FunctionType> funcType = std::dynamic_pointer_cast<FunctionType>(type);
     if (funcType != nullptr){
         for(auto it = funcType -> Params.rbegin();it != funcType -> Params.rend();++it){
-
             node ->Params.push_front(NewLocalVar( (*it) ->TToken ->Content,(*it) ->Type, true));
         }
     }
+    TypeVisitor typeVisitor;
+
     Lex.ExceptToken(TokenKind::LBrace);
+
     while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
-        node -> Stmts.push_back(ParseStatement());
+        auto stmtNode = ParseStatement();
+        node -> Stmts.push_back(stmtNode);
+        if (node->Type->GetBaseType()->IsStructType()){
+            auto returnNode  = std::dynamic_pointer_cast<ReturnStmtNode>(stmtNode);
+            if(!returnNode)
+                continue;
+            returnNode ->Accept(&typeVisitor);
+            if (!Type::IsTypeEqual(type->GetBaseType(),returnNode->Type)){
+                auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,returnNode->Type->Align);
+                DiagLoc(Lex.SourceCode, returnNode->Tk->Location,tips.c_str());
+            }
+            if(auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(returnNode ->Lhs)){
+                varExprNode->VarObj->Offset = Type::Pointer->Size * -1;
+                varExprNode ->VarObj->isInit = true;
+                varExprNode ->VarObj ->isPointer = true;
+            }else{
+                assert(0);
+            }
+        }
     }
+
 
     auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(type));
     funcSign ->FuncName = node ->FuncName;
+
+
     Scope::GetInstance() ->PushFuncSign(funcSign);
 
     Scope::GetInstance() -> PopScope();
@@ -443,6 +466,14 @@ std::shared_ptr<Type> Parser::GenerateType(int baseType,bool isConstant) {
 std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
     if (Lex.CurrentToken -> Kind == TokenKind::LParent){
         auto funcType = std::make_shared<FunctionType>(baseType);
+        //if return type is struct  set the first param is  struct offset
+        if(funcType->GetBaseType()->IsStructType()){
+            auto param = std::make_shared<Param>();
+            param -> Type = Type::Pointer;
+            param ->TToken = std::make_shared<Token>();
+            param ->TToken ->Content = "1";
+            funcType -> Params.push_back(param);
+        }
         Lex.GetNextToken();
         if (Lex.CurrentToken -> Kind != TokenKind::RParent){
             std::list<std::shared_ptr<Token>> tokens;

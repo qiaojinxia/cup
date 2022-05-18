@@ -131,9 +131,8 @@ namespace BDD{
     };
 
     class FunctionType : public Type{
-    private:
-        std::shared_ptr<Type> ReturnType;
     public:
+        std::shared_ptr<Type> ReturnType;
         std::vector<std::shared_ptr<Param>> Params{} ;
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8,"func"), ReturnType(returnType) {}
 
