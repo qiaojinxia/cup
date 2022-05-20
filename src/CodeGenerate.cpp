@@ -356,10 +356,9 @@ void CodeGenerate::Visitor(FunctionNode *node) {
             printf("\t %s %s, %d(%%rbp)\n", GetMoveCode(var->Type).data(), Xmm[Depth++], var -> Offset);
         }else if (var->Type->IsIntegerNum()){
             printf("\t  mov %s, %d(%%rbp)\n",Regx64[var -> Type -> Size / 2][index++],var -> Offset );
-        }else if (var->Type->IsPointerType()){
+        }else if (var->Type->IsPointerType() || var ->Type ->IsArrayType()){
             printf("\t  mov %s, %d(%%rbp)\n", GetReg(Type::Pointer->Size,index++).data(),var -> Offset );
         }else if (var->Type->GetBaseType()->IsStructType() || var->Type->GetBaseType()->IsUnionType()){
-
         }else{
             assert(0);
         }
@@ -405,21 +404,25 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         if(arg ->Type ->IsStructType() || arg ->Type->IsUnionType()){
             continue;
         }
+
+        //Allocation register
         if(argType->IsFunctionType()){
             arg ->Accept(this);
             argType =  arg ->Type ->GetBaseType();
+        }else if(argType -> IsArrayType()){
+            GenerateAddress(arg.get());
         }else{
             arg ->Accept(this);
         }
-
         if (argType->IsFloatPointNum()){
             useReg.push_back(Xmm[count_f++]);
-        }else if(argType -> IsStructType()){
-            //when func return struct
+        }else if( argType -> IsArrayType()){
+            //array type pass pointer
             useReg.push_back(GetReg(Type::VoidType->Size,count_i++));
         }else{
             useReg.push_back(GetReg(argType->Size,count_i++));
         }
+        //push arg
         if (argType -> IsStructType() || argType -> IsUnionType())
             continue;
         if (argType ->IsFloatPointNum()){
@@ -444,8 +447,11 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
     for(auto &arg:node -> Args){
         if (arg->Type->IsStructType() || arg->Type->IsUnionType()) {
             continue;
+        }else if(arg->Type->IsPointerType() || arg -> Type->IsArrayType()){
+            Pop(Type::Pointer,useReg[seq].data());
+        }else{
+            Pop(arg ->Type->GetBaseType(),useReg[seq].data());
         }
-        Pop(arg ->Type->GetBaseType(),useReg[seq].data());
         seq ++;
     }
     std::string FuncName(node->FuncName);
@@ -553,6 +559,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         }else{
             printf("\t  lea %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size, GetCurTargetReg().data());
         }
+
     }else{
         printf("not a value\n");
         assert(0);

@@ -1,7 +1,7 @@
-#宏 吧啦啦能量沙罗沙罗小魔仙全身变 enum 斗者临兵皆阵列前行
-#宏 吧啦啦能量沙罗沙罗小魔仙全身变 struct 道生一,一生二,二生三,三生万物
-#宏 吧啦啦能量沙罗沙罗小魔仙全身变 typedef 无名天地之始,有名万物之母
-#宏 吧啦啦能量沙罗沙罗小魔仙全身变 extern 天下万物生于有,有生于无
+#define enum 斗者临兵皆阵列前行
+#define struct 道生一,一生二,二生三,三生万物
+#define typedef 无名天地之始,有名万物之母
+#define extern 天下万物生于有,有生于无
 天下万物生于有,有生于无 int  assert(int  excepted,int actual);
 天下万物生于有,有生于无 int  assert_f(float  excepted,float actual);
 无名天地之始,有名万物之母 道生一,一生二,二生三,三生万物 user{
@@ -11,17 +11,25 @@
     int height;
     float width;
 } User ;
+
 int UserStructAdd(User a,User * b){
     b -> age = 30;
     a.age = 20;
     return a.age + b -> age ;
 }
+
 User UserStructReturn(User a,User * b){
     User xiaoli;
     b->height = 30;
     if(a.height >= 190){ xiaoli.height = 99;}else{xiaoli.height = 77;}
     return xiaoli;
 }
+
+int testArray(int a[3]){
+    a[0] = 777;
+}
+
+
 int testFuncCallWithStruct(){
     斗者临兵皆阵列前行 Sex {MALE = 1,FEMALE = 0};
     User xiaozhang = {"zhangsan",10,MALE,190,140.0};
@@ -30,6 +38,9 @@ int testFuncCallWithStruct(){
     assert(190,xiaozhang.height);
     assert(30,xiaozhang.age);
     assert(99,lisi.height);
+    int ay[3] ={1,2,3};
+    testArray(ay);
+    assert(777,ay[0]);
 }
 //
 //float testFloatAdd(float a,float b){

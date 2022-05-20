@@ -230,13 +230,20 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     Scope::GetInstance() -> PushScope();
     auto type = ParseDeclarationSpec();
     std::list<std::shared_ptr<Token>> nameTokens;
-    node -> FuncName = Lex.CurrentToken->Content;
+    auto FuncNameToken = Lex.CurrentToken;
+    node -> FuncName = FuncNameToken->Content;
     type = ParseDeclarator(type,&nameTokens);
     node -> Type = type;
     std::shared_ptr<FunctionType> funcType = std::dynamic_pointer_cast<FunctionType>(type);
     if (funcType != nullptr){
-        for(auto it = funcType -> Params.rbegin();it != funcType -> Params.rend();++it){
-            node ->Params.push_front(NewLocalVar( (*it) ->TToken ->Content,(*it) ->Type, true));
+        for(auto it = funcType -> Params.rbegin();it != funcType -> Params.rend();++it) {
+            //if paramer is arry actually is pointer
+            if ((*it)->Type->IsArrayType()) {
+                auto  pType = std::make_shared<PointerType>((*it)->Type);
+                node->Params.push_front(NewLocalVar((*it)->TToken->Content, pType, true));
+            } else {
+                node->Params.push_front(NewLocalVar((*it)->TToken->Content, (*it)->Type, true));
+            }
         }
     }
     TypeVisitor typeVisitor;
@@ -269,7 +276,10 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(type));
     funcSign ->FuncName = node ->FuncName;
 
-
+    if (Scope::GetInstance() ->GetFuncSign(funcSign ->FuncName)){
+        auto tips =  string_format("redefinition of '%s' !",std::string(funcSign ->FuncName).c_str());
+        DiagLoc(Lex.SourceCode, FuncNameToken->Location,tips.c_str());
+    }
     Scope::GetInstance() ->PushFuncSign(funcSign);
 
     Scope::GetInstance() -> PopScope();
