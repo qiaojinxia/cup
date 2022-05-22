@@ -222,6 +222,7 @@ class BinaryNode :public  AstNode{
         std::string_view FuncName;
         std::vector<std::shared_ptr<AstNode>> Args;
         int ReturnStructOffset;
+        std::shared_ptr<AstNode> FuncPointerOffset ;
         void Accept(AstVisitor *visitor) override;
     };
 

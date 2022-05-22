@@ -111,10 +111,10 @@ void CodeGenerate::CmpZero(std::shared_ptr<AstNode> node){
 }
 
 void CodeGenerate::Visitor(ExprVarNode *node) {
-    if (node -> Type -> IsPointerType()){
-        printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
-    }else if(node -> Type -> IsStructType()){
+    if (node ->Type -> IsFunctionType() || node -> Type -> IsFuncPointerType() || node -> Type -> IsStructType() ){
         GenerateAddress(node);
+    }else if (node -> Type -> IsPointerType()){
+        printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
     }else{
         GenerateAddress(node);
         Load(node);
@@ -455,11 +455,18 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         seq ++;
     }
     std::string FuncName(node->FuncName);
+    if (node ->FuncPointerOffset)
+    {
+//        node ->FuncPointerOffset->Accept(this);
+        GenerateAddress(node ->FuncPointerOffset.get());
+        printf("\t  callq *(%%rax)\n");
+    }else{
 #ifdef __linux__
-    printf("\t  call %s\n",FuncName.data());
+        printf("\t  call %s\n",FuncName.data());
 #else
-    printf("\t  call _%s\n",FuncName.data());
+        printf("\t  call _%s\n",FuncName.data());
 #endif
+    }
     if (tmp_rsp)
         printf("\t  add $%d,%%rsp\n",tmp_rsp);
     Depth = 0;
@@ -525,7 +532,13 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
     }
     if (auto varExprNode = dynamic_cast<ExprVarNode *>(node)){
         //if var use to return and return type is struct that's actually a pointer ,point to caller  reserve stack
-        if(varExprNode ->VarObj ->isPointer){
+        if(varExprNode ->Type ->IsFunctionType()){
+#ifdef __linux__
+            printf("\t  lea %s(%%rip),%s\n", std::string(varExprNode->Tk->Content).data(), GetCurTargetReg().data());
+#else
+            printf("\t  lea _%s(%%rip),%s\n", std::string(varExprNode->Tk->Content).data(), GetCurTargetReg().data());
+#endif
+        }else if(varExprNode ->VarObj ->isPointer){
             printf("\t  mov %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());
         }else{
             printf("\t  lea %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());

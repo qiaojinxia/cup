@@ -32,7 +32,7 @@ namespace BDD{
 
         std::shared_ptr<Type> ParseDeclarationSpec();
 
-        std::shared_ptr<Type> GenerateType(int baseType,bool isConstant);
+        std::shared_ptr<Type> GenerateType(int baseType,bool isConstant) const;
 
         std::shared_ptr<Type> ParseDeclarator(std::shared_ptr<Type> baseType,std::list<std::shared_ptr<Token>> *nameTokens);
 
@@ -52,7 +52,7 @@ namespace BDD{
 
         std::shared_ptr<RecordType> ParseRecord(RecordType::TagKind recordeType);
 
-        std::shared_ptr<Var> FindLocalVar(std::string_view varName);
+        static std::shared_ptr<Var> FindLocalVar(std::string_view varName);
 
         std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type,bool isParam);
 

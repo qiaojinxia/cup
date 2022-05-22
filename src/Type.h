@@ -84,6 +84,8 @@ namespace BDD{
 
 
         bool IsAliasType() const;
+
+        bool IsFuncPointerType() const;
     };
 
 
@@ -123,7 +125,6 @@ namespace BDD{
 
         std::shared_ptr<Type> GetBaseType();
     };
-
 
     struct Param{
         std::shared_ptr<Type> Type;

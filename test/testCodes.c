@@ -12,6 +12,11 @@
     float width;
 } User ;
 
+int max(int x, int y)
+{
+    return x + y;
+}
+
 int UserStructAdd(User a,User * b){
     b -> age = 30;
     a.age = 20;
@@ -29,7 +34,6 @@ int testArray(int a[3]){
     a[0] = 777;
 }
 
-
 int testFuncCallWithStruct(){
     斗者临兵皆阵列前行 Sex {MALE = 1,FEMALE = 0};
     User xiaozhang = {"zhangsan",10,MALE,190,140.0};
@@ -41,6 +45,10 @@ int testFuncCallWithStruct(){
     int ay[3] ={1,2,3};
     testArray(ay);
     assert(777,ay[0]);
+    int (* p)(int a, int b) = max;
+    int m = p(3,4);
+    assert(7,m);
+
 }
 //
 //float testFloatAdd(float a,float b){

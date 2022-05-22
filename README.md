@@ -10,4 +10,4 @@ Now support
 - Support Ternary Operator `int a = b < c ? b : c;`
 - Support Pointer operation ` + 、 - 、diff`
 - Support KeyWord `enum typedef struct union const extern`
-- Support type auto cast 
+- Support type auto cast  、function pointer

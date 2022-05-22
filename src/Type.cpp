@@ -87,6 +87,19 @@ bool Type::IsArrayType() const {
     return TypeC == TypeClass::AryType;
 }
 
+bool Type::IsFuncPointerType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsFuncPointerType();
+    }
+    if (TypeC == TypeClass::PtrType){
+        auto ry = dynamic_cast<const PointerType *>(this);
+        return ry->Base ->IsFunctionType() ;
+    }
+    return false;
+}
+
+
 bool Type::IsStructType() const {
     if (TypeC == TypeClass::AliasType){
         auto alias_type = dynamic_cast<const AliasType *>(this);

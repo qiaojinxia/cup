@@ -115,8 +115,10 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 }
 
 void TypeVisitor::Visitor(ExprVarNode *node) {
-    node -> Type = node ->VarObj ->Type;
-    node -> isParam = node ->VarObj ->isParam;
+    if (node ->VarObj){
+        node -> Type = node ->VarObj ->Type;
+        node -> isParam = node ->VarObj ->isParam;
+    }
 }
 
 void TypeVisitor::Visitor(ProgramNode *node) {
@@ -171,6 +173,8 @@ void TypeVisitor::Visitor(FuncCallNode *node) {
     for(auto &arg:node ->Args){
         arg ->Accept(this);
     }
+    if (node ->FuncPointerOffset)
+        node ->FuncPointerOffset->Accept(this);
 }
 
 void TypeVisitor::Visitor(ReturnStmtNode *node) {
@@ -279,6 +283,7 @@ void TypeVisitor::Visitor(AssignNode *node) {
     if (CurAssignType ->IsAliasType()){
         CurAssignType = std::dynamic_pointer_cast<AliasType>(CurAssignType)->Base;
     }
+
     if(auto ternaryNode = std::dynamic_pointer_cast<TernaryNode>(node->Rhs)){
         ternaryNode ->Type = node->Lhs->Type;
     }
