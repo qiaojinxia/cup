@@ -111,7 +111,7 @@ void CodeGenerate::CmpZero(std::shared_ptr<AstNode> node){
 }
 
 void CodeGenerate::Visitor(ExprVarNode *node) {
-    if (node ->Type -> IsFunctionType() || node -> Type -> IsFuncPointerType() || node -> Type -> IsStructType() ){
+    if (node ->Type -> IsFunctionType() || node -> Type -> IsStructType() ){
         GenerateAddress(node);
     }else if (node -> Type -> IsPointerType()){
         printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
@@ -404,7 +404,6 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         if(arg ->Type ->IsStructType() || arg ->Type->IsUnionType()){
             continue;
         }
-
         //Allocation register
         if(argType->IsFunctionType()){
             arg ->Accept(this);
@@ -422,16 +421,24 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         }else{
             useReg.push_back(GetReg(argType->Size,count_i++));
         }
-        //push arg
         if (argType -> IsStructType() || argType -> IsUnionType())
             continue;
-        if (argType ->IsFloatPointNum()){
-            Push(argType->GetBaseType(),Xmm[0]);
+        if (node -> Args.size() != 1){
+            //push arg
+            if (argType ->IsFloatPointNum()){
+                Push(argType->GetBaseType(),Xmm[0]);
+            }else{
+                Push(argType, GetRax(argType).data());
+            }
         }else{
-            Push(argType, GetRax(argType).data());
+            //handle just one arg
+            if (argType ->IsFloatPointNum()){
+            }else{
+                printf("\t  %s  %s,%s\n", GetMoveCode2(argType).data(), GetRax(argType).data(),useReg.back().data());
+            }
         }
     }
-
+    
 
     int seq = 0;
     //if return struct set first addrss to %%rdi
@@ -444,16 +451,20 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         }
         seq++;
     }
+
     for(auto &arg:node -> Args){
-        if (arg->Type->IsStructType() || arg->Type->IsUnionType()) {
-            continue;
-        }else if(arg->Type->IsPointerType() || arg -> Type->IsArrayType()){
-            Pop(Type::Pointer,useReg[seq].data());
-        }else{
-            Pop(arg ->Type->GetBaseType(),useReg[seq].data());
+        if (node -> Args.size() != 1){
+            if (arg->Type->IsStructType() || arg->Type->IsUnionType()) {
+                continue;
+            }else if(arg->Type->IsPointerType() || arg -> Type->IsArrayType()){
+                Pop(Type::Pointer,useReg[seq].data());
+            }else{
+                Pop(arg ->Type->GetBaseType(),useReg[seq].data());
+            }
         }
         seq ++;
     }
+
     std::string FuncName(node->FuncName);
     if (node ->FuncPointerOffset)
     {
@@ -775,6 +786,8 @@ const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
         }else if (type -> Size == 8){
             return "movsq";
         }
+    }else if(type->IsPointerType()){
+        return "movsq";
     }
     assert(0);
 }
@@ -796,6 +809,10 @@ const std::string CodeGenerate::GetMoveCode2(std::shared_ptr<Type>  type) {
         }else if (type -> Size == 8){
             return "movq";
         }
+    }else if(type->IsPointerType()){
+        return "movq";
+    }else if(type->IsArrayType()){
+        return "mov";
     }
     assert(0);
 }
@@ -964,7 +981,9 @@ const std::string CodeGenerate::GetRdx(std::shared_ptr<Type> type) {
 }
 
 const std::string CodeGenerate::GetRax(std::shared_ptr<Type> type) {
-    if (type -> Size == 1){
+    if (type->IsArrayType()) {
+        return "%rax";
+    }else if (type -> Size == 1){
         return "%al";
     }else if (type -> Size == 2){
         return "%ax";

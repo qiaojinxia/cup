@@ -112,5 +112,7 @@
      - Support struct return
 - 2022-05-20
      - Support array arg  as funCall `int a[3] = {1,2,3}; void addArray(int a[3]){a[0]  = 77;}`
-- 2022-05-21
+- 2022-05-22
      - Support funcPointer case `int (* p)(int a, int b) = max;`
+- 2022-05-23
+     - Support funcPointer as arg case  `int (* p)(int a, int b) = max; xx(p);`

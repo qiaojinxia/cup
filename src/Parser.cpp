@@ -351,7 +351,7 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
     //if can't find func in declar table next find func pointer table
     if (!funcSign){
         auto  varNode = Scope::GetInstance() ->FindVar(Lex.CurrentToken->Content);
-        if (!varNode ->Type->IsFuncPointerType()){
+        if (!varNode || !varNode ->Type->IsFuncPointerType()){
             DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"func must declare first !");
         }
         auto varExprNode =std::make_shared<ExprVarNode>(nullptr);
