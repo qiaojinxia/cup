@@ -4,6 +4,7 @@
 #define extern 天下万物生于有,有生于无
 天下万物生于有,有生于无 int  assert(int  excepted,int actual);
 天下万物生于有,有生于无 int  assert_f(float  excepted,float actual);
+无名天地之始,有名万物之母 int (* MaxPointer)(int, int);
 无名天地之始,有名万物之母 道生一,一生二,二生三,三生万物 user{
     char *  name;
     int  age;
@@ -12,8 +13,8 @@
     float width;
 } User ;
 
-int max(int x, int y){
-        return x + y;
+int max(int a, int b){
+    return a > b ? a : b;
 }
 
 int UserStructAdd(User a,User * b){
@@ -33,8 +34,8 @@ int testArray(int a[3]){
     a[0] = 777;
 }
 
-int testFuncPointer (int (* p)(int a, int b)){
-    return p(2,4);
+int testFuncPointer (MaxPointer p){
+    return p(6,7);
 }
 
 int testFuncCallWithStruct(){
@@ -45,54 +46,54 @@ int testFuncCallWithStruct(){
     assert(190,xiaozhang.height);
     assert(30,xiaozhang.age);
     assert(99,lisi.height);
-    int ay[3] ={1,2,3};
+    int ay[3] = {1,2,3};
     testArray(ay);
     assert(777,ay[0]);
-    int (* p)(int a, int b) = max;
+    MaxPointer p = max;
     int m = p(3,4);
-    assert(7,m);
+    assert(4,m);
     int xm = testFuncPointer(p);
-    assert(6,xm);
+    assert(7,xm);
 }
-//
-//float testFloatAdd(float a,float b){
-//    float x = 0.0;
-//    for (int i = 0; i < 10 ; i++) {
-//       x = x + 10.0;
-//    }
-//    return a + b + x;
-//}
-//int testIntAdd(int a,int b){
-//    return a + b;
-//}
-//
-//int testIf(){
-//    float a = 300.0;float b = 400.0;
-//    int c = 100; int d = 200;
-//    if (b >= 399.0 && a > 301.0 || b < 10){
-//        a = a + 1.0;
-//    }else{
-//        a = a - 3.0;
-//    }
-//
-//    assert(0,(int)(a > 300.0));
-//    assert_f(297.0,a);
-//    int e = 0;
-//    int f = 1;
-//    int * g = &f;
-//    if(e || *g && e){
-//        assert(1,0);
-//    }
-//    assert_f(797.0,testFloatAdd(a,b));
-//    assert(300,testIntAdd(c,d));
-//}
-//
+
+float testFloatAdd(float a,float b){
+    float x = 0.0;
+    for (int i = 0; i < 10 ; i++) {
+       x = x + 10.0;
+    }
+    return a + b + x;
+}
+int testIntAdd(int a,int b){
+    return a + b;
+}
+
+int testIf(){
+    float a = 300.0;float b = 400.0;
+    int c = 100; int d = 200;
+    if (b >= 399.0 && a > 301.0 || b < 10){
+        a = a + 1.0;
+    }else{
+        a = a - 3.0;
+    }
+
+    assert(0,(int)(a > 300.0));
+    assert_f(297.0,a);
+    int e = 0;
+    int f = 1;
+    int * g = &f;
+    if(e || *g && e){
+        assert(1,0);
+    }
+    assert_f(797.0,testFloatAdd(a,b));
+    assert(300,testIntAdd(c,d));
+}
+
 
 
 int testCode(){
 //    testEnum();
 //    testSwitch();
-//    testConstant();-
+//    testConstant();
     testFuncCallWithStruct();
 //    testIf();
     return 0;

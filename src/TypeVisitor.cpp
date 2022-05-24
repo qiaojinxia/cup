@@ -175,11 +175,22 @@ void TypeVisitor::Visitor(FuncCallNode *node) {
     }
     if (node ->FuncPointerOffset)
         node ->FuncPointerOffset->Accept(this);
+
 }
 
 void TypeVisitor::Visitor(ReturnStmtNode *node) {
-   node ->Lhs ->Accept(this);
-   node ->Type = node -> Lhs->Type;
+    if (auto ternaryNode = std::dynamic_pointer_cast<BDD::TernaryNode>(node->Lhs)){
+        ternaryNode -> Type = node ->Type;
+    }
+    node ->Lhs ->Accept(this);
+    auto lhsType =  node -> Lhs ->Type;
+    if (auto funcType = std::dynamic_pointer_cast<FunctionType>(node->Lhs->Type))
+        lhsType = funcType->ReturnType;
+    if (lhsType != node ->Type ){
+        //need to cast
+        assert(0);
+    }
+    node ->Type =lhsType;
 }
 
 void TypeVisitor::Visitor(DeclarationStmtNode *node) {
@@ -530,4 +541,11 @@ bool Type::IsTypeEqual(std::shared_ptr<Type>  tp1,std::shared_ptr<Type>  tp2){
 
     }
     return true;
+}
+
+bool Type::IsTypeCanConvert(std::shared_ptr<Type>  tp1,std::shared_ptr<Type>  tp2){
+    if (tp1 -> IsBInType() && tp2 ->IsBInType()){
+       return true;
+    }
+    return false;
 }

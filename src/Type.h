@@ -86,6 +86,8 @@ namespace BDD{
         bool IsAliasType() const;
 
         bool IsFuncPointerType() const;
+
+        static bool IsTypeCanConvert(std::shared_ptr<Type> tp1, std::shared_ptr<Type> tp2);
     };
 
 

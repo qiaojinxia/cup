@@ -223,8 +223,12 @@ std::shared_ptr<ProgramNode> Parser::Parse() {
     Scope::GetInstance() -> PushScope();
     auto node = std::make_shared<ProgramNode>(Lex.CurrentToken);
     while (Lex.CurrentToken -> Kind != TokenKind::Eof){
-        while (ParseExtern()){}
-        ParseTypeDef();
+        if (ParseExtern()){
+            continue;
+        }
+        if(ParseTypeDef()){
+            continue;
+        }
         node ->Funcs.push_back(ParseFunc());
     }
     Scope::GetInstance() -> PopScope();
@@ -308,15 +312,17 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
         auto stmtNode = ParseStatement();
         node -> Stmts.push_back(stmtNode);
+        //search all return node set offset is return struct offset
+        auto returnNode  = std::dynamic_pointer_cast<ReturnStmtNode>(stmtNode);
+        if(!returnNode)
+            continue;
+        returnNode -> Type = type->GetBaseType();
+        returnNode ->Accept(&typeVisitor);
+        if (!Type::IsTypeEqual(type->GetBaseType(),returnNode->Type)){
+            auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,returnNode->Type->Align);
+            DiagLoc(Lex.SourceCode, returnNode->Tk->Location,tips.c_str());
+        }
         if (node->Type->GetBaseType()->IsStructType()){
-            auto returnNode  = std::dynamic_pointer_cast<ReturnStmtNode>(stmtNode);
-            if(!returnNode)
-                continue;
-            returnNode ->Accept(&typeVisitor);
-            if (!Type::IsTypeEqual(type->GetBaseType(),returnNode->Type)){
-                auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,returnNode->Type->Align);
-                DiagLoc(Lex.SourceCode, returnNode->Tk->Location,tips.c_str());
-            }
             if(auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(returnNode ->Lhs)){
                 varExprNode->VarObj->Offset = Type::Pointer->Size * -1;
                 varExprNode ->VarObj->isInit = true;
@@ -357,7 +363,10 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
         auto varExprNode =std::make_shared<ExprVarNode>(nullptr);
         varExprNode -> VarObj = varNode;
         node ->FuncPointerOffset = varExprNode;
-        funcType = std::dynamic_pointer_cast<FunctionType>(varNode->Type->GetBaseType());
+        auto varNodeType = varNode->Type;
+        if (varNode ->Type->IsAliasType())
+            varNodeType = varNodeType->GetBaseType();
+        funcType = std::dynamic_pointer_cast<FunctionType>(varNodeType ->GetBaseType());
     }else{
         funcType = funcSign ->FuncType;
     }
@@ -561,20 +570,14 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
             funcType -> Params.push_back(param);
         }
         Lex.GetNextToken();
-        if (Lex.CurrentToken -> Kind != TokenKind::RParent){
-            std::list<std::shared_ptr<Token>> tokens;
-            auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
-            auto param = std::make_shared<Param>();
-            param -> Type = type;
-            param -> TToken = tokens.back();
-            funcType -> Params.push_back(param);
-            while (Lex.CurrentToken -> Kind != TokenKind::RParent){
+        std::list<std::shared_ptr<Token>> tokens;
+        while (Lex.CurrentToken -> Kind != TokenKind::RParent){
                 auto type = ParseDeclarator(ParseDeclarationSpec(),&tokens);
                 auto param = std::make_shared<Param>();
                 param ->Type = type;
-                param ->TToken = tokens.back();
+                if (!tokens.empty())
+                    param ->TToken = tokens.back();
                 funcType ->  Params.push_back(param);
-            }
         }
         Lex.ExceptToken(TokenKind::RParent);
         if (FuncPointerName){
@@ -596,6 +599,10 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
 //  ParseDeclarator ::=  (Identifier)* ParseTypeSuffix
 std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, std::list<std::shared_ptr<Token>> *nameTokens) {
     auto type = baseType;
+    if (Lex.CurrentToken->Kind == TokenKind::Comma){
+        Lex.GetNextToken();
+        return type;
+    }
     if (Lex.CurrentToken->Kind == TokenKind::Identifier){
         while(Lex.CurrentToken -> Kind == TokenKind::Identifier && !IsTypeName() ){
             if (nameTokens){
@@ -613,6 +620,8 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
             DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except func pointer name!");
         }
         Lex.EndPeekToken();
+    }else if (Lex.CurrentToken ->Kind == TokenKind::RParent){
+        return type;
     }else{
         DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except variable name!");
     }
@@ -1205,8 +1214,9 @@ std::shared_ptr<AstNode> Parser::ParseTypeDef() {
             Scope::GetInstance() ->PushTag(token->Content,newType);
         }
         Lex.ExceptToken(TokenKind::Semicolon);
+        return emptyNode;
     }
-    return emptyNode;
+    return nullptr;
 }
 
 std::shared_ptr<AstNode> Parser::ParseWhileStmt() {

@@ -115,4 +115,6 @@
 - 2022-05-22
      - Support funcPointer case `int (* p)(int a, int b) = max;`
 - 2022-05-23
-     - Support funcPointer as arg case  `int (* p)(int a, int b) = max; xx(p);`
+     - Support funcPointer as arg case  `int (* p)(int a, int b) = max; xx(p);
+- 2022-0-24
+     - Support funcPointer typedef case `int (* MaxPointer)(int, int);`
