@@ -117,7 +117,7 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 void TypeVisitor::Visitor(ExprVarNode *node) {
     if (node ->VarObj){
         node -> Type = node ->VarObj ->Type;
-        node -> isParam = node ->VarObj ->isParam;
+        node -> isParam = node ->VarObj -> VarAttr ->isParam;
     }
 }
 
@@ -243,7 +243,8 @@ void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
     for(auto &n:node ->AssignNodes){
         n ->Accept(this);
     }
-    node ->Type = node -> AssignNodes.back()->Type;
+    if (!node ->AssignNodes.empty())
+        node ->Type = node -> AssignNodes.back()->Type;
 }
 
 void TypeVisitor::Visitor(MemberAccessNode *node) {

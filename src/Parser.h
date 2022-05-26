@@ -30,7 +30,7 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseFuncCallNode();
 
-        std::shared_ptr<Type> ParseDeclarationSpec();
+        std::shared_ptr<Type> ParseDeclarationSpec(std::shared_ptr<Attr> attr);
 
         std::shared_ptr<Type> GenerateType(int baseType,bool isConstant) const;
 
@@ -54,7 +54,7 @@ namespace BDD{
 
         static std::shared_ptr<Var> FindLocalVar(std::string_view varName);
 
-        std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type,bool isParam);
+        std::shared_ptr<Var> NewLocalVar(std::string_view varName,std::shared_ptr<Type> type,std::shared_ptr<Attr> attr);
 
         std::shared_ptr<AstNode> ParseBinaryExpr(int priority);
 

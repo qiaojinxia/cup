@@ -80,6 +80,7 @@ namespace BDD{
         Extern,
         And,
         Or,
+        Static,
     };
     class SourceLocation{
     public:

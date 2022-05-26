@@ -269,6 +269,8 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Const;
             }else if(content == "extern"){
                 kind = TokenKind::Extern;
+            }else if(content == "static"){
+                kind = TokenKind::Static;
             }
         }else{
             DiagLoc(SourceCode,CurrentToken->Location,"token '%c' is illegal",CurChar);

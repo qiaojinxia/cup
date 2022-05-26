@@ -199,13 +199,32 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
     }
 }
 
+
+
+
 void CodeGenerate::Visitor(ProgramNode *node) {
+
     for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
         if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
             continue;
         }
         //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
         ParseInit(v.second);
+    }
+    for (auto &dataSeg: scope->Scope::GetInstance()->GetStaticTable()) {
+        if (!dataSeg.second.empty()){
+            printf("%s\n",dataSeg.first.data());
+            printf(".align 4\n");
+            for (auto &v: dataSeg.second) {
+                printf("%s:\n",v.second->Name.data());
+                auto cstNode = v.second;
+                if (dataSeg.first == ".bss"){
+                    printf("\t .zero  %d\n", cstNode ->Type ->Size);
+                }else{
+                    printf("\t %s  %s\n", GetStoreCode(cstNode ->Type ->Size).data(),cstNode->GetValue().data());
+                }
+            }
+        }
     }
     for (auto &s: node->Funcs)
         s->Accept(this);
@@ -329,14 +348,14 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     }
 
     for (auto &v: node -> Locals) {
-        if (v->Type ->IsStructType() && v ->isParam){
+        if (v->Type ->IsStructType() && v -> VarAttr -> isParam){
             v -> Offset += s_offset;
-            v ->isInit = true;
+            v -> VarAttr ->isInit = true;
             s_offset += v->Type->GetBaseType()->Size;
         }
     }
     for (auto &v: node -> Locals) {
-        if (v->isInit){
+        if (v-> VarAttr->isInit){
             continue;
         }
         offset += v ->Type ->Size;
@@ -549,6 +568,8 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
 #else
             printf("\t  lea _%s(%%rip),%s\n", std::string(varExprNode->Tk->Content).data(), GetCurTargetReg().data());
 #endif
+        }else if(varExprNode ->VarObj ->VarAttr->isStatic){
+            printf("\t  lea %s(%%rip),%s\n", varExprNode -> VarObj ->GlobalName.data(), GetCurTargetReg().data());
         }else if(varExprNode ->VarObj ->isPointer){
             printf("\t  mov %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());
         }else{
@@ -702,6 +723,9 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
     }else if(type->IsFloatPointNum()){
         printf("\t  %s %s,(%%rdi)\n", GetMoveCode(type).data(),Xmm[Depth-1]);
         return;
+    }else if(type->IsFunctionType()){
+        printf("\t  mov %%rax,(%%rdi)\n");
+        return;
     }else if (!type ->IsBInType()){
         printf("\t  mov $%d,%%rcx\n",type ->Size);
         printf("\t  call _mempcy\n");
@@ -712,6 +736,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
     }
     assert(0);
 }
+
 
 void CodeGenerate::Visitor(MemberAccessNode *node) {
     auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs ->Type ->GetBaseType());
@@ -1464,6 +1489,25 @@ const std::string CodeGenerate::PopJmpLabel() {
 const std::string CodeGenerate::GetJmpLabel() {
     auto backLabel = JmpStack.back();
     return std::string(backLabel);
+}
+
+std::string CodeGenerate::GetStoreCode(int size) {
+    switch (size){
+        case 1:
+            return ".byte";
+            break;
+        case 2:
+            return ".short";
+            break;
+        case 4:
+            return ".long";
+            break;
+        case 8:
+            return ".quad";
+            break;
+        default:
+            assert(0);
+    }
 }
 
 std::string CodeGenerate::GetReverseJmp(BinaryOperator anOperator) {

@@ -17,6 +17,7 @@ namespace BDD{
     class ArrayType;
     class RecordType;
     class AliasType;
+    class Attr;
     class Type {
     public:
         static std::shared_ptr<BuildInType> VoidType;
@@ -40,6 +41,7 @@ namespace BDD{
             AryType,
             RecordType,
             AliasType,
+            ConstType,
         };
         enum class TypeSize{
             Byte = 1,
@@ -58,7 +60,6 @@ namespace BDD{
         bool IsIntegerNum() const;
         bool IsFloatPointNum() const;
         virtual std::shared_ptr<Type> GetBaseType(){return nullptr;};
-        bool IsConstant;
         bool IsFunctionType() const;
         bool IsPointerType() const;
         bool IsArrayType() const;
@@ -75,7 +76,6 @@ namespace BDD{
         bool IsLongType() const;
         bool IsStringType() const;
         bool IsUnsignedNum() const;
-
         static bool IsTypeEqual(std::shared_ptr<Type> tp1, std::shared_ptr<Type> tp2);
 
         bool IsUIntType() const;
@@ -88,6 +88,8 @@ namespace BDD{
         bool IsFuncPointerType() const;
 
         static bool IsTypeCanConvert(std::shared_ptr<Type> tp1, std::shared_ptr<Type> tp2);
+
+        TypeClass GetTypeC() const;
     };
 
 
@@ -129,8 +131,10 @@ namespace BDD{
     };
 
     struct Param{
+    public:
         std::shared_ptr<Type> Type;
         std::shared_ptr<Token> TToken;
+        std::shared_ptr<Attr> ParamAttr;
     };
 
     class FunctionType : public Type{
@@ -138,7 +142,7 @@ namespace BDD{
         std::shared_ptr<Type> ReturnType;
         std::vector<std::shared_ptr<Param>> Params{} ;
         FunctionType(std::shared_ptr<Type> returnType)  : Type(TypeClass::FuncType, 8, 8,"func"), ReturnType(returnType) {}
-
+        std::shared_ptr<Attr> FuncAttr;
         std::shared_ptr<Type> GetBaseType();
     };
 
@@ -186,6 +190,13 @@ namespace BDD{
         EnumType(std::shared_ptr<Token> tk) : AliasType(Type::IntType,tk) {}
     };
 
+    struct ConstType : public  Type{
+    public:
+        std::shared_ptr<Type> Base;
+        std::shared_ptr<Token> token;
+        std::shared_ptr<Type> GetBaseType();
+        ConstType(std::shared_ptr<Type> typ,std::shared_ptr<Token> tk):token(tk),Type(typ->GetTypeC(), typ ->Size, typ->Align, typ->Alias) ,Base(typ){}
+    };
 }
 
 #endif //BODDY_TYPE_H

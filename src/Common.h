@@ -22,6 +22,8 @@ namespace BDD{
         };
         IteratorNode next();
         bool has_next();
+
+
     };
 
     std::vector<std::string> split_str(const std::string& s, char delimiter);
@@ -37,6 +39,8 @@ namespace BDD{
     void string_replace(std::string &origin, const std::string &search, const std::string &content);
 
     bool is_contains_str(std::string str, std::string contains_str);
+
+    std::string read_file(std::string path);
 }
 
 

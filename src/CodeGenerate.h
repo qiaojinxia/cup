@@ -152,6 +152,8 @@ namespace BDD{
 
         const int GetStructReturn2Offset();
         const void SetStructReturn2Offset(int offset);
+
+        std::string GetStoreCode(int size);
     };
 }
 

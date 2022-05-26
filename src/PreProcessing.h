@@ -12,7 +12,6 @@ namespace BDD{
     public:
         PreProcessing(const char * s) :source(s){};
         std::string Scan();
-
     };
 }
 

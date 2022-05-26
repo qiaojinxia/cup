@@ -264,6 +264,11 @@ bool Type::IsBoolType() const {
     return TypeC == TypeClass::BInType;
 }
 
+Type::TypeClass Type::GetTypeC() const {
+    return TypeC;
+}
+
+
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
     for(auto &field:fields){
@@ -363,3 +368,8 @@ std::shared_ptr<Type> RecordType::GetBaseType() {
 std::shared_ptr<Type> AliasType::GetBaseType() {
     return Base;
 }
+
+std::shared_ptr<Type> ConstType::GetBaseType() {
+    return Base;
+}
+

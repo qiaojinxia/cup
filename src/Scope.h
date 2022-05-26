@@ -23,12 +23,16 @@ namespace BDD{
         std::unordered_map<std::string_view,std::shared_ptr<FuncSign>> FuncTable = {};
     private:
         std::unordered_map<std::string,std::shared_ptr<ConstantNode>> ConstTable = {};
+
+        std::unordered_map<std::string,std::unordered_map<std::string,std::shared_ptr<ConstantNode>>> StaticVarTable = {};
+
         int countConstant{0};
         class ScopeItem{
         public:
             std::unordered_map<std::string_view,std::shared_ptr<Var>> VarScope = {};
             std::unordered_map<std::string_view,std::shared_ptr<Type>> TypeScope = {};
             std::shared_ptr<ScopeItem> parent;
+            std::string scopeTag ;
         };
     private:
         std::shared_ptr<ScopeItem> CurScope = {};
@@ -36,7 +40,7 @@ namespace BDD{
         void PutToConstantTable(std::shared_ptr<ConstantNode> constantNode);
         std::unordered_map<std::string,std::shared_ptr<ConstantNode>> GetConstantTable();
 
-        void PushScope();
+        void PushScope(std::string_view scopeTagName);
         void PopScope();
 
         void PushVar(std::shared_ptr<Var> var);
@@ -58,6 +62,16 @@ namespace BDD{
             }
             return m_scopeInstance;
         }
+
+        std::unordered_map<std::string, std::shared_ptr<ConstantNode>>& GetStaticZeroVarTable();
+
+        void PushStaticVar(std::string name, std::shared_ptr<ConstantNode> cstNode);
+        std::string PushStaticVar(std::string_view name,std::shared_ptr<Type> type);
+
+        std::unordered_map<std::string, std::shared_ptr<ConstantNode>>& GetStaticInitVarTable();
+
+        std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<ConstantNode>>>
+        GetStaticTable();
     };
 
 }

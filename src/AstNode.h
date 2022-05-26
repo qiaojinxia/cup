@@ -27,13 +27,22 @@ namespace BDD{
         std::shared_ptr<Token> Tk;
         bool isTypeInit{false};
     };
+
+    class Attr{
+    public:
+        bool isInit{false};
+        bool isPublic{false};
+        bool isParam{false};
+        bool isStatic{false};
+    };
+
     class Var{
     public:
         std::shared_ptr<Type> Type;
         std::string_view Name;
-        bool isInit{false};
+        std::string GlobalName;
+        std::shared_ptr<Attr> VarAttr;
         bool isPointer{false};
-        bool  isParam{false};
         int Offset;
     };
     class ProgramNode:public  AstNode{

@@ -6,9 +6,13 @@
 #include "Common.h"
 
 using namespace BDD;
-void Scope::PushScope() {
+void Scope::PushScope(std::string_view scopeTagName) {
+    if (scopeTagName == ""){
+        scopeTagName = CurScope->scopeTag;
+    }
     auto newScope = std::make_shared<ScopeItem>();
     newScope -> parent = CurScope;
+    newScope ->scopeTag = std::string(scopeTagName).data();
     CurScope = newScope;
 }
 
@@ -48,6 +52,8 @@ std::shared_ptr<Type> Scope::FindTag(std::string_view tagName) {
     return nullptr;
 }
 
+
+
 void Scope::PushVar(std::shared_ptr<Var> var) {
     CurScope->VarScope[var->Name] = var;
 }
@@ -83,6 +89,40 @@ std::unordered_map<std::string, std::shared_ptr<ConstantNode>> Scope::GetConstan
 }
 
 
+void Scope::PushStaticVar(std::string name,std::shared_ptr<ConstantNode> cstNode){
+    if (cstNode ->Value == 0){
+        return;
+    }
+    auto stZVar = GetStaticZeroVarTable().find(name);
+    if (stZVar != GetStaticZeroVarTable().end()){
+        GetStaticZeroVarTable().erase(name);
+        cstNode ->Name = name;
+        GetStaticInitVarTable()[name] = cstNode;
+    }
+}
+
+
+std::unordered_map<std::string,std::unordered_map<std::string,std::shared_ptr<ConstantNode>>> Scope::GetStaticTable() {
+    return StaticVarTable;
+}
+
+std::unordered_map<std::string,std::shared_ptr<ConstantNode>>& Scope::GetStaticZeroVarTable() {
+    auto sTableZero = StaticVarTable.find(".bss");
+    if (sTableZero == StaticVarTable.end()){
+        StaticVarTable[".bss"] = std::unordered_map<std::string,std::shared_ptr<ConstantNode>>();
+    }
+    return StaticVarTable[".bss"];
+}
+
+std::unordered_map<std::string,std::shared_ptr<ConstantNode>>& Scope::GetStaticInitVarTable() {
+    auto sTableInit = StaticVarTable.find(".data");
+    if (sTableInit == StaticVarTable.end()){
+        StaticVarTable[".data"] = std::unordered_map<std::string,std::shared_ptr<ConstantNode>>();
+    }
+    return StaticVarTable[".data"];
+}
+
+
 void Scope::PutToConstantTable(std::shared_ptr<ConstantNode> constantNode) {
     if (constantNode ->Name == ""){
         auto labelName = string_format("caomao_%d",countConstant ++);
@@ -101,5 +141,17 @@ std::shared_ptr<FuncSign> Scope::GetFuncSign(std::string_view funcName) {
         return nullptr;
     }
     return FuncTable.find(funcName)->second;
+}
+
+std::string Scope::PushStaticVar(std::string_view name,std::shared_ptr<Type> type) {
+    auto cstNode = std::make_shared<ConstantNode>(nullptr);
+    cstNode->isChange = true;
+    cstNode ->Value = 0;
+    cstNode ->Type = type;
+    std::string varName(name);
+    std::string curVarScopeTag = string_format("%s.%s",CurScope->scopeTag.data(),varName.data());
+    cstNode ->Name = curVarScopeTag;
+    GetStaticZeroVarTable()[curVarScopeTag] = cstNode;
+    return curVarScopeTag;
 }
 

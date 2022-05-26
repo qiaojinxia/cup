@@ -1,41 +1,25 @@
-#define enum 斗者临兵皆阵列前行
-#define struct 道生一,一生二,二生三,三生万物
-#define typedef 无名天地之始,有名万物之母
-#define extern 天下万物生于有,有生于无
-天下万物生于有,有生于无 int  assert(int  excepted,int actual);
-天下万物生于有,有生于无 int  assert_f(float  excepted,float actual);
-无名天地之始,有名万物之母 int (* MaxPointer)(int, int);
-无名天地之始,有名万物之母 道生一,一生二,二生三,三生万物 user{
-    char *  name;
-    int  age;
-    int  sex;
-    int height;
-    float width;
-} User ;
-
-int max(int a, int b){
-    return a > b ? a : b;
-}
-
+#include "head.h"
 int UserStructAdd(User a,User * b){
     b -> age = 30;
     a.age = 20;
     return a.age + b -> age ;
 }
-
 User UserStructReturn(User a,User * b){
     User xiaoli;
     b->height = 30;
     if(a.height >= 190){ xiaoli.height = 99;}else{xiaoli.height = 77;}
     return xiaoli;
 }
-
 int testArray(int a[3]){
     a[0] = 777;
 }
 
 int testFuncPointer (MaxPointer p){
     return p(6,7);
+}
+
+int max(int a, int b){
+    return a > b ? a : b;
 }
 
 int testFuncCallWithStruct(){
@@ -46,48 +30,53 @@ int testFuncCallWithStruct(){
     assert(190,xiaozhang.height);
     assert(30,xiaozhang.age);
     assert(99,lisi.height);
-    int ay[3] = {1,2,3};
+    int ay[3] = {4,888,999};
     testArray(ay);
     assert(777,ay[0]);
-    MaxPointer p = max;
-    int m = p(3,4);
-    assert(4,m);
+    MaxPointer p = NULL;
+    p = max;
+    int m = p(ay[0],ay[2]);
+    assert(999,m);
     int xm = testFuncPointer(p);
     assert(7,xm);
+    static int sm ;
+    static int sd ;
+    sm = sm + 2;
+    assert(2,sm);
 }
 
-float testFloatAdd(float a,float b){
-    float x = 0.0;
-    for (int i = 0; i < 10 ; i++) {
-       x = x + 10.0;
-    }
-    return a + b + x;
-}
-int testIntAdd(int a,int b){
-    return a + b;
-}
-
-int testIf(){
-    float a = 300.0;float b = 400.0;
-    int c = 100; int d = 200;
-    if (b >= 399.0 && a > 301.0 || b < 10){
-        a = a + 1.0;
-    }else{
-        a = a - 3.0;
-    }
-
-    assert(0,(int)(a > 300.0));
-    assert_f(297.0,a);
-    int e = 0;
-    int f = 1;
-    int * g = &f;
-    if(e || *g && e){
-        assert(1,0);
-    }
-    assert_f(797.0,testFloatAdd(a,b));
-    assert(300,testIntAdd(c,d));
-}
-
+//float testFloatAdd(float a,float b){
+//    float x = 0.0;
+//    for (int i = 0; i < 10 ; i++) 2 {
+//       x = x + 10.0;
+//    }
+//    return a + b + x;
+//}
+//int testIntAdd(int a,int b){
+//    return a + b;
+//}
+//
+//int testIf(){
+//    float a = 300.0;float b = 400.0;
+//    int c = 100; int d = 200;
+//    if (b >= 399.0 && a > 301.0 || b < 10){
+//        a = a + 1.0;
+//    }else{
+//        a = a - 3.0;
+//    }
+//
+//    assert(0,(int)(a > 300.0));
+//    assert_f(297.0,a);
+//    int e = 0;
+//    int f = 1;
+//    int * g = &f;
+//    if(e || *g && e){
+//        assert(1,0);
+//    }
+//    assert_f(797.0,testFloatAdd(a,b));
+//    assert(300,testIntAdd(c,d));
+//}
+//
 
 
 int testCode(){
