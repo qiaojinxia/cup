@@ -156,3 +156,22 @@ std::string  BDD::read_file(std::string path){
     std::string inputStr = buffer;
     return inputStr;
 }
+
+std::string BDD::GetStoreCode(int size) {
+    switch (size){
+        case 1:
+            return ".byte";
+            break;
+        case 2:
+            return ".short";
+            break;
+        case 4:
+            return ".long";
+            break;
+        case 8:
+            return ".quad";
+            break;
+        default:
+            assert(0);
+    }
+}

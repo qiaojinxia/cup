@@ -36,7 +36,7 @@ namespace BDD{
         std::list<std::string_view> JmpStack;
         std::list<std::string_view> ContinueStack;
         int Return2OffsetStack;
-        std::string curTargetReg;
+        std::list<std::string> curTargetReg ={};
     public:
         CodeGenerate(){
             Scope:Scope::GetInstance();
@@ -153,7 +153,6 @@ namespace BDD{
         const int GetStructReturn2Offset();
         const void SetStructReturn2Offset(int offset);
 
-        std::string GetStoreCode(int size);
     };
 }
 

@@ -120,3 +120,5 @@
      - Support funcPointer typedef case `int (* MaxPointer)(int, int);`
 - 2022-05-26
      - Support static var case add #inclue `static int a;`
+- 2022-05-27
+     - Support static array case `static int a[3] = {1,2};`

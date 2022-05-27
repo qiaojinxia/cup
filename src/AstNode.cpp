@@ -56,6 +56,10 @@ std::string ConstantNode::GetValue() {
     return 0;
 }
 
+bool ConstantNode::HasSetValue() {
+    return Next != nullptr || Sub != 0 || Tk != 0;
+}
+
 void BinaryNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }

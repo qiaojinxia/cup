@@ -88,10 +88,16 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseBlock();
 
+        std::shared_ptr<AstNode> ParseCompoundStmt();
+
+
+
         bool ParseExtern();
 
     private:
         bool IsTypeName();
+
+        std::shared_ptr<ConstantNode> parseInitListExpr(std::shared_ptr<ConstantNode> root);
     };
 
 }

@@ -90,7 +90,7 @@ std::unordered_map<std::string, std::shared_ptr<ConstantNode>> Scope::GetConstan
 
 
 void Scope::PushStaticVar(std::string name,std::shared_ptr<ConstantNode> cstNode){
-    if (cstNode ->Value == 0){
+    if (cstNode ->Value == 0 && !cstNode ->HasSetValue()){
         return;
     }
     auto stZVar = GetStaticZeroVarTable().find(name);

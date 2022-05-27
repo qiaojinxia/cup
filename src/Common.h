@@ -41,6 +41,8 @@ namespace BDD{
     bool is_contains_str(std::string str, std::string contains_str);
 
     std::string read_file(std::string path);
+
+    std::string GetStoreCode(int size);
 }
 
 

@@ -18,3 +18,9 @@ testCode:
 	cd ./cmake-build-debug/ && ./cup "path" "../test/testCodes.c" > tmp.s
 	clang ./cmake-build-debug/tmp.s ./test/copy.s ./test/main.c ./test/assert.c  -o tmp.out
 	./tmp.out
+targetCode:
+	cp -r ./test/*.h  ./cmake-build-debug
+	cd ./cmake-build-debug/ && make
+	cd ./cmake-build-debug/ && ./cup "path" "../test/$(OBJECTS)" > tmp.s
+	clang ./cmake-build-debug/tmp.s ./test/copy.s ./test/assert.c  -o tmp.out
+	./tmp.out

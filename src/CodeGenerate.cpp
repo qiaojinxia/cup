@@ -199,8 +199,25 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
     }
 }
 
-
-
+void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
+    if (!cstNode){
+        return;
+    }
+    auto cursor = cstNode ;
+    if (cstNode -> Type->IsStructType()){
+        assert(0);
+    }else if(cstNode ->Type ->IsArrayType()){
+        cursor = cursor->Next;
+        while (cursor) {
+            PrintConstNode(cursor);
+            cursor = cursor->Sub;
+        }
+    }else{
+        printf("\t %s  %s\n", GetStoreCode(cstNode ->Type ->Size).data(),cstNode->GetValue().data());
+        cursor = cursor->Next;
+        PrintConstNode(cursor);
+    }
+}
 
 void CodeGenerate::Visitor(ProgramNode *node) {
 
@@ -218,10 +235,10 @@ void CodeGenerate::Visitor(ProgramNode *node) {
             for (auto &v: dataSeg.second) {
                 printf("%s:\n",v.second->Name.data());
                 auto cstNode = v.second;
-                if (dataSeg.first == ".bss"){
-                    printf("\t .zero  %d\n", cstNode ->Type ->Size);
-                }else{
-                    printf("\t %s  %s\n", GetStoreCode(cstNode ->Type ->Size).data(),cstNode->GetValue().data());
+                    if (dataSeg.first == ".bss"){
+                        printf("\t .zero  %d\n", cstNode ->Type ->Size);
+                    }else{
+                        PrintConstNode(cstNode);
                 }
             }
         }
@@ -229,6 +246,8 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     for (auto &s: node->Funcs)
         s->Accept(this);
 }
+
+
 
 void CodeGenerate::Visitor(IfElseStmtNode *node) {
     IsCmpJmpModule = true;
@@ -596,13 +615,13 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         if (arefNode ->Offset ->Type ->Size == Type::IntType ->Size){
             printf("\t  cdqe\n");
         }
-        if (arefNode ->Lhs ->Type ->IsPointerType()){
-            Push(Type::LongType);
-            arefNode ->Lhs ->Accept(this);
-            Pop(Type::LongType, "%rcx");
-            printf("\t  lea (%%rax,%%rcx,%d),%s\n",node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
+        if(varExprNode->VarObj->VarAttr->isStatic ||varExprNode ->Type ->IsPointerType()){
+            SetCurTargetReg("%rdi");
+            GenerateAddress(varExprNode.get());
+            ClearCurTargetReg();
+            printf("\t  lea (%%rdi,%%rax,%d),%s\n",node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
         }else{
-            printf("\t  lea %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size, GetCurTargetReg().data());
+            printf("\t  lea %d(%%rdi,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size, GetCurTargetReg().data());
         }
 
     }else{
@@ -1057,16 +1076,17 @@ void CodeGenerate::Visitor(ArefNode *node) {
     if (node ->Offset ->Type ->Size == Type::IntType ->Size){
         printf("\t  cdqe\n");
     }
-    if (node ->Lhs ->Type ->IsPointerType()){
-        Push(Type::LongType);
-        node ->Lhs ->Accept(this);
-        Pop(Type::LongType, "%rcx");
-        printf("\t  lea (%%rax,%%rcx,%d),%%rax\n",node-> Type->GetBaseType()->Size);
-        Load(node);
+    if (varExprNode->VarObj->VarAttr->isStatic || node ->Lhs ->Type ->IsPointerType()){
+        SetCurTargetReg("%rdi");
+        GenerateAddress(varExprNode.get());
+        ClearCurTargetReg();
+        printf("\t  mov (%%rdi,%%rax,%d),%s\n",node-> Type->GetBaseType()->Size,
+               GetRax(node->Type).data());
         return;
+    }else {
+        printf("\t  mov %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset,
+               node-> Type->GetBaseType()->Size,GetRax(node->Type).data());
     }
-    printf("\t  lea %d(%%rbp,%%rax,%d),%%rax\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size);
-    Load(node);
 }
 
 const std::string CodeGenerate::GetRax(int size) {
@@ -1491,24 +1511,7 @@ const std::string CodeGenerate::GetJmpLabel() {
     return std::string(backLabel);
 }
 
-std::string CodeGenerate::GetStoreCode(int size) {
-    switch (size){
-        case 1:
-            return ".byte";
-            break;
-        case 2:
-            return ".short";
-            break;
-        case 4:
-            return ".long";
-            break;
-        case 8:
-            return ".quad";
-            break;
-        default:
-            assert(0);
-    }
-}
+
 
 std::string CodeGenerate::GetReverseJmp(BinaryOperator anOperator) {
     switch (anOperator) {
@@ -1540,18 +1543,19 @@ std::string CodeGenerate::GetReverseJmp(BinaryOperator anOperator) {
 }
 
 std::string CodeGenerate::GetCurTargetReg() {
-    if (curTargetReg == ""){
+    if (curTargetReg.empty()){
         return "%rax";
     }
-    return curTargetReg;
+    return curTargetReg.back();
 }
 
 void CodeGenerate::SetCurTargetReg(std::string reg) {
-    curTargetReg = reg;
+    curTargetReg.push_back(reg);
 }
 
+
 void CodeGenerate::ClearCurTargetReg(){
-    curTargetReg = "";
+    curTargetReg.pop_back();
 }
 
 const int CodeGenerate::GetStructReturn2Offset() {

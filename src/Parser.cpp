@@ -78,7 +78,7 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
 }
 
 
-// primary = "(" "{" stmt+ "}" ")"
+// primary = "(" ParseCompoundStmt ")"
 //         | "(" expr ")"
 //         | "sizeof" "(" type-name ")"
 //         | "sizeof" unary
@@ -93,42 +93,20 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
     switch (Lex.CurrentToken -> Kind){
         case TokenKind::LParent:
         {
-            Lex.BeginPeekToken();
             Lex.GetNextToken();
             if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
-                Scope::GetInstance() -> PushScope("");
-                Lex.EndPeekToken();
-                Lex.ExceptToken(TokenKind::LParent);
-                Lex.ExceptToken(TokenKind::LBrace);
-                auto node = std::make_shared<StmtExprNode>(Lex.CurrentToken);
-                while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
-                    node -> Stmts.push_back(ParseStatement());
-                }
-                Lex.GetNextToken();
-                Lex.ExceptToken(TokenKind::RParent);
-                Scope::GetInstance() -> PopScope();
-                return node;
+                node =  ParseCompoundStmt();
+                break;
             }
-            Lex.EndPeekToken();
-            Lex.GetNextToken();
             node = ParseExpr();
             Lex.ExceptToken(TokenKind::RParent);
             break;
         }
         case TokenKind::LBrace:
         {
-            Lex.BeginPeekToken();
-            Lex.GetNextToken();
-            if (Lex.CurrentToken ->Kind == TokenKind::Num ||
-            Lex.CurrentToken ->Kind == TokenKind::String ||
-            Lex.CurrentToken ->Kind == TokenKind::FloatNum){
-                auto initValues  = ParseInitListExpr();
-                node = initValues;
-            }else{
-                Lex.EndPeekToken();
-            }
-        }
+            node =  ParseCompoundStmt();
             break;
+        }
         case TokenKind::Identifier:
         {
             Lex.BeginPeekToken();
@@ -1043,25 +1021,45 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
 }
 
 
-// ParseInitListExpr ::= "{" (init1,",")* "}"
-std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
-    std::shared_ptr<ConstantNode> cursor = std::make_shared<ConstantNode>(nullptr) ;
-    std::shared_ptr<ConstantNode> root = cursor;
-    root ->isRoot = true;
+std::shared_ptr<ConstantNode> Parser::parseInitListExpr(std::shared_ptr<ConstantNode> root) {
+    std::shared_ptr<ConstantNode> cursor= root;
     do {
         if (Lex.CurrentToken->Kind == TokenKind::Comma){
             Lex.GetNextToken();
         }
         if (Lex.CurrentToken ->Kind == TokenKind::LBrace){
             Lex.GetNextToken();
-            cursor -> Sub = ParseInitListExpr();
-        }else{
+            std::shared_ptr<ConstantNode> subRoot = std::make_shared<ConstantNode>(nullptr);
+            subRoot ->isRoot = true;
+            parseInitListExpr(subRoot);
+            if (!subRoot -> Next)
+                return nullptr;
+            if (root)
+                root ->Sub = subRoot;
+            else
+                root = subRoot;
+        }else {
             cursor->Next  = std::dynamic_pointer_cast<ConstantNode>(ParsePrimaryExpr());
+            if (!cursor ->Next)
+                return nullptr;
             cursor = cursor -> Next;
         }
     }while(Lex.CurrentToken->Kind == TokenKind::Comma);
-    Lex.ExceptToken(TokenKind::RBrace);
     return root;
+}
+
+// ParseInitListExpr ::= "{" (ParsePrimaryExpr,",")* | (ParsePrimaryExpr:ParsePrimaryExpr ",")* "}"
+std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
+    Lex.BeginPeekToken();
+    if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
+        auto initCstNode = parseInitListExpr(nullptr);
+        if(initCstNode ->HasSetValue()){
+            Lex.ExceptToken(TokenKind::RBrace);
+            return initCstNode;
+        }
+        Lex.EndPeekToken();
+    }
+    return nullptr;
 }
 
 //exampleCode ` enum CaoMao { Caomao1 = 1, Caomao2 = 2, Caomao3 }`
@@ -1294,3 +1292,24 @@ bool Parser::ParseExtern() {
     }
     return false;
 }
+
+//ParseCompoundStmt ::= "{" ParseInitListExpr | Stmt |  StmtList  "}"
+std::shared_ptr<AstNode> Parser::ParseCompoundStmt() {
+    auto initCstNode = ParseInitListExpr();
+    if(initCstNode)
+        return initCstNode;
+    if (Lex.CurrentToken ->Kind == TokenKind::LBrace){
+        Scope::GetInstance() -> PushScope("");
+        auto node = std::make_shared<StmtExprNode>(Lex.CurrentToken);
+        Lex.GetNextToken();
+        while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
+            node -> Stmts.push_back(ParseStatement());
+        }
+        Lex.GetNextToken();
+        Lex.ExceptToken(TokenKind::RParent);
+        Scope::GetInstance() -> PopScope();
+        return node;
+    }
+    return nullptr;
+}
+
