@@ -20,27 +20,6 @@ void CodeGenerate::ReleaseXmm() {
     Depth = XmmPrevDepth;
 }
 
-const std::string CodeGenerate::GetAdd(std::shared_ptr<Type> type) {
-    if (type -> IsFloatType()){
-        return "addss";
-    }else if (type -> IsDoubleType()){
-        return "addsd";
-    }
-    return "add";
-}
-
-const std::string CodeGenerate::GetMul(std::shared_ptr<Type> type) {
-    if (type -> IsFloatType()){
-        return "mulss";
-    }else if (type -> IsDoubleType()){
-        return "mulsd";
-    }
-//    else if (type ->IsULongType()){
-//        return "mul";
-//    }
-    return "imul";
-}
-
 const std::string CodeGenerate::GetReg(int size,int n){
     if (size > 8 || n > 5){
         assert(0);
@@ -48,26 +27,6 @@ const std::string CodeGenerate::GetReg(int size,int n){
     return Regx64[size/2][n];
 }
 
-const std::string CodeGenerate::GetDiv(std::shared_ptr<Type> type) {
-    if (type -> IsFloatType()){
-        return "divss";
-    }else if (type -> IsDoubleType()){
-        return "divsd";
-    }else if (type ->IsULongType()){
-        return "div";
-    }else{
-        return "idiv";
-    }
-}
-
-const std::string CodeGenerate::GetMinus(std::shared_ptr<Type> type) {
-    if (type -> IsFloatType()){
-        return "subss";
-    }else if (type -> IsDoubleType()){
-        return "subsd";
-    }
-    return "sub";
-}
 
 void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {}
 
@@ -153,6 +112,8 @@ void printConstant(int size, bool isFloat,bool isString,std::shared_ptr<Token> t
 }
 
 void ParseInit(std::shared_ptr<ConstantNode> node){
+    if (node->isStatic)
+        return;
     int size = 0 ;
     bool isFloat = false;
     bool isString = false;
@@ -198,36 +159,33 @@ void ParseInit(std::shared_ptr<ConstantNode> node){
         root ->isStore = true;
     }
 }
-
+void printStruct(std::shared_ptr<ConstantNode>& node);
+void printCharPointer(std::shared_ptr<ConstantNode>& node);
+void printString(std::shared_ptr<ConstantNode>& node);
+void printBuildIn(std::shared_ptr<ConstantNode>& node);
+void printArray(std::shared_ptr<ConstantNode>& node);
 void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     if (!cstNode){
         return;
     }
-    auto cursor = cstNode ;
-    if (cstNode -> Type->IsStructType()){
-        assert(0);
-    }else if(cstNode ->Type ->IsArrayType()){
-        cursor = cursor->Next;
-        while (cursor) {
-            PrintConstNode(cursor);
-            cursor = cursor->Sub;
-        }
+    if (cstNode->Type->IsStructType()){
+        printStruct(cstNode);
+    } else if (cstNode->Type->IsPtrCharType()){
+        printCharPointer(cstNode);
+    }else if (cstNode->Type->IsStringType()){
+        printString(cstNode);
+    }else if (cstNode->Type->IsBInType()){
+        printBuildIn(cstNode);
+    }else if (cstNode->Type->IsArrayType()){
+        printArray(cstNode ->Next);
     }else{
-        printf("\t %s  %s\n", GetStoreCode(cstNode ->Type ->Size).data(),cstNode->GetValue().data());
-        cursor = cursor->Next;
-        PrintConstNode(cursor);
+        assert(0);
     }
+
 }
 
 void CodeGenerate::Visitor(ProgramNode *node) {
 
-    for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
-        if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
-            continue;
-        }
-        //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
-        ParseInit(v.second);
-    }
     for (auto &dataSeg: scope->Scope::GetInstance()->GetStaticTable()) {
         if (!dataSeg.second.empty()){
             printf("%s\n",dataSeg.first.data());
@@ -242,6 +200,13 @@ void CodeGenerate::Visitor(ProgramNode *node) {
                 }
             }
         }
+    }
+    for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
+        if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
+            continue;
+        }
+        //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
+        ParseInit(v.second);
     }
     for (auto &s: node->Funcs)
         s->Accept(this);
@@ -557,7 +522,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             }
             break;
         case UnaryOperator::Deref:
-            node -> Lhs ->Accept(this);
+            GenerateAddress(node -> Lhs.get());
             Load(node -> Lhs);
             break;
         case UnaryOperator::Addr:
@@ -670,6 +635,194 @@ void CodeGenerate::Load(std::shared_ptr<Type> type){
 }
 
 
+bool  prevHandle(std::shared_ptr<ConstantNode> node){
+    if (node ->Name != "" || node ->isRoot){
+        PushStoreOffsetTag(node->Name);
+        return true;
+    }
+    return false;
+}
+
+
+void HandleStore(std::shared_ptr<ConstantNode>& node,void ( * p)(std::shared_ptr<ConstantNode>& node),bool PreNext){
+    bool isPush = prevHandle(node);
+    if (PreNext)
+        node = node->Next;
+    p(node);
+    if (isPush){
+        PopStoreOffsetTag();
+    }
+}
+
+void printBuildIn(std::shared_ptr<ConstantNode>& node){
+    printf("\t %s   %s\n", GetStoreCode(node ->Type ->Size).data(),node->GetValue().data());
+}
+
+void printCharPointer(std::shared_ptr<ConstantNode>& node){
+    auto cstNode = Scope::GetInstance() ->GetConstantTable().find(node->Name);
+    if (cstNode == Scope::GetInstance() ->GetConstantTable().end()){
+        Scope::GetInstance() ->PutToConstantTable(node);
+    }
+    printf("\t .quad   %s\n",std::string(node->Name).data());
+}
+
+void printString(std::shared_ptr<ConstantNode>& node){
+    printf("\t .asciz   %s\n",std::string(node->Tk->Content).data());
+}
+
+void printZero(int num){
+    if (num)
+        printf("\t .zero   %d\n",num);
+}
+
+
+void printArray(std::shared_ptr<ConstantNode>& node){
+    auto cursor = node;
+    auto aryType = node->Type;//array fisr element type as arrayType
+    void (* p) (std::shared_ptr<ConstantNode>& node);
+    if (cursor->Type->IsStructType()){
+        p =  printStruct;
+    } else if (cursor->Type->IsPtrCharType()){
+        p = printCharPointer;
+    }else if (cursor->Type->IsStringType()){
+        p = printString;
+    }else if (cursor->Type->IsBInType()){
+        p = printBuildIn;
+    }else{
+        assert(0);
+    }
+    while(cursor){
+        p(cursor);
+        cursor = cursor->Next;
+    }
+}
+
+void printStruct(std::shared_ptr<ConstantNode>& node){
+    auto cursor = node ->Next;
+    int offset = 0;
+    while(cursor){
+        int gap = cursor->Offset - offset;
+        printZero(gap);
+        if (cursor->Type->IsStructType()){
+            printStruct(cursor);
+        } else if (cursor->Type->IsPtrCharType()){
+            printCharPointer(cursor);
+        }else if (cursor->Type->IsStringType()){
+            printString(cursor);
+        }else if (cursor->Type->IsBInType()){
+            printBuildIn(cursor);
+        }else if (cursor->Type->IsArrayType()){
+            printArray(cursor->Sub);
+        }
+        offset += cursor->Type->Size;
+        cursor = cursor ->Next;
+    }
+    if (node->Type->IsStructType())
+        printZero(node->Type->Size - offset);
+
+}
+
+void storeBuildIn(std::shared_ptr<ConstantNode>& node){
+    if (node->Type->IsIntegerNum()){
+        if (node ->isStore){
+            printf("\t  mov %%rax,(%%rdi)\n");
+        }else{
+            printf("\t  %s $%s,%d(%%rdi)\n", GetMoveCode2(node->Type).data(),node->GetValue().data(),node->Offset);
+        }
+    }else if(node-> Type-> IsFloatPointNum()){
+        if (node ->isStore){
+            printf("\t  mov %s(%%rip),%s\n", CurrentOffsetTag().data(),GetRax(node->Type).data());
+            printf("\t  mov %s,%d(%%rdi)\n", GetRax(node->Type).data(),node->Offset);
+        }else{
+            printf("\t  mov $%s,%s\n", node->GetValue().data(),GetRax(node->Type).data());
+            printf("\t  mov %s,%d(%%rdi)\n", GetRax(node->Type).data(),node->Offset);
+        }
+    }
+}
+
+void storePointer(std::shared_ptr<ConstantNode>& node){
+    if (node ->Type -> IsPtrCharType()){
+        // handle cosnt char *
+        printf("\t  lea %s(%%rip),%%rax\n", CurrentOffsetTag().data());
+        if (node->Offset){
+            printf("\t  add $%d,%%rax\n",node->Offset);
+        }
+        printf("\t  mov %%rax,(%%rdi)\n");
+    }else{
+        printf("\t  %s $%s,(%%rdi)\n", GetMoveCode2(node->Type).data(),node->GetValue().data());
+    }
+}
+
+void storeArray (std::shared_ptr<ConstantNode>&);
+
+void storeString(std::shared_ptr<ConstantNode>& node) {
+    auto iter =  Str2IntArrayIterator(node->Tk->Content);
+    auto offset = node ->Offset;
+    while(iter.has_next()){
+        auto outPutIntNode = iter.next();
+        printf("\t  %s $%lu,%s\n", GetMoveCode2(outPutIntNode.Size).data(), outPutIntNode.Value, GetRax(outPutIntNode.Size).data());
+        printf("\t  %s %s,%d(%%rdi)\n", GetMoveCode2(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data(), offset);
+        offset += outPutIntNode .Size;
+    }
+}
+
+void storeHandle(std::shared_ptr<ConstantNode>& node) {
+    while (node) {
+        if (node->Type->IsBInType()){
+            HandleStore(node,storeBuildIn, false);
+        }else if(node->Type->IsPointerType()){
+            HandleStore(node,storePointer, false);
+        }else if(node->Type->IsStructType()){
+            HandleStore(node, storeHandle, true);
+        }else if(node->Type->IsStringType()){
+            HandleStore(node,storeString, false);
+        }else if(node->Type->IsArrayType()){
+            HandleStore(node,storeArray, false);
+        }
+        if (node)
+            node = node->Next;
+        else
+            break;
+    }
+}
+
+void mmStoreArray(std::shared_ptr<ConstantNode> node,std::string src){
+    int offset = node->Offset;
+    std::shared_ptr<ConstantNode> cursor = node ->Sub;
+    if(src.empty()){
+        while(cursor){
+            int size = 0;
+            unsigned long fullNum = 0;
+            while(size<8){
+                if (!cursor || size + cursor->Type->Size > 8 )
+                    break;
+                fullNum += cursor->Value << (size * 8);
+                size += cursor->Type->Size;
+                cursor = cursor->Next;
+            }
+            if (size <=0)
+                break;
+            printf("\t  mov $%s,%s\n",  convert_to_hex(fullNum).data(), GetRax(size).data());
+            printf("\t  mov %s,%d(%%rdi)\n",  GetRax(size).data(),offset);
+            fullNum = 0;
+            offset += size;
+        }
+    }else{
+        //copy array from data seg
+    }
+}
+
+void storeArray(std::shared_ptr<ConstantNode>& node){
+    if(node->Type->GetBaseType()->IsStructType()){
+        storeHandle(node);
+    }else{
+        mmStoreArray(node,"");
+    }
+}
+
+
+
+
 void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
     std::shared_ptr<AstNode> cursor = node;
     std::shared_ptr<Type> type;
@@ -677,51 +830,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         cursor = castNode ->CstNode;
     }
     if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(cursor)){
-        std::shared_ptr<ConstantNode> rootNode;
-        if (constNode -> isRoot){
-            rootNode = constNode;
-            constNode = constNode ->Next;
-        }
-        while(constNode){
-            if (constNode -> isStore){
-                if (constNode-> Type-> IsPtrCharType()){
-                    if (rootNode) {
-                        printf("\t  lea %s(%%rip),%%rax\n", rootNode->Name.data());
-                        printf("\t  add $%d,%%rax\n",constNode->Offset);
-                    }else{
-                        printf("\t  lea %s(%%rip),%%rax\n", constNode->Name.data());
-                    }
-                    printf("\t  mov %%rax,(%%rdi)\n");
-                }else if (constNode-> Type-> IsFloatPointNum()){
-                    printf("\t  mov %s(%%rip),%s\n",constNode->Name.data() ,GetRax(constNode->Type).data());
-                    printf("\t  mov %s,%d(%%rdi)\n", GetRax(constNode->Type).data(),constNode->Offset);
-                }else{
-                    printf("\t  mov $%d,%%rcx\n",cursor->Type->Size);
-                    printf("\t  call _mempcy\n");
-                }
-            }else{
-                if (constNode-> Type-> IsPointerType()){
-                    printf("\t  movq $%s,(%%rdi)\n",constNode->GetValue().data());
-                }else if (constNode->Type->IsFloatPointNum()){
-                    printf("\t  mov $%s,%s\n",constNode->GetValue().data(), GetRax(constNode->Type).data());
-                    printf("\t  mov %s,%d(%%rdi)\n" ,GetRax(constNode->Type).data(),constNode->Offset);
-                }else if(constNode->Type->IsStringType()){
-                    auto iter =  Str2IntArrayIterator(constNode->Tk->Content);
-                    auto offset = 0;
-                    while(iter.has_next()){
-                        auto outPutIntNode = iter.next();
-                        printf("\t  %s $%lu,%s\n", GetMoveCode(outPutIntNode.Size).data(),outPutIntNode.Value, GetRax(outPutIntNode.Size).data());
-                        printf("\t  %s %s,%d(%%rdi)\n",  GetMoveCode(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data(), offset);
-                        offset += outPutIntNode .Size;
-                    }
-                }else if (!cursor -> Type -> IsStringType() && !cursor -> Type -> IsStructType() && !cursor -> Type -> IsArrayType()){
-                    printf("\t  %s $%s,(%%rdi)\n", GetMoveCode2(constNode->Type).data(),constNode->GetValue().data());
-                }else{
-                    printf("\t  %s  $%s,%d(%%rdi)\n", GetMoveCode2(constNode->Type).data(), constNode->GetValue().c_str(), constNode -> Offset);
-                }
-            }
-            constNode = constNode->Next;
-        }
+        storeHandle(constNode);
         return;
     }else if (auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(cursor)){
         type = varExprNode->Type;
@@ -800,67 +909,6 @@ std::string_view CodeGenerate::currentContinueTarget() {
     return ContinueStack.back();
 }
 
-const std::string CodeGenerate::GetMoveCode(int size) {
-    if (size == 1){
-        return "movb";
-    }else if (size == 2){
-        return "movw";
-    }else if (size == 4){
-        return "movl";
-    }else if (size  == 8){
-        return "movq";
-    }
-    assert(0);
-}
-
-const std::string CodeGenerate::GetMoveCode(std::shared_ptr<Type>  type) {
-    if (type->IsFloatPointNum()){
-        if (type -> Size == 4){
-            return "movss";
-        }else if (type -> Size == 8){
-            return "movsd";
-        }
-    }else if (type->IsIntegerNum()){
-        if (type -> Size == 1){
-            return "movsb";
-        }else if (type -> Size == 2){
-            return "movsw";
-        }else if (type -> Size == 4){
-            return "movsl";
-        }else if (type -> Size == 8){
-            return "movsq";
-        }
-    }else if(type->IsPointerType()){
-        return "movsq";
-    }
-    assert(0);
-}
-
-const std::string CodeGenerate::GetMoveCode2(std::shared_ptr<Type>  type) {
-    if (type->IsFloatPointNum()){
-        if (type -> Size == 4){
-            return "movss";
-        }else if (type -> Size == 8){
-            return "movsd";
-        }
-    }else if (type->IsIntegerNum()){
-        if (type -> Size == 1){
-            return "movb";
-        }else if (type -> Size == 2){
-            return "movw";
-        }else if (type -> Size == 4){
-            return "movl";
-        }else if (type -> Size == 8){
-            return "movq";
-        }
-    }else if(type->IsPointerType()){
-        return "movq";
-    }else if(type->IsArrayType()){
-        return "mov";
-    }
-    assert(0);
-}
-
 
 void CodeGenerate::PushStructOrUnion(std::shared_ptr<AstNode> node){
     int surplus = node ->Type->Size;
@@ -883,8 +931,8 @@ void CodeGenerate::PushStructOrUnion(std::shared_ptr<AstNode> node){
             }else{
                 return;
             }
-            printf("\t  %s %d(%%rdi),%s\n", GetMoveCode(curSize).data(), offset  , GetRax(curSize).data());
-            printf("\t  %s %s,%d(%%rsp)\n", GetMoveCode(curSize).data(), GetRax(curSize).data(),offset);
+            printf("\t  %s %d(%%rdi),%s\n", GetMoveCode2(curSize).data(), offset  , GetRax(curSize).data());
+            printf("\t  %s %s,%d(%%rsp)\n", GetMoveCode2(curSize).data(), GetRax(curSize).data(), offset);
             index ++;
             offset += curSize;
             surplus -= curSize;
@@ -918,35 +966,6 @@ void CodeGenerate::Visitor(CastNode *node) {
     printf("\t  %s \n",castCode.data());
 }
 
-
-const std::string CodeGenerate::GetIDivCode(std::shared_ptr<Type> type) {
-    if (type -> Size == 1){
-        return "idivb";
-    }else if (type -> Size == 2){
-        return "idivw";
-    }else if (type -> Size == 4){
-        return "idivw";
-    }else if (type -> Size == 8){
-        return "idivq";
-    } else{
-        assert(0);
-    }
-}
-
-
-const std::string CodeGenerate::GetDivCode(std::shared_ptr<Type> type) {
-    if (type -> Size == 1){
-        return "divb";
-    }else if (type -> Size == 2){
-        return "divw";
-    }else if (type -> Size == 4){
-        return "divw";
-    }else if (type -> Size == 8){
-        return "divq";
-    } else{
-        assert(0);
-    }
-}
 
 void CodeGenerate::Push(std::shared_ptr<Type> ty,const char * reg) {
     auto size = ty ->Size;
@@ -990,8 +1009,6 @@ void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
     printf("\t  add $%d, %%rsp\n",ty->Size);
 }
 
-
-
 void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
     if (ty ->IsFloatPointNum()){
         if (reg){
@@ -1010,65 +1027,6 @@ void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
     printf("\t  add $%d, %%rsp\n",ty->Size);
 }
 
-const std::string CodeGenerate::GetRdx(std::shared_ptr<Type> type) {
-    if (type -> Size == 1){
-        return "%dl";
-    }else if (type -> Size == 2){
-        return "%dx";
-    }else if (type -> Size == 4){
-        return "%edx";
-    }else if (type -> Size>= 8){
-        return "%rdx";
-    } else{
-        assert(0);
-    }
-}
-
-const std::string CodeGenerate::GetRax(std::shared_ptr<Type> type) {
-    if (type->IsArrayType()) {
-        return "%rax";
-    }else if (type -> Size == 1){
-        return "%al";
-    }else if (type -> Size == 2){
-        return "%ax";
-    }else if (type -> Size == 4){
-        return "%eax";
-    }else if (type -> Size>= 8){
-        return "%rax";
-    } else{
-        assert(0);
-    }
-}
-
-const std::string CodeGenerate::GetRcx(int size) {
-    if (size == 1){
-        return "%cl";
-    }else if (size == 2){
-        return "%cx";
-    }else if (size == 4){
-        return "%ecx";
-    }else if (size == 8){
-        return "%rcx";
-    } else{
-        assert(0);
-    }
-}
-
-
-const std::string CodeGenerate::GetRcx(std::shared_ptr<Type> type) {
-    if (type -> Size == 1){
-        return "%cl";
-    }else if (type -> Size == 2){
-        return "%cx";
-    }else if (type -> Size == 4){
-        return "%ecx";
-    }else if (type -> Size == 8){
-        return "%rcx";
-    } else{
-        assert(0);
-    }
-}
-
 
 void CodeGenerate::Visitor(ArefNode *node) {
     auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
@@ -1076,144 +1034,17 @@ void CodeGenerate::Visitor(ArefNode *node) {
     if (node ->Offset ->Type ->Size == Type::IntType ->Size){
         printf("\t  cdqe\n");
     }
-    if (varExprNode->VarObj->VarAttr->isStatic || node ->Lhs ->Type ->IsPointerType()){
+    if (varExprNode && !varExprNode->VarObj->VarAttr->isStatic){
+            printf("\t  mov %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset,
+                   node-> Type->GetBaseType()->Size,GetRax(node->Type).data());
+    }else{
         SetCurTargetReg("%rdi");
-        GenerateAddress(varExprNode.get());
+        GenerateAddress(node ->Lhs.get());
         ClearCurTargetReg();
-        printf("\t  mov (%%rdi,%%rax,%d),%s\n",node-> Type->GetBaseType()->Size,
-               GetRax(node->Type).data());
-        return;
-    }else {
-        printf("\t  mov %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset,
+        printf("\t  mov (%%rdi,%%rax,%d),%s\n",
                node-> Type->GetBaseType()->Size,GetRax(node->Type).data());
     }
 }
-
-const std::string CodeGenerate::GetRax(int size) {
-    if (size == 1){
-        return "%al";
-    }else if (size == 2){
-        return "%ax";
-    }else if (size == 4){
-        return "%eax";
-    }else if (size == 8){
-        return "%rax";
-    } else{
-        assert(0);
-    }
-}
-
-std::string BDD::CodeGenerate::GetCastCode(std::string fromTo) {
-    if (CastMap.empty()){
-        CastMap["i8->i32"] = "movsx %al, %eax";
-        CastMap["u8->i32"] = "movzbl %al, %eax";
-        CastMap["bool->i32"] = "movzbl %al, %eax";
-        CastMap["u8->u32"] =  "movzbl %al, %eax";
-
-        CastMap["i16->i32"] = "movswl %ax, %eax";
-        CastMap["u16->u32"] = "movzwl %ax, %eax";
-        CastMap["i32->f32"] = "cvtsi2ssl %eax, %xmm0";
-        CastMap["i32->i64"] = "movsx %eax, %rax";
-
-        CastMap["i16->u32"] = "movzwl %ax, %eax";
-
-        CastMap["u32->u64"] = "NULL";
-
-
-        CastMap["i32->i8"] =  "movsx %al, %rax";
-        CastMap["i32->i16"] =  "movsx %ax, %rax";
-        CastMap["i32->u32"] =  "NULL";
-
-        CastMap["i32->u64"] =  "NULL";
-        CastMap["u64->i32"] =  "NULL";
-
-        CastMap["u16->i32"] =  "movzwl %ax, %eax";
-
-        CastMap["u64->i64"] =  "NULL";
-        CastMap["i64->u64"] =  "NULL";
-
-        CastMap["i32->f64"] = "cvtsi2sdl %eax, %xmm0";
-
-        CastMap["u32->f32"] = "mov %eax, %eax; cvtsi2ssq %rax, %xmm0";
-        CastMap["u32->i64"] = "movzx %eax, %rax";
-        CastMap["u32->f64"] = "movzx %eax, %rax; cvtsi2sdq %rax, %xmm0";
-
-        CastMap["i64->f32"] = "cvtsi2ssq %rax, %xmm0";
-        CastMap["i64->f64"] = "cvtsi2sdq %rax, %xmm0";
-
-        CastMap["u64->f32"] = "cvtsi2ssq %rax, %xmm0";
-
-        CastMap["u64->f64"] =
-                "test %rax,%rax; js 1f; pxor %xmm0,%xmm0; cvtsi2sd %rax,%xmm0; jmp 2f; "
-                "1: mov %rax,%rdi; and $1,%eax; pxor %xmm0,%xmm0; shr %rdi; "
-                "or %rax,%rdi; cvtsi2sd %rdi,%xmm0; addsd %xmm0,%xmm0; 2:";
-
-        CastMap["f32->i8"] = "cvttss2sil %xmm0, %eax; movsbl %al, %eax";
-        CastMap["f32->u8"] = "cvttss2sil %xmm0, %eax; movzbl %al, %eax";
-        CastMap["f32->i16"] = "cvttss2sil %xmm0, %eax; movswl %ax, %eax";
-        CastMap["f32->u16"] = "cvttss2sil %xmm0, %eax; movzwl %ax, %eax";
-        CastMap["f32->i32"] = "cvttss2sil %xmm0, %eax";
-        CastMap["f32->u32"] = "cvttss2siq %xmm0, %rax";
-        CastMap["f32->i64"] = "cvttss2siq %xmm0, %rax";//
-        CastMap["f32->u64"] = "cvttss2siq %xmm0, %rax";
-        CastMap["f32->f64"] = "cvtss2sd %xmm0, %xmm0";
-
-        CastMap["f64->i8"] = "cvttsd2sil %xmm0, %eax; movsbl %al, %eax";
-        CastMap["f64->u8"] = "cvttsd2sil %xmm0, %eax; movzbl %al, %eax";
-        CastMap["f64->i16"] = "cvttsd2sil %xmm0, %eax; movswl %ax, %eax";
-        CastMap["f64->u16"] = "cvttsd2sil %xmm0, %eax; movzwl %ax, %eax";
-        CastMap["f64->i32"] = "cvttsd2sil %xmm0, %eax";//
-        CastMap["f64->u32"] = "cvttsd2siq %xmm0, %rax";
-        CastMap["f64->f32"] = "cvtsd2ss %xmm0, %xmm0"; //
-        CastMap["f64->i64"] = "cvttsd2siq %xmm0, %rax"; //
-        CastMap["f64->u64"] = "cvttsd2siq %xmm0, %rax";
-    }
-    return CastMap[fromTo];
-}
-
-const std::string CodeGenerate::GetRdi(std::shared_ptr<Type> type) {
-    if (type ->Size == 1){
-        return "%dil";
-    }else if (type ->Size == 2){
-        return "%di";
-    }else if (type ->Size == 4){
-        return "%edi";
-    }else if (type ->Size == 8){
-        return "%rdi";
-    } else{
-        assert(0);
-    }
-}
-
-const std::string CodeGenerate::GetSet(BinaryOperator op) {
-    switch (op) {
-        case BinaryOperator::Greater:
-            return "setg";
-        case BinaryOperator::FloatPointGreater:
-            return "seta";
-        case BinaryOperator::FloatPointLesser:
-            return "setb";
-        case  BinaryOperator::GreaterEqual:
-            return "setge";
-        case  BinaryOperator::FloatPointGreaterEqual:
-            return "setae";
-        case BinaryOperator::FloatPointLesserEqual:
-            return "setbe";
-        case BinaryOperator::Lesser:
-            return "setl";
-        case BinaryOperator::LesserEqual:
-            return "setle";
-        case BinaryOperator::Equal:
-        case BinaryOperator::FloatPointEqual:
-            return "sete";
-        case BinaryOperator::NotEqual:
-        case BinaryOperator::FloatPointNotEqual:
-            return "setne";
-        default:
-            assert(0);
-    }
-}
-
 
 void CodeGenerate::Visitor(EmptyNode *node) {}
 
@@ -1435,14 +1266,18 @@ void CodeGenerate::Visitor(BitOpNode *node) {
 
 void CodeGenerate::Visitor(TernaryNode *node) {
     int n = Sequence ++;
+    IsCmpJmpModule = true;
+    std::string branchLabel = string_format(".LT.else%d",n);
+    PushJmpLabel(branchLabel);
     node ->Cond->Accept(this);
-    printf("\t  jz .LT.else%d\n",n);
     node ->Then->Accept(this);
+    printf("\t  jmp .LT.end_%d\n",n);
     if (node ->Else){
         printf(".LT.else%d:\n",n);
         node ->Else->Accept(this);
     }
     printf(".LT.end_%d:\n",n);
+    PopJmpLabel();
 }
 
 void CodeGenerate::Visitor(SwitchCaseSmtNode *node) {
@@ -1511,37 +1346,6 @@ const std::string CodeGenerate::GetJmpLabel() {
     return std::string(backLabel);
 }
 
-
-
-std::string CodeGenerate::GetReverseJmp(BinaryOperator anOperator) {
-    switch (anOperator) {
-        case BinaryOperator::Greater:
-            return "jle";
-        case BinaryOperator::FloatPointGreater:
-            return "jbe";
-        case BinaryOperator::FloatPointLesser:
-            return "jae";
-        case BinaryOperator::GreaterEqual:
-            return "jl";
-        case BinaryOperator::FloatPointGreaterEqual:
-            return "jb";
-        case BinaryOperator::FloatPointLesserEqual:
-            return "ja";
-        case BinaryOperator::Lesser:
-            return "jge";
-        case BinaryOperator::LesserEqual:
-            return "jg";
-        case BinaryOperator::Equal:
-        case BinaryOperator::FloatPointEqual:
-            return "jne";
-        case BinaryOperator::NotEqual:
-        case BinaryOperator::FloatPointNotEqual:
-            return "je";
-        default:
-            assert(0);
-    }
-}
-
 std::string CodeGenerate::GetCurTargetReg() {
     if (curTargetReg.empty()){
         return "%rax";
@@ -1564,4 +1368,16 @@ const int CodeGenerate::GetStructReturn2Offset() {
 
 const void CodeGenerate::SetStructReturn2Offset(int offset) {
     Return2OffsetStack = offset;
+}
+
+void BDD::PushStoreOffsetTag(std::string_view label) {
+    OffsetTag.push_back(label);
+}
+
+void BDD::PopStoreOffsetTag() {
+    OffsetTag.pop_back();
+}
+
+std::string_view BDD::CurrentOffsetTag() {
+    return OffsetTag.back();
 }

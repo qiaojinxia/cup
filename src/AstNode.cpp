@@ -22,6 +22,15 @@ std::string ConstantNode::GetValue() {
         return std::to_string(Value);
     }
     auto s_num = std::string(Tk->Content).c_str();
+    if (this->isChar){
+        return string_format("%d",this->Value);
+//        const char *m = std::string(Tk->Content.substr(1, Tk->Content.size() - 2)).data();
+//
+//
+//        char  ch1 = *m + '\0';
+//        char _num = *&ch1;
+//        s_num = std::string(string_format("%d",_num)).data();
+    }
     if (is_contains_str(std::string(Tk->Content),"0x")){
         return s_num;
     }

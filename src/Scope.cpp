@@ -97,6 +97,7 @@ void Scope::PushStaticVar(std::string name,std::shared_ptr<ConstantNode> cstNode
     if (stZVar != GetStaticZeroVarTable().end()){
         GetStaticZeroVarTable().erase(name);
         cstNode ->Name = name;
+        cstNode ->isStatic = true;
         GetStaticInitVarTable()[name] = cstNode;
     }
 }
@@ -125,7 +126,7 @@ std::unordered_map<std::string,std::shared_ptr<ConstantNode>>& Scope::GetStaticI
 
 void Scope::PutToConstantTable(std::shared_ptr<ConstantNode> constantNode) {
     if (constantNode ->Name == ""){
-        auto labelName = string_format("caomao_%d",countConstant ++);
+        auto labelName = string_format("caomao_%d",CountConstant ++);
         auto name = labelName.data();
         constantNode -> Name = name;
     }

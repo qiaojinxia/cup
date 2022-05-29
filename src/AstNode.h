@@ -159,7 +159,9 @@ class BinaryNode :public  AstNode{
         bool isRoot{};
         bool isStore{};
         int Offset{};
+        bool isStatic{false};
         unsigned long Value{};
+        bool isChar{false};
         bool isChange{};
         std::string GetValue();
         bool HasSetValue();

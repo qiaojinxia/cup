@@ -175,7 +175,6 @@ void TypeVisitor::Visitor(FuncCallNode *node) {
     }
     if (node ->FuncPointerOffset)
         node ->FuncPointerOffset->Accept(this);
-
 }
 
 void TypeVisitor::Visitor(ReturnStmtNode *node) {
@@ -493,21 +492,25 @@ void TypeVisitor::Visitor(BitOpNode *node) {
 }
 
 void TypeVisitor::Visitor(TernaryNode *node) {
+    if ( node -> isTypeInit)
+        return;
+    node -> isTypeInit = true;
     node ->Cond ->Accept(this);
     node ->Then ->Accept(this);
-    if (node ->Then ->Type != node->Type){
+    if (node ->Then ->Type != CurAssignType){
         auto castNode = std::make_shared<CastNode>(nullptr);
         castNode -> Type = node ->Type;
         castNode ->CstNode = node ->Then;
         node ->Then = castNode;
     }
     node ->Else ->Accept(this);
-    if (node ->Else ->Type != node->Type){
+    if (node ->Else ->Type != CurAssignType){
         auto castNode = std::make_shared<CastNode>(nullptr);
         castNode -> Type = node ->Type;
         castNode ->CstNode = node ->Then;
         node ->Else = castNode;
     }
+    node  ->Type = CurAssignType;
 }
 
 void TypeVisitor::Visitor(SwitchCaseSmtNode *node) {

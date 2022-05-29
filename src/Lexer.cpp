@@ -53,6 +53,17 @@ void BDD::Lexer::GetNextToken() {
     }else if (CurChar == ','){
         kind = TokenKind::Comma;
         GetNextChar();
+    }else if (CurChar == '\''){
+        kind = TokenKind::CharNum;
+        GetNextChar();
+        if(CurChar == '\\'){
+            GetNextChar();
+            value = CurChar - 100;
+        }else{
+            value = CurChar;
+        }
+        GetNextChar();
+        GetNextChar();
     }else if(CurChar == '*'){
         kind = TokenKind::Asterisk;
         GetNextChar();
@@ -337,6 +348,8 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "sizeof";
         case TokenKind::Comma:
             return ",";
+        case TokenKind::Colon:
+            return ":";
         case TokenKind::Continue:
             return "continue";
         case TokenKind::Enum:

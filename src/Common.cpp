@@ -175,3 +175,364 @@ std::string BDD::GetStoreCode(int size) {
             assert(0);
     }
 }
+
+std::string BDD::GetReverseJmp(BinaryOperator anOperator) {
+    switch (anOperator) {
+        case BinaryOperator::Greater:
+            return "jle";
+        case BinaryOperator::FloatPointGreater:
+            return "jbe";
+        case BinaryOperator::FloatPointLesser:
+            return "jae";
+        case BinaryOperator::GreaterEqual:
+            return "jl";
+        case BinaryOperator::FloatPointGreaterEqual:
+            return "jb";
+        case BinaryOperator::FloatPointLesserEqual:
+            return "ja";
+        case BinaryOperator::Lesser:
+            return "jge";
+        case BinaryOperator::LesserEqual:
+            return "jg";
+        case BinaryOperator::Equal:
+        case BinaryOperator::FloatPointEqual:
+            return "jne";
+        case BinaryOperator::NotEqual:
+        case BinaryOperator::FloatPointNotEqual:
+            return "je";
+        default:
+            assert(0);
+    }
+}
+
+const std::string BDD::GetSet(BinaryOperator op) {
+    switch (op) {
+        case BinaryOperator::Greater:
+            return "setg";
+        case BinaryOperator::FloatPointGreater:
+            return "seta";
+        case BinaryOperator::FloatPointLesser:
+            return "setb";
+        case  BinaryOperator::GreaterEqual:
+            return "setge";
+        case  BinaryOperator::FloatPointGreaterEqual:
+            return "setae";
+        case BinaryOperator::FloatPointLesserEqual:
+            return "setbe";
+        case BinaryOperator::Lesser:
+            return "setl";
+        case BinaryOperator::LesserEqual:
+            return "setle";
+        case BinaryOperator::Equal:
+        case BinaryOperator::FloatPointEqual:
+            return "sete";
+        case BinaryOperator::NotEqual:
+        case BinaryOperator::FloatPointNotEqual:
+            return "setne";
+        default:
+            assert(0);
+    }
+}
+
+
+const std::string BDD::GetRax(int size) {
+    if (size == 1){
+        return "%al";
+    }else if (size == 2){
+        return "%ax";
+    }else if (size == 4){
+        return "%eax";
+    }else if (size == 8){
+        return "%rax";
+    } else{
+        assert(0);
+    }
+}
+
+std::string BDD::GetCastCode(std::string fromTo) {
+    if (CastMap.empty()){
+        CastMap["i8->i32"] = "movsx %al, %eax";
+        CastMap["u8->i32"] = "movzbl %al, %eax";
+        CastMap["bool->i32"] = "movzbl %al, %eax";
+        CastMap["u8->u32"] =  "movzbl %al, %eax";
+
+        CastMap["i16->i32"] = "movswl %ax, %eax";
+        CastMap["u16->u32"] = "movzwl %ax, %eax";
+        CastMap["i32->f32"] = "cvtsi2ssl %eax, %xmm0";
+        CastMap["i32->i64"] = "movsx %eax, %rax";
+
+        CastMap["i16->u32"] = "movzwl %ax, %eax";
+
+        CastMap["u32->u64"] = "NULL";
+
+
+        CastMap["i32->i8"] =  "movsx %al, %rax";
+        CastMap["i32->i16"] =  "movsx %ax, %rax";
+        CastMap["i32->u32"] =  "NULL";
+
+        CastMap["i32->u64"] =  "NULL";
+        CastMap["u64->i32"] =  "NULL";
+
+        CastMap["u16->i32"] =  "movzwl %ax, %eax";
+
+        CastMap["u64->i64"] =  "NULL";
+        CastMap["i64->u64"] =  "NULL";
+
+        CastMap["i32->f64"] = "cvtsi2sdl %eax, %xmm0";
+
+        CastMap["u32->f32"] = "mov %eax, %eax; cvtsi2ssq %rax, %xmm0";
+        CastMap["u32->i64"] = "movzx %eax, %rax";
+        CastMap["u32->f64"] = "movzx %eax, %rax; cvtsi2sdq %rax, %xmm0";
+
+        CastMap["i64->f32"] = "cvtsi2ssq %rax, %xmm0";
+        CastMap["i64->f64"] = "cvtsi2sdq %rax, %xmm0";
+
+        CastMap["u64->f32"] = "cvtsi2ssq %rax, %xmm0";
+
+        CastMap["u64->f64"] =
+                "test %rax,%rax; js 1f; pxor %xmm0,%xmm0; cvtsi2sd %rax,%xmm0; jmp 2f; "
+                "1: mov %rax,%rdi; and $1,%eax; pxor %xmm0,%xmm0; shr %rdi; "
+                "or %rax,%rdi; cvtsi2sd %rdi,%xmm0; addsd %xmm0,%xmm0; 2:";
+
+        CastMap["f32->i8"] = "cvttss2sil %xmm0, %eax; movsbl %al, %eax";
+        CastMap["f32->u8"] = "cvttss2sil %xmm0, %eax; movzbl %al, %eax";
+        CastMap["f32->i16"] = "cvttss2sil %xmm0, %eax; movswl %ax, %eax";
+        CastMap["f32->u16"] = "cvttss2sil %xmm0, %eax; movzwl %ax, %eax";
+        CastMap["f32->i32"] = "cvttss2sil %xmm0, %eax";
+        CastMap["f32->u32"] = "cvttss2siq %xmm0, %rax";
+        CastMap["f32->i64"] = "cvttss2siq %xmm0, %rax";//
+        CastMap["f32->u64"] = "cvttss2siq %xmm0, %rax";
+        CastMap["f32->f64"] = "cvtss2sd %xmm0, %xmm0";
+
+        CastMap["f64->i8"] = "cvttsd2sil %xmm0, %eax; movsbl %al, %eax";
+        CastMap["f64->u8"] = "cvttsd2sil %xmm0, %eax; movzbl %al, %eax";
+        CastMap["f64->i16"] = "cvttsd2sil %xmm0, %eax; movswl %ax, %eax";
+        CastMap["f64->u16"] = "cvttsd2sil %xmm0, %eax; movzwl %ax, %eax";
+        CastMap["f64->i32"] = "cvttsd2sil %xmm0, %eax";//
+        CastMap["f64->u32"] = "cvttsd2siq %xmm0, %rax";
+        CastMap["f64->f32"] = "cvtsd2ss %xmm0, %xmm0"; //
+        CastMap["f64->i64"] = "cvttsd2siq %xmm0, %rax"; //
+        CastMap["f64->u64"] = "cvttsd2siq %xmm0, %rax";
+    }
+    return CastMap[fromTo];
+}
+
+const std::string BDD::GetRdi(std::shared_ptr<Type> type) {
+    if (type ->Size == 1){
+        return "%dil";
+    }else if (type ->Size == 2){
+        return "%di";
+    }else if (type ->Size == 4){
+        return "%edi";
+    }else if (type ->Size == 8){
+        return "%rdi";
+    } else{
+        assert(0);
+    }
+}
+
+const std::string BDD::GetRcx(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "%cl";
+    }else if (type -> Size == 2){
+        return "%cx";
+    }else if (type -> Size == 4){
+        return "%ecx";
+    }else if (type -> Size == 8){
+        return "%rcx";
+    } else{
+        assert(0);
+    }
+}
+
+const std::string BDD::GetRcx(int size) {
+    if (size == 1){
+        return "%cl";
+    }else if (size == 2){
+        return "%cx";
+    }else if (size == 4){
+        return "%ecx";
+    }else if (size == 8){
+        return "%rcx";
+    } else{
+        assert(0);
+    }
+}
+
+const std::string BDD::GetRax(std::shared_ptr<Type> type) {
+    if (type->IsArrayType()) {
+        return "%rax";
+    }else if (type -> Size == 1){
+        return "%al";
+    }else if (type -> Size == 2){
+        return "%ax";
+    }else if (type -> Size == 4){
+        return "%eax";
+    }else if (type -> Size>= 8){
+        return "%rax";
+    } else{
+        assert(0);
+    }
+}
+
+const std::string BDD::GetRdx(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "%dl";
+    }else if (type -> Size == 2){
+        return "%dx";
+    }else if (type -> Size == 4){
+        return "%edx";
+    }else if (type -> Size>= 8){
+        return "%rdx";
+    } else{
+        assert(0);
+    }
+}
+
+const std::string BDD::GetIDivCode(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "idivb";
+    }else if (type -> Size == 2){
+        return "idivw";
+    }else if (type -> Size == 4){
+        return "idivw";
+    }else if (type -> Size == 8){
+        return "idivq";
+    } else{
+        assert(0);
+    }
+}
+
+
+const std::string BDD::GetDivCode(std::shared_ptr<Type> type) {
+    if (type -> Size == 1){
+        return "divb";
+    }else if (type -> Size == 2){
+        return "divw";
+    }else if (type -> Size == 4){
+        return "divw";
+    }else if (type -> Size == 8){
+        return "divq";
+    } else{
+        assert(0);
+    }
+}
+
+const std::string BDD::GetMoveCode2(std::shared_ptr<Type>  type) {
+    if (type->IsFloatPointNum()){
+        if (type -> Size == 4){
+            return "movss";
+        }else if (type -> Size == 8){
+            return "movsd";
+        }
+    }else if (type->IsIntegerNum()){
+        if (type -> Size == 1){
+            return "movb";
+        }else if (type -> Size == 2){
+            return "movw";
+        }else if (type -> Size == 4){
+            return "movl";
+        }else if (type -> Size == 8){
+            return "movq";
+        }
+    }else if(type->IsPointerType()){
+        return "movq";
+    }else if(type->IsArrayType()){
+        return "mov";
+    }else if (type->IsBoolType()){
+        return "movb";
+    }
+    assert(0);
+}
+
+
+const std::string BDD::GetMoveCode(std::shared_ptr<Type>  type) {
+    if (type->IsFloatPointNum()){
+        if (type -> Size == 4){
+            return "movss";
+        }else if (type -> Size == 8){
+            return "movsd";
+        }
+    }else if (type->IsIntegerNum()){
+        if (type -> Size == 1){
+            return "movsb";
+        }else if (type -> Size == 2){
+            return "movsw";
+        }else if (type -> Size == 4){
+            return "movsl";
+        }else if (type -> Size == 8){
+            return "movsq";
+        }
+    }else if(type->IsPointerType()){
+        return "movsq";
+    }
+    assert(0);
+}
+
+const std::string BDD::GetMoveCode(int size) {
+    if (size == 1){
+        return "movsb";
+    }else if (size == 2){
+        return "movsw";
+    }else if (size == 4){
+        return "movsl";
+    }else if (size  == 8){
+        return "movsq";
+    }
+    assert(0);
+}
+
+const std::string BDD::GetMoveCode2(int size) {
+    if (size == 1){
+        return "movb";
+    }else if (size == 2){
+        return "movw";
+    }else if (size == 4){
+        return "movl";
+    }else if (size  == 8){
+        return "movq";
+    }
+    assert(0);
+}
+
+const std::string BDD::GetDiv(std::shared_ptr<Type> type) {
+    if (type -> IsFloatType()){
+        return "divss";
+    }else if (type -> IsDoubleType()){
+        return "divsd";
+    }else if (type ->IsULongType()){
+        return "div";
+    }else{
+        return "idiv";
+    }
+}
+
+const std::string BDD::GetMinus(std::shared_ptr<Type> type) {
+    if (type -> IsFloatType()){
+        return "subss";
+    }else if (type -> IsDoubleType()){
+        return "subsd";
+    }
+    return "sub";
+}
+
+const std::string BDD::GetAdd(std::shared_ptr<Type> type) {
+    if (type -> IsFloatType()){
+        return "addss";
+    }else if (type -> IsDoubleType()){
+        return "addsd";
+    }
+    return "add";
+}
+
+const std::string BDD::GetMul(std::shared_ptr<Type> type) {
+    if (type -> IsFloatType()){
+        return "mulss";
+    }else if (type -> IsDoubleType()){
+        return "mulsd";
+    }
+//    else if (type ->IsULongType()){
+//        return "mul";
+//    }
+    return "imul";
+}

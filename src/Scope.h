@@ -21,12 +21,10 @@ namespace BDD{
     class Scope {
     public:
         std::unordered_map<std::string_view,std::shared_ptr<FuncSign>> FuncTable = {};
+        int CountConstant{0};
     private:
         std::unordered_map<std::string,std::shared_ptr<ConstantNode>> ConstTable = {};
-
         std::unordered_map<std::string,std::unordered_map<std::string,std::shared_ptr<ConstantNode>>> StaticVarTable = {};
-
-        int countConstant{0};
         class ScopeItem{
         public:
             std::unordered_map<std::string_view,std::shared_ptr<Var>> VarScope = {};

@@ -268,7 +268,9 @@ Type::TypeClass Type::GetTypeC() const {
     return TypeC;
 }
 
-
+bool Type::IsConstant() const {
+    return TypeC == TypeClass::AliasType && constant;
+}
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
     for(auto &field:fields){
@@ -366,10 +368,6 @@ std::shared_ptr<Type> RecordType::GetBaseType() {
 }
 
 std::shared_ptr<Type> AliasType::GetBaseType() {
-    return Base;
-}
-
-std::shared_ptr<Type> ConstType::GetBaseType() {
     return Base;
 }
 

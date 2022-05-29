@@ -55,9 +55,21 @@ void print_s(char * a){
     printf("output:%s\n",a);
 }
 
+void print_i(int a){
+    printf("%c\n",a);
+}
 
 
+int put(char a){
+    printf("%c",a);
+    return 0;
+}
 
+
+int printft(float a){
+    printf("output:%f\n",a);
+    return 0;
+}
 
 void print_float(float a){
     printf("output:%f\n",a);

@@ -51,6 +51,7 @@ namespace BDD{
         };
         int Size;
         int Align;
+        bool constant;
         const char * Alias;
     private:
         TypeClass TypeC;
@@ -77,7 +78,7 @@ namespace BDD{
         bool IsStringType() const;
         bool IsUnsignedNum() const;
         static bool IsTypeEqual(std::shared_ptr<Type> tp1, std::shared_ptr<Type> tp2);
-
+        bool IsConstant() const;
         bool IsUIntType() const;
 
         bool IsULongType() const;
@@ -184,19 +185,12 @@ namespace BDD{
         std::shared_ptr<Token> token;
         std::shared_ptr<Type> GetBaseType();
         AliasType(std::shared_ptr<Type> typ,std::shared_ptr<Token> tk) : Type(TypeClass::AliasType,typ ->Size,typ->Align,typ->Alias) ,Base(typ),token(tk){}
-    };
+     };
 
     struct EnumType : public  AliasType{
         EnumType(std::shared_ptr<Token> tk) : AliasType(Type::IntType,tk) {}
     };
 
-    struct ConstType : public  Type{
-    public:
-        std::shared_ptr<Type> Base;
-        std::shared_ptr<Token> token;
-        std::shared_ptr<Type> GetBaseType();
-        ConstType(std::shared_ptr<Type> typ,std::shared_ptr<Token> tk):token(tk),Type(typ->GetTypeC(), typ ->Size, typ->Align, typ->Alias) ,Base(typ){}
-    };
 }
 
 #endif //BODDY_TYPE_H

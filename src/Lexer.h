@@ -45,6 +45,7 @@ namespace BDD{
         Long,
         Float,
         Double,
+        CharNum,
         _Bool,
         Struct,
         Union,
@@ -146,5 +147,6 @@ namespace BDD{
     };
 
 
+    const std::string GetMoveCode(int size);
 }
 #endif //BODDY_LEXER_H

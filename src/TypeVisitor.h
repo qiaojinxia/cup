@@ -49,8 +49,9 @@ namespace BDD{
         void Visitor(OrNode *node) override;
         void Visitor(AndNode *node) override;
     private:
-        std::shared_ptr<Type> CurAssignType;
         std::shared_ptr<Type> CurFuncType;
+    public:
+        std::shared_ptr<Type> CurAssignType;
     };
 
 }

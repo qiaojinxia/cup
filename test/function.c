@@ -116,6 +116,3 @@ int (*fnptr(int (*fn)(int n, ...)))(int, ...) {
 int param_decay2(int x()) { return x(); }
 
 int param_decay2(int x()) { return x(); }
-int testfunc() {
-
-}

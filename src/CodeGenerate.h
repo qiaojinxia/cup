@@ -11,8 +11,11 @@
 
 
 namespace BDD{
+    void PushStoreOffsetTag(std::string_view label);
+    void PopStoreOffsetTag();
+    std::string_view CurrentOffsetTag();
+    static std::list<std::string_view> OffsetTag;
     class CodeGenerate:public AstVisitor{
-        std::unordered_map< std::string, std::string> CastMap;
     private:
         int StackLevel{0};
         int Sequence{0};
@@ -26,7 +29,6 @@ namespace BDD{
         const int MaxBit {8};
         const char *Xmm[8] = {"%xmm0","%xmm1","%xmm2","%xmm3" ,"%xmm4","%xmm5","%xmm6" };
         int XmmCount{0};
-
         int XmmPrevDepth;
         int Depth{0};
         Scope * scope;
@@ -105,42 +107,17 @@ namespace BDD{
 
         void GenerateAddress(AstNode *node);
 
-        const std::string GetMoveCode(std::shared_ptr<Type> type);
-        const std::string GetMoveCode2(std::shared_ptr<Type>  type);
 
-        const std::string GetIDivCode(std::shared_ptr<Type> type);
 
-        const std::string GetRax(std::shared_ptr<Type> type);
-        const std::string GetRcx(std::shared_ptr<Type> type);
-        const std::string GetRcx(int size);
-        const std::string GetRax(int size);
-        const std::string GetAdd(std::shared_ptr<Type> type);
-
-        std::string GetCastCode(std::string fromTo);
-
-        const std::string GetRdi(std::shared_ptr<Type> sharedPtr);
-
-        const std::string GetDivCode(std::shared_ptr<Type> type);
 
         void Load(std::shared_ptr<Type> type);
 
-        const std::string GetMoveCode(int size);
 
-        const std::string GetMinus(std::shared_ptr<Type> type);
-
-        const std::string GetMul(std::shared_ptr<Type> type);
-
-        const std::string GetDiv(std::shared_ptr<Type> type);
-
-        const std::string GetRdx(std::shared_ptr<Type> type);
-
-        const std::string GetSet(BinaryOperator op);
 
         const void PushJmpLabel(std::string labelName);
         const std::string PopJmpLabel();
         const std::string GetJmpLabel();
 
-        std::string GetReverseJmp(BinaryOperator anOperator);
 
         void CmpZero(std::shared_ptr<AstNode> node);
 
