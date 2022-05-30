@@ -111,54 +111,7 @@ void printConstant(int size, bool isFloat,bool isString,std::shared_ptr<Token> t
     return;
 }
 
-void ParseInit(std::shared_ptr<ConstantNode> node){
-    if (node->isStatic)
-        return;
-    int size = 0 ;
-    bool isFloat = false;
-    bool isString = false;
-    int offset = 0;
-    bool skip = true;
-    auto root = node;
-    if (node -> Type ->IsFloatPointNum()){
-        skip = false;
-    }else if (!node ->Type  -> IsBInType() ) {
-        if (node->Type->Size >= 48 ){
-            skip = false;
-        }
-    }
-    if (node->isRoot){
-        node = node ->Next;
-    }
-    int first = true;
-    while (node) {
-        if(!(node -> Type ->IsPtrCharType() || !skip)){
-            node = node ->Next;
-            continue;
-        }
-        if (first){
-            printf("%s:\n", root -> Name.data());
-            first = false;
-        }
-        //single value direct loading mov $num,%rax
-        isFloat = node->Type->IsFloatPointNum();
-        size = node ->Type ->Size;
-        isString = node->Type->IsPtrCharType();
-        offset += node ->Type ->Size;
-        int gap = AlignTo(offset,node->Type->Align) - offset;
-        offset += gap;
-        if (gap != 0)
-            printf("\t.zero  %d\n",gap);
-        if (node -> Sub){
-            ParseInit(node ->Sub);
-        }else{
-            printConstant(size,isFloat , isString,node -> Tk);
-        }
-        node -> isStore = true;
-        node = node ->Next;
-        root ->isStore = true;
-    }
-}
+
 void printStruct(std::shared_ptr<ConstantNode>& node);
 void printCharPointer(std::shared_ptr<ConstantNode>& node);
 void printString(std::shared_ptr<ConstantNode>& node);
@@ -185,7 +138,6 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
 }
 
 void CodeGenerate::Visitor(ProgramNode *node) {
-
     for (auto &dataSeg: scope->Scope::GetInstance()->GetStaticTable()) {
         if (!dataSeg.second.empty()){
             printf("%s\n",dataSeg.first.data());
@@ -205,8 +157,16 @@ void CodeGenerate::Visitor(ProgramNode *node) {
         if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
             continue;
         }
-        //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
-        ParseInit(v.second);
+        if(v.second ->Type->Size >= 40 || v .second ->Type ->IsFloatPointNum()
+        || v .second ->Type ->IsPtrCharType() || v .second ->Type ->IsStringType()){
+            printf(".data \n");
+            printf(".align 4\n");
+            printf("%s:\n", v.second -> Name.data());
+            //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
+            PrintConstNode(v.second);
+            v.second ->isStore = true;
+        }
+
     }
     for (auto &s: node->Funcs)
         s->Accept(this);
@@ -666,8 +626,27 @@ void printCharPointer(std::shared_ptr<ConstantNode>& node){
     printf("\t .quad   %s\n",std::string(node->Name).data());
 }
 
+std::string MergeCharArray(std::shared_ptr<ConstantNode>& node){
+    auto cursor = node ->Next;
+    std::string content;
+    while(cursor){
+        content += string_format("%c",cursor->Value);
+        cursor = cursor ->Next;
+    }
+    return content;
+}
+
 void printString(std::shared_ptr<ConstantNode>& node){
-    printf("\t .asciz   %s\n",std::string(node->Tk->Content).data());
+    if (!node->Tk){
+        node -> Tk = std::make_shared<Token>();
+        auto ct = MergeCharArray(node);
+        node -> Tk ->Content = ct;
+        printf("\t .asciz   \"%s\"\n",std::string(node->Tk->Content).data());
+        return;
+    }else{
+        printf("\t .asciz   %s\n",std::string(node->Tk->Content).data());
+    }
+    node -> isStore = true;
 }
 
 void printZero(int num){
@@ -754,26 +733,40 @@ void storePointer(std::shared_ptr<ConstantNode>& node){
 }
 
 void storeArray (std::shared_ptr<ConstantNode>&);
+void storeHandle (std::shared_ptr<ConstantNode>&);
 
 void storeString(std::shared_ptr<ConstantNode>& node) {
-    auto iter =  Str2IntArrayIterator(node->Tk->Content);
-    auto offset = node ->Offset;
-    while(iter.has_next()){
+
+    auto iter = Str2IntArrayIterator(node->Tk->Content);
+    auto offset = node->Offset;
+//    if (node->isStore)
+//        printf("\t  lea %s(%%rip),%%rdx\n",node->Name.data());
+    while (iter.has_next()) {
         auto outPutIntNode = iter.next();
-        printf("\t  %s $%lu,%s\n", GetMoveCode2(outPutIntNode.Size).data(), outPutIntNode.Value, GetRax(outPutIntNode.Size).data());
-        printf("\t  %s %s,%d(%%rdi)\n", GetMoveCode2(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data(), offset);
-        offset += outPutIntNode .Size;
+        if (node->isStore) {
+            printf("\t  %s  %s(%%rip),%s\n",GetMoveCode2(outPutIntNode.Size).data(),node->Name.data(), GetRax(outPutIntNode.Size).data());
+            printf("\t  %s  %s,(%%rdi)\n",GetMoveCode2(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data());
+
+        }else{
+            printf("\t  %s $%lu,%s\n", GetMoveCode2(outPutIntNode.Size).data(), outPutIntNode.Value,
+                   GetRax(outPutIntNode.Size).data());
+        }
+        printf("\t  %s %s,%d(%%rdi)\n", GetMoveCode2(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data(),
+               offset);
+        offset += outPutIntNode.Size;
     }
+    node = nullptr;
 }
 
-void storeHandle(std::shared_ptr<ConstantNode>& node) {
+
+void storeStruct(std::shared_ptr<ConstantNode>& node) {
     while (node) {
         if (node->Type->IsBInType()){
             HandleStore(node,storeBuildIn, false);
         }else if(node->Type->IsPointerType()){
             HandleStore(node,storePointer, false);
         }else if(node->Type->IsStructType()){
-            HandleStore(node, storeHandle, true);
+            HandleStore(node, storeStruct, true);
         }else if(node->Type->IsStringType()){
             HandleStore(node,storeString, false);
         }else if(node->Type->IsArrayType()){
@@ -786,19 +779,52 @@ void storeHandle(std::shared_ptr<ConstantNode>& node) {
     }
 }
 
-void mmStoreArray(std::shared_ptr<ConstantNode> node,std::string src){
+void storeHandle(std::shared_ptr<ConstantNode>& node) {
+    if (node->isStore && node ->Type->Size >= 40){
+        printf("\t  mov $%d,%%rcx\n",node -> Type ->Size);
+        printf("\t  lea %s(%%rip),%%rax\n",node -> Name.data());
+        printf("\t  call _mempcy\n");
+        return;
+    }
+    while (node) {
+        if (node->Type->IsBInType()){
+            HandleStore(node,storeBuildIn, false);
+        }else if(node->Type->IsPointerType()){
+            HandleStore(node,storePointer, false);
+        }else if(node->Type->IsStructType()){
+            HandleStore(node, storeStruct, true);
+        }else if(node->Type->IsStringType()){
+            HandleStore(node,storeString, false);
+        }else if(node->Type->IsArrayType()){
+            HandleStore(node,storeArray, false);
+        }
+        if (node)
+            node = node->Next;
+        else
+            break;
+    }
+}
+
+//use  rdx rax rdi copy array
+void mmStoreCst(std::shared_ptr<ConstantNode>& node, std::string name, bool isStore){
     int offset = node->Offset;
-    std::shared_ptr<ConstantNode> cursor = node ->Sub;
-    if(src.empty()){
+    std::shared_ptr<ConstantNode> cursor = node;
+    if(!isStore){
         while(cursor){
             int size = 0;
             unsigned long fullNum = 0;
-            while(size<8){
-                if (!cursor || size + cursor->Type->Size > 8 )
+            while(size < 8){
+                if ( size + cursor->Type->Size > 8)
                     break;
-                fullNum += cursor->Value << (size * 8);
+                if ( cursor->Type->Size != 8){
+                    fullNum += atoll(cursor->GetValue().c_str()) << (size * 8);
+                }else{
+                    fullNum = atoll(cursor->GetValue().c_str());
+                }
                 size += cursor->Type->Size;
                 cursor = cursor->Next;
+                if (!cursor)
+                    break;
             }
             if (size <=0)
                 break;
@@ -808,16 +834,31 @@ void mmStoreArray(std::shared_ptr<ConstantNode> node,std::string src){
             offset += size;
         }
     }else{
-        //copy array from data seg
+        //if store init data in data region copy from data to target address
+        printf("\t  lea %s(%%rip),%%rdx\n", name.data());
+        while(cursor) {
+            int size = 0;
+            while (size < 8) {
+                if (size + cursor->Type->Size > 8)
+                    break;
+                size += cursor->Type->Size;
+                cursor = cursor->Next;
+                if (!cursor)
+                    break;
+            }
+            if (size <=0)
+                break;
+            printf("\t  %s %d(%%rdx),%s\n", GetMoveCode2(size).data(), offset , GetRax(size).data());
+            printf("\t  %s %s,%d(%%rdi)\n", GetMoveCode2(size).data(),  GetRax(size).data(),offset);
+            offset += size;
+        }
     }
+    node = cursor;
 }
 
 void storeArray(std::shared_ptr<ConstantNode>& node){
-    if(node->Type->GetBaseType()->IsStructType()){
-        storeHandle(node);
-    }else{
-        mmStoreArray(node,"");
-    }
+    //todo array is struct
+    mmStoreCst(node->Next, node->Name.data(), node->isStore);
 }
 
 
@@ -830,7 +871,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         cursor = castNode ->CstNode;
     }
     if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(cursor)){
-        storeHandle(constNode);
+            storeHandle(constNode);
         return;
     }else if (auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(cursor)){
         type = varExprNode->Type;
@@ -1031,18 +1072,23 @@ void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
 void CodeGenerate::Visitor(ArefNode *node) {
     auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
     node -> Offset ->Accept(this);
+    //use rax as index so if index is eax need extend
     if (node ->Offset ->Type ->Size == Type::IntType ->Size){
         printf("\t  cdqe\n");
     }
+    auto tarSeg = GetRax(node->Type).data();
+    if (node->Type->IsFloatPointNum())
+        tarSeg = Xmm[Depth++];
     if (varExprNode && !varExprNode->VarObj->VarAttr->isStatic){
-            printf("\t  mov %d(%%rbp,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset,
-                   node-> Type->GetBaseType()->Size,GetRax(node->Type).data());
+            printf("\t  %s %d(%%rbp,%%rax,%d),%s\n",
+                   GetMoveCode2(node-> Type).data(),varExprNode ->VarObj ->Offset,
+                   node-> Type->GetBaseType()->Size,tarSeg);
     }else{
         SetCurTargetReg("%rdi");
         GenerateAddress(node ->Lhs.get());
         ClearCurTargetReg();
-        printf("\t  mov (%%rdi,%%rax,%d),%s\n",
-               node-> Type->GetBaseType()->Size,GetRax(node->Type).data());
+        printf("\t  %s (%%rdi,%%rax,%d),%s\n",
+               GetMoveCode2(node-> Type).data(),node-> Type->GetBaseType()->Size,tarSeg);
     }
 }
 

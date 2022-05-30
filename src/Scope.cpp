@@ -96,8 +96,8 @@ void Scope::PushStaticVar(std::string name,std::shared_ptr<ConstantNode> cstNode
     auto stZVar = GetStaticZeroVarTable().find(name);
     if (stZVar != GetStaticZeroVarTable().end()){
         GetStaticZeroVarTable().erase(name);
+        ConstTable.erase(cstNode->Name);
         cstNode ->Name = name;
-        cstNode ->isStatic = true;
         GetStaticInitVarTable()[name] = cstNode;
     }
 }

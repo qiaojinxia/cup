@@ -124,3 +124,5 @@
      - Support static array case `static int a[3] = {1,2};`
 - 2022-05-29
      - Support static struct case `static StructNam xxx = {}`
+- 2022-05-30
+     optimization test array constant Store

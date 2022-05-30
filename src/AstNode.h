@@ -159,10 +159,9 @@ class BinaryNode :public  AstNode{
         bool isRoot{};
         bool isStore{};
         int Offset{};
-        bool isStatic{false};
         unsigned long Value{};
-        bool isChar{false};
         bool isChange{};
+        bool isChar{false};
         std::string GetValue();
         bool HasSetValue();
         void Accept(AstVisitor *visitor) override;
