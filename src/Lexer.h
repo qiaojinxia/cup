@@ -147,6 +147,5 @@ namespace BDD{
     };
 
 
-    const std::string GetMoveCode(int size);
 }
 #endif //BODDY_LEXER_H

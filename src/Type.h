@@ -32,8 +32,9 @@ namespace BDD{
         static std::shared_ptr<BuildInType> ULongType;
         static std::shared_ptr<BuildInType> FloatType;
         static std::shared_ptr<BuildInType> DoubleType;
-        static std::shared_ptr<PointerType> StringType;
+        static std::shared_ptr<PointerType> PtrCharType;
         static std::shared_ptr<BuildInType> BoolType;
+        static std::shared_ptr<ArrayType> StringType;
         enum class TypeClass{
             BInType,
             PtrType,

@@ -536,3 +536,11 @@ const std::string BDD::GetMul(std::shared_ptr<Type> type) {
 //    }
     return "imul";
 }
+
+const std::string BDD::RepeatN(std::string a,int  n) {
+    std::string rt ;
+    for (int i = 0; i < n; i++) {
+        rt += a;
+    }
+    return rt;
+}

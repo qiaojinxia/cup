@@ -126,7 +126,7 @@ std::unordered_map<std::string,std::shared_ptr<ConstantNode>>& Scope::GetStaticI
 
 void Scope::PutToConstantTable(std::shared_ptr<ConstantNode> constantNode) {
     if (constantNode ->Name == ""){
-        auto labelName = string_format("caomao_%d",CountConstant ++);
+        auto labelName = string_format("const.caomao.%d",CountConstant ++);
         auto name = labelName.data();
         constantNode -> Name = name;
     }

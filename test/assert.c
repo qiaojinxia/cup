@@ -13,9 +13,6 @@ void assert(int  excepted,int actual){
     }
 }
 
-
-
-
 void assert_u(long  excepted, long actual){
     if(excepted == actual){
         printf("code test pass (%d) => %lu\n",codeId ++ ,actual);

@@ -166,7 +166,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
             constNode -> Value = Lex.CurrentToken -> Value;
-            constNode -> Type = Type::StringType;
+            constNode -> Type = Type::PtrCharType;
             Lex.GetNextToken();
             node =  constNode;
             break;

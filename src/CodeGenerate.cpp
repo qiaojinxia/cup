@@ -80,38 +80,6 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
     }
 }
 
-void printConstant(int size, bool isFloat,bool isString,std::shared_ptr<Token> token)
-{
-    if (isString){
-        auto s_string =  std::string(token->Content).c_str();
-        printf("\t.string  %s\n", s_string);
-    }else if (isFloat){
-        if (size == 4 ) {
-                auto s_num = std::string(token->Content).c_str();
-                float d_num = atof(s_num);
-                int *lp_num = (int *) &d_num;
-                printf("\t.long  %s\n", convert_to_hex(*lp_num).data());
-        } else if (size == 8) {
-                auto s_num = std::string(token->Content).c_str();
-                double d_num = atof(s_num);
-                long *lp_num = (long *) &d_num;
-                printf("\t.quad  %s\n", convert_to_hex(*lp_num).data());
-        }
-    }else{
-        if (size == 1 ) {
-            printf("\t.byte  %d\n", (unsigned int)token->Value);
-        }else if (size == 2 ) {
-            printf("\t.short  %d\n", (unsigned int)token->Value);
-        }else if (size == 4 ) {
-            printf("\t.long  %d\n", (unsigned int)token->Value);
-        } else if (size == 8) {
-            printf("\t.quad  %ld\n", token ->Value);
-        }
-    }
-    return;
-}
-
-
 void printStruct(std::shared_ptr<ConstantNode>& node);
 void printCharPointer(std::shared_ptr<ConstantNode>& node);
 void printString(std::shared_ptr<ConstantNode>& node);
@@ -124,7 +92,7 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     if (cstNode->Type->IsStructType()){
         printStruct(cstNode);
     } else if (cstNode->Type->IsPtrCharType()){
-        printCharPointer(cstNode);
+        printString(cstNode);
     }else if (cstNode->Type->IsStringType()){
         printString(cstNode);
     }else if (cstNode->Type->IsBInType()){
@@ -137,7 +105,31 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
 
 }
 
+
+void preProcessCstNode(std::shared_ptr<ConstantNode> node, bool isInStructOrArray){
+    if(!node){
+        return;
+    }
+    if (node ->Type->IsPtrCharType() && isInStructOrArray){
+        auto strNode = std::make_shared<ConstantNode>(node->Tk);
+        strNode ->Type = Type::StringType;
+        Scope::GetInstance()->PutToConstantTable(strNode);
+        node ->Name = strNode->Name;
+    }
+    if(node ->Type->IsStructType() || node ->Type->IsArrayType())
+        isInStructOrArray = true;
+    preProcessCstNode(node->Sub,isInStructOrArray);
+    preProcessCstNode(node->Next,isInStructOrArray);
+}
+
 void CodeGenerate::Visitor(ProgramNode *node) {
+    for (auto &dataSeg: scope->Scope::GetInstance()->GetStaticTable()) {
+        if (dataSeg.first == ".data"){
+            for (auto &v: dataSeg.second) {
+                preProcessCstNode(v.second, false);
+            }
+        }
+    }
     for (auto &dataSeg: scope->Scope::GetInstance()->GetStaticTable()) {
         if (!dataSeg.second.empty()){
             printf("%s\n",dataSeg.first.data());
@@ -152,6 +144,9 @@ void CodeGenerate::Visitor(ProgramNode *node) {
                 }
             }
         }
+    }
+    for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
+        preProcessCstNode(v.second, false);
     }
     for (auto &v: scope->Scope::GetInstance()->GetConstantTable()) {
         if (v .second ->Next == nullptr && v .second ->Type->IsIntegerNum()){
@@ -171,6 +166,7 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     for (auto &s: node->Funcs)
         s->Accept(this);
 }
+
 
 
 
@@ -618,12 +614,14 @@ void printBuildIn(std::shared_ptr<ConstantNode>& node){
     printf("\t %s   %s\n", GetStoreCode(node ->Type ->Size).data(),node->GetValue().data());
 }
 
+
 void printCharPointer(std::shared_ptr<ConstantNode>& node){
     auto cstNode = Scope::GetInstance() ->GetConstantTable().find(node->Name);
-    if (cstNode == Scope::GetInstance() ->GetConstantTable().end()){
-        Scope::GetInstance() ->PutToConstantTable(node);
+    if (cstNode!= Scope::GetInstance() ->GetConstantTable().end()){
+        printf("\t .quad   %s\n",std::string(node->Name).data());
+    }else{
+        assert(0);
     }
-    printf("\t .quad   %s\n",std::string(node->Name).data());
 }
 
 std::string MergeCharArray(std::shared_ptr<ConstantNode>& node){
@@ -636,16 +634,21 @@ std::string MergeCharArray(std::shared_ptr<ConstantNode>& node){
     return content;
 }
 
+
 void printString(std::shared_ptr<ConstantNode>& node){
+    int size = node->Type->Size;
+    std::string_view tk ;
     if (!node->Tk){
         node -> Tk = std::make_shared<Token>();
         auto ct = MergeCharArray(node);
         node -> Tk ->Content = ct;
-        printf("\t .asciz   \"%s\"\n",std::string(node->Tk->Content).data());
-        return;
+        tk = ct;
     }else{
-        printf("\t .asciz   %s\n",std::string(node->Tk->Content).data());
+        tk = node->Tk->Content.substr(1,node->Tk->Content.size()-2);
     }
+    std::string  storeCode;
+    storeCode = size - tk.size() == 0 ? ".ascii": ".asciz";
+    printf("\t %s  \"%s%s\"\n",storeCode.data(),std::string(tk).data(), RepeatN("\\000",size - tk.size() -1).data());
     node -> isStore = true;
 }
 
@@ -693,7 +696,7 @@ void printStruct(std::shared_ptr<ConstantNode>& node){
         }else if (cursor->Type->IsArrayType()){
             printArray(cursor->Sub);
         }
-        offset += cursor->Type->Size;
+        offset += cursor->Type->Size + gap;
         cursor = cursor ->Next;
     }
     if (node->Type->IsStructType())
@@ -736,17 +739,13 @@ void storeArray (std::shared_ptr<ConstantNode>&);
 void storeHandle (std::shared_ptr<ConstantNode>&);
 
 void storeString(std::shared_ptr<ConstantNode>& node) {
-
     auto iter = Str2IntArrayIterator(node->Tk->Content);
     auto offset = node->Offset;
-//    if (node->isStore)
-//        printf("\t  lea %s(%%rip),%%rdx\n",node->Name.data());
     while (iter.has_next()) {
         auto outPutIntNode = iter.next();
         if (node->isStore) {
             printf("\t  %s  %s(%%rip),%s\n",GetMoveCode2(outPutIntNode.Size).data(),node->Name.data(), GetRax(outPutIntNode.Size).data());
             printf("\t  %s  %s,(%%rdi)\n",GetMoveCode2(outPutIntNode.Size).data(), GetRax(outPutIntNode.Size).data());
-
         }else{
             printf("\t  %s $%lu,%s\n", GetMoveCode2(outPutIntNode.Size).data(), outPutIntNode.Value,
                    GetRax(outPutIntNode.Size).data());
@@ -860,9 +859,6 @@ void storeArray(std::shared_ptr<ConstantNode>& node){
     //todo array is struct
     mmStoreCst(node->Next, node->Name.data(), node->isStore);
 }
-
-
-
 
 void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
     std::shared_ptr<AstNode> cursor = node;
