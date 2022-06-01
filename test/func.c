@@ -11,9 +11,11 @@ int printLove(){
         }
         put('\n');
     }
+    return 0;
 }
 int main() {
     PrintLove lv = 0;
     lv = printLove;
-    lv();
+    int m = lv();
+    return m;
 }

@@ -117,7 +117,6 @@ void TypeVisitor::Visitor(ConstantNode *node) {
 void TypeVisitor::Visitor(ExprVarNode *node) {
     if (node ->VarObj){
         node -> Type = node ->VarObj ->Type;
-        node -> isParam = node ->VarObj -> VarAttr ->isParam;
     }
 }
 
@@ -306,6 +305,7 @@ void TypeVisitor::Visitor(AssignNode *node) {
         castNode ->Type = node ->Lhs ->Type;
         castNode ->CstNode = node ->Rhs;
     }
+
     node ->Type = node ->Lhs->Type;
     CurAssignType = nullptr;
 }

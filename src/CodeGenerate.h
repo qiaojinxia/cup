@@ -39,6 +39,7 @@ namespace BDD{
         std::list<std::string_view> JmpStack;
         std::list<std::string_view> ContinueStack;
         int Return2OffsetStack;
+        bool IsDeclaration{false};
         std::list<std::string> curTargetReg ={};
     public:
         CodeGenerate(){

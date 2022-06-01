@@ -56,13 +56,53 @@ void BDD::Lexer::GetNextToken() {
     }else if (CurChar == '\''){
         kind = TokenKind::CharNum;
         GetNextChar();
-        if(CurChar == '\\'){
+        if (CurChar == '\\'){
             GetNextChar();
-            value = CurChar - 100;
-        }else{
-            value = CurChar;
+            switch (CurChar) {
+                case 'a':
+                    CurChar = 7;
+                    break;
+                case 'b':
+                    CurChar = 8;
+                    break;
+                case 'f':
+                    CurChar = 12;
+                    break;
+                case 'n':
+                    CurChar = 10;
+                    break;
+                case 'r':
+                    CurChar = 13;
+                    break;
+                case 't':
+                    CurChar = 9;
+                    break;
+                case 'v':
+                    CurChar = 11;
+                    break;
+                case '\\':
+                    CurChar = 92;
+                    break;
+                case '\?':
+                    CurChar = 63;
+                    break;
+                case '\'':
+                    CurChar = 39;
+                    break;
+                case '\"':
+                    CurChar = 34;
+                    break;
+                case '\0':
+                    CurChar = 0;
+                    break;
+                default:
+                    break;
+            }
         }
+        value = CurChar;
         GetNextChar();
+        if (CurChar != '\'')
+            printf("excepted ' ");
         GetNextChar();
     }else if(CurChar == '*'){
         kind = TokenKind::Asterisk;

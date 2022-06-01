@@ -115,7 +115,11 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             Lex.GetNextToken();
             if (Lex.CurrentToken -> Kind == TokenKind::LParent){
                 Lex.EndPeekToken();
-                return ParseFuncCallNode();
+                auto funcCallNode =  ParseFuncCallNode();
+                //to record funcall node if return is structType to distribution  memory in stack
+                if (funcCallNode ->Type->GetBaseType()->IsStructType())
+                    CurFuncCall.push_back(std::dynamic_pointer_cast<FuncCallNode>(funcCallNode));
+                return  funcCallNode;
             }
             Lex.EndPeekToken();
 
@@ -285,13 +289,13 @@ std::shared_ptr<Var> Parser::NewLocalVar(std::string_view varName,std::shared_pt
     obj ->Name = varName;
     obj -> Offset = 0;
     obj -> VarAttr  = attr;
-    LocalVars -> push_front(obj);
+    LocalVars -> push_back(obj);
     Scope::GetInstance() -> PushVar(obj);
     return obj;
 }
 
 std::shared_ptr<AstNode> Parser::ParseFunc() {
-    auto node =std::make_shared<FunctionNode>(Lex.CurrentToken);
+    auto node = std::make_shared<FunctionNode>(Lex.CurrentToken);
     LocalVars = &node -> Locals;
     std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
     auto type = ParseDeclarationSpec(varAttr);
@@ -320,27 +324,42 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     while (Lex.CurrentToken -> Kind != TokenKind::RBrace){
         auto stmtNode = ParseStatement();
         node -> Stmts.push_back(stmtNode);
-        //search all return node set offset is return struct offset
+
+        // when getUser return a struct write to caller stack we need allocate memory give Callee to write return data
+        //if funCall return struct but is DeclarationAssignmentStmtNode need't  allocate additional space direct store to  variable
+        // such as struct user a = getUser(); in others, we need allocate memory space to temporary storage to copy to other variables
+        // such as struct user a; a = getUser();
+        auto exptStmt = std::dynamic_pointer_cast<ExprStmtNode>(stmtNode);
+        bool isDecr;
+        if (exptStmt){
+            auto declarationStmtNode = std::dynamic_pointer_cast<DeclarationAssignmentStmtNode>(exptStmt->Lhs);
+            declarationStmtNode ? isDecr = true : isDecr = false;
+        }
+        while (!CurFuncCall.empty()){
+            if (!isDecr){
+                node->InnerFunCallStmts.push_back(CurFuncCall.front());
+                isDecr = true;
+                continue;
+            }
+            CurFuncCall.pop_front();
+        }
         auto returnNode  = std::dynamic_pointer_cast<ReturnStmtNode>(stmtNode);
         if(!returnNode)
             continue;
+
+        // if return a struct that store address (ReturnOffset(%%rbp)) the data need to copy to
+        if (node->Type->GetBaseType()->IsStructType()){
+            returnNode ->ReturnOffset = -1 * Type::VoidType->Size;
+        }
+
+        node -> ReturnStmts.push_back(returnNode);
         returnNode -> Type = type->GetBaseType();
         returnNode ->Accept(&typeVisitor);
         if (!Type::IsTypeEqual(type->GetBaseType(),returnNode->Type)){
             auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,returnNode->Type->Align);
             DiagLoc(Lex.SourceCode, returnNode->Tk->Location,tips.c_str());
         }
-        if (node->Type->GetBaseType()->IsStructType()){
-            if(auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(returnNode ->Lhs)){
-                varExprNode->VarObj->Offset = Type::Pointer->Size * -1;
-                varExprNode ->VarObj-> VarAttr -> isInit = true;
-                varExprNode ->VarObj ->isPointer = true;
-            }else{
-                assert(0);
-            }
-        }
     }
-
 
     auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(type));
     funcSign ->FuncName = node ->FuncName;
@@ -349,6 +368,11 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
         auto tips =  string_format("redefinition of '%s' !",std::string(funcSign ->FuncName).c_str());
         DiagLoc(Lex.SourceCode, FuncNameToken->Location,tips.c_str());
     }
+
+
+    if (node->ReturnStmts.empty() && node->Type != Type::VoidType)
+        DiagLoc(Lex.SourceCode,FuncNameToken->Location, string_format("func %s excepted return ",std::string(funcSign ->FuncName).data()).data());
+
     Scope::GetInstance() ->PushFuncSign(funcSign);
 
     Scope::GetInstance() -> PopScope();
@@ -604,7 +628,6 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
         std::list<std::shared_ptr<Token>> tokens;
         while (Lex.CurrentToken -> Kind != TokenKind::RParent){
                 std::shared_ptr<Attr> paramAttr = std::make_shared<Attr>();
-                paramAttr ->isParam = true;
                 auto type = ParseDeclarator(ParseDeclarationSpec(paramAttr),&tokens);
                 if(paramAttr ->isStatic)
                     DiagLoc(Lex.SourceCode,Lex.GetLocation(),"invalid storage class specifier in function declarator");
@@ -912,6 +935,15 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
             auto assignNode = std::make_shared<AssignNode>(Lex.CurrentToken);
             assignNode -> Lhs = left;
             assignNode -> Rhs = ParseBinaryExpr(curPriority);
+            //if assign rhs is func convert to &func
+            if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(assignNode ->Rhs)){
+                if(Scope::GetInstance()->GetFuncSign(exprNode->Name)){
+                    auto  unaryNode = std::make_shared<UnaryNode>(exprNode->Tk);
+                    unaryNode ->Lhs = assignNode->Rhs;
+                    unaryNode->Uop = UnaryOperator::Addr;
+                    assignNode ->Rhs = unaryNode;
+                }
+            }
             binaryNode = assignNode;
             break;
         }

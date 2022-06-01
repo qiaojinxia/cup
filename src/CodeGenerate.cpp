@@ -133,7 +133,7 @@ void CodeGenerate::Visitor(ProgramNode *node) {
     for (auto &dataSeg: scope->Scope::GetInstance()->GetStaticTable()) {
         if (!dataSeg.second.empty()){
             printf("%s\n",dataSeg.first.data());
-            printf(".align 4\n");
+            printf(".align 8\n");
             for (auto &v: dataSeg.second) {
                 printf("%s:\n",v.second->Name.data());
                 auto cstNode = v.second;
@@ -155,7 +155,7 @@ void CodeGenerate::Visitor(ProgramNode *node) {
         if(v.second ->Type->Size >= 40 || v .second ->Type ->IsFloatPointNum()
         || v .second ->Type ->IsPtrCharType() || v .second ->Type ->IsStringType()){
             printf(".data \n");
-            printf(".align 4\n");
+            printf(".align 8\n");
             printf("%s:\n", v.second -> Name.data());
             //if arry or struct | array | string size <= 48 direct mov instance value to init not store in data
             PrintConstNode(v.second);
@@ -272,28 +272,20 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     int offset = 0;
     int s_offset = 16;
 
-    for (auto &stmt : node ->Stmts) {
-        if (!stmt->Type)
-            continue;
-        if (auto stmtNode = std::dynamic_pointer_cast<ExprStmtNode>(stmt)){
-            auto funcCallNode = std::dynamic_pointer_cast<FuncCallNode>(stmtNode->Lhs);
-            if (!funcCallNode)
-                continue;
-            if(funcCallNode->Type->GetBaseType()->IsStructType()){
-                offset +=  funcCallNode->Type->GetBaseType()->Size;
-                offset = AlignTo(offset, funcCallNode->Type->GetBaseType() -> Align);
-                funcCallNode -> ReturnStructOffset = -offset;
-            }
-        }
-    }
-
-    for (auto &v: node -> Locals) {
-        if (v->Type ->IsStructType() && v -> VarAttr -> isParam){
+    //Initialize params stack memory
+    for (auto &v: node -> Params) {
+        if (v->Type ->IsStructType()){
             v -> Offset += s_offset;
             v -> VarAttr ->isInit = true;
             s_offset += v->Type->GetBaseType()->Size;
+        }else{
+            offset += v ->Type ->Size;
+            offset = AlignTo(offset,v -> Type -> Align);
+            v -> Offset = -offset;
+            v -> VarAttr ->isInit = true;
         }
     }
+    //Initialize local variables stack memory
     for (auto &v: node -> Locals) {
         if (v-> VarAttr->isInit){
             continue;
@@ -302,8 +294,17 @@ void CodeGenerate::Visitor(FunctionNode *node) {
         offset = AlignTo(offset,v -> Type -> Align);
         v -> Offset = -offset;
     }
-    offset = AlignTo(offset,16);
 
+
+    //if funcCall return struct need allocate memory in  caller
+    // then  Pass pointer to callee write
+    for (auto &funcCallNode : node ->InnerFunCallStmts) {
+        offset +=  funcCallNode->Type->GetBaseType()->Size;
+        offset = AlignTo(offset, funcCallNode->Type->GetBaseType() -> Align);
+                funcCallNode -> ReturnStructOffset = -offset;
+    }
+
+    offset = AlignTo(offset,16);
     printf("\t  push %%rbp\n");
     printf("\t  mov %%rsp, %%rbp\n");
     if (offset > 0 ){
@@ -443,6 +444,13 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 }
 
 void CodeGenerate::Visitor(ReturnStmtNode *node) {
+    if (node->Type->IsStructType() && node->ReturnOffset){
+        SetCurTargetReg("%rsi");
+        GenerateAddress(node->Lhs.get());
+        ClearCurTargetReg();
+        printf("\t  mov %d(%%rbp),%%rdi\n",node->ReturnOffset);
+        Store(node->Lhs);
+    }
     node -> Lhs -> Accept(this);
     printf("\t  jmp .LReturn_%s\n",CurrentFuncName.data());
 }
@@ -545,6 +553,8 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
             printf("\t  lea %d(%%rdi,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size, GetCurTargetReg().data());
         }
 
+    }else if (auto funcNode = dynamic_cast<FuncCallNode *>(node)){
+        printf("\t  lea %d(%%rbp),%s\n",funcNode->ReturnStructOffset,GetCurTargetReg().data());
     }else{
         printf("not a value\n");
         assert(0);
@@ -556,9 +566,11 @@ void CodeGenerate::Visitor(SizeOfExprNode *node) {
 }
 
 void CodeGenerate::Visitor(DeclarationAssignmentStmtNode *node) {
+    IsDeclaration = true;
     for (auto &n:node ->AssignNodes) {
         n ->Accept(this);
     }
+    IsDeclaration = false;
 }
 
 void CodeGenerate::Load(AstNode *node) {
@@ -781,7 +793,7 @@ void storeStruct(std::shared_ptr<ConstantNode>& node) {
 void storeHandle(std::shared_ptr<ConstantNode>& node) {
     if (node->isStore && node ->Type->Size >= 40){
         printf("\t  mov $%d,%%rcx\n",node -> Type ->Size);
-        printf("\t  lea %s(%%rip),%%rax\n",node -> Name.data());
+        printf("\t  lea %s(%%rip),%%rsi\n",node -> Name.data());
         printf("\t  call _mempcy\n");
         return;
     }
@@ -889,7 +901,15 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node) {
         printf("\t  %s %s,(%%rdi)\n", GetMoveCode(type).data(),Xmm[Depth-1]);
         return;
     }else if(type->IsFunctionType()){
-        printf("\t  mov %%rax,(%%rdi)\n");
+        if (type ->GetBaseType()->IsStructType()){
+            SetCurTargetReg("%rsi");
+            GenerateAddress(node.get());
+            ClearCurTargetReg();
+            printf("\t  mov $%d,%%rcx\n",type ->GetBaseType()->Size);
+            printf("\t  call _mempcy\n");
+        }else{
+            printf("\t  %s %s,(%%rdi)\n", GetMoveCode2(node->Type).data(), GetRax(node->Type).data());
+        }
         return;
     }else if (!type ->IsBInType()){
         printf("\t  mov $%d,%%rcx\n",type ->Size);
@@ -1094,7 +1114,7 @@ void CodeGenerate::Visitor(EmptyNode *node) {}
 void CodeGenerate::Visitor(AssignNode *node) {
     USeXmm();
     auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node->Lhs);
-    if (varExprNode)
+    if (varExprNode && IsDeclaration)
         SetStructReturn2Offset(varExprNode->VarObj->Offset);
     auto constantNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
     if (!constantNode){

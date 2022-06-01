@@ -126,3 +126,5 @@
      - Support static struct case `static StructNam xxx = {}`
 - 2022-05-30
      optimization test array constant Store
+- 2022-06-01
+     optimization  func return struct lexer support Escape character

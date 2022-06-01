@@ -2,7 +2,7 @@
 #CopyMemory(内存拷贝) 64bit copy memory from src to dest
 #void *memcpy(void *dest, const void *src, size_t n);
 #dest(%rdi) : to write memory begin address
-#src(%rax) : write from  memeory begin address
+#src(%rsi) : write from  memeory begin address
 #size(%rcx): memory bytes size
 # load 10bytes can be divded into load 8bytes 1 times use movsq Code and load 2 bytes two times use movsb Code  (10 / 8 = 1...2)
 .text
@@ -10,15 +10,12 @@
 _mempcy:
     push %rbp
     mov %rsp, %rbp
-    push %rsi
-    mov %rax,%rsi
     push %rcx
     shr $3,%rcx
     rep movsq
     pop %rcx
     and $7,%rcx
     rep movsb
-    pop %rsi
     mov %rbp,%rsp
     pop %rbp
     ret

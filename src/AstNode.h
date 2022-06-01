@@ -18,6 +18,7 @@ namespace BDD{
     int AlignTo(int size,int align);
     class AstVisitor;
     class Field;
+    class FuncCallNode;
     class AstNode {
     public:
         virtual ~AstNode() = default;
@@ -32,7 +33,6 @@ namespace BDD{
     public:
         bool isInit{false};
         bool isPublic{false};
-        bool isParam{false};
         bool isStatic{false};
     };
 
@@ -59,6 +59,8 @@ namespace BDD{
         std::list<std::shared_ptr<Var>> Params;
         std::list<std::shared_ptr<Var>> Locals;
         std::list<std::shared_ptr<AstNode>> Stmts;
+        std::list<std::shared_ptr<AstNode>> ReturnStmts;
+        std::list<std::shared_ptr<FuncCallNode>> InnerFunCallStmts; // Function calls inside functions
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -241,6 +243,7 @@ class BinaryNode :public  AstNode{
     public:
         explicit ReturnStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs;
+        int ReturnOffset{0}; //if returnType is  struct that record the offset of rbp store the return Struct write address
         void Accept(AstVisitor *visitor) override;
     };
 
