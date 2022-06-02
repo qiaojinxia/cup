@@ -101,12 +101,25 @@ bool Type::IsFuncPointerType() const {
 }
 
 
+bool Type::IsRecordType() const {
+    if (TypeC == TypeClass::AliasType){
+        auto alias_type = dynamic_cast<const AliasType *>(this);
+        return alias_type ->Base->IsRecordType();
+    }
+    if (TypeC == TypeClass::RecordType){
+        return true;
+    }
+    return false;
+}
+
+
+
 bool Type::IsStructType() const {
     if (TypeC == TypeClass::AliasType){
         auto alias_type = dynamic_cast<const AliasType *>(this);
         return alias_type ->Base->IsStructType();
     }
-    if (TypeC == TypeClass::RecordType){
+    if (IsRecordType()){
         auto ry = dynamic_cast<const RecordType *>(this);
         return ry -> Kind  == RecordType::TagKind::Struct;
     }
@@ -118,7 +131,7 @@ bool Type::IsUnionType() const {
         auto alias_type = dynamic_cast<const AliasType *>(this);
         return alias_type ->Base->IsUnionType();
     }
-    if (TypeC == TypeClass::RecordType){
+    if (IsRecordType()){
         auto ry = dynamic_cast<const RecordType *>(this);
         return ry -> Kind  == RecordType::TagKind::Union;
     }

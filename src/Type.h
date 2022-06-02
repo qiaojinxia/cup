@@ -78,6 +78,7 @@ namespace BDD{
         bool IsLongType() const;
         bool IsStringType() const;
         bool IsUnsignedNum() const;
+        bool IsRecordType() const;
         static bool IsTypeEqual(std::shared_ptr<Type> tp1, std::shared_ptr<Type> tp2);
         bool IsConstant() const;
         bool IsUIntType() const;

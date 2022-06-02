@@ -294,6 +294,12 @@ std::shared_ptr<Var> Parser::NewLocalVar(std::string_view varName,std::shared_pt
     return obj;
 }
 
+std::shared_ptr<ExprVarNode> Parser::GetVarExprNode(std::shared_ptr<AstNode> node) {
+    auto exprVarNode = std::dynamic_pointer_cast<ExprVarNode>(node);
+    return exprVarNode;
+}
+
+
 std::shared_ptr<AstNode> Parser::ParseFunc() {
     auto node = std::make_shared<FunctionNode>(Lex.CurrentToken);
     LocalVars = &node -> Locals;
@@ -336,29 +342,42 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
             declarationStmtNode ? isDecr = true : isDecr = false;
         }
         while (!CurFuncCall.empty()){
-            if (!isDecr){
-                node->InnerFunCallStmts.push_back(CurFuncCall.front());
-                isDecr = true;
+            if (isDecr){
+                CurFuncCall.pop_front();
+                isDecr = false;
                 continue;
             }
+            node->InnerFunCallStmts.push_back(CurFuncCall.front());
             CurFuncCall.pop_front();
         }
-        auto returnNode  = std::dynamic_pointer_cast<ReturnStmtNode>(stmtNode);
-        if(!returnNode)
+        //check return type
+        if(CurFuncReturnNode.empty())
             continue;
-
-        // if return a struct that store address (ReturnOffset(%%rbp)) the data need to copy to
-        if (node->Type->GetBaseType()->IsStructType()){
-            returnNode ->ReturnOffset = -1 * Type::VoidType->Size;
+        for (auto &rtStmt:CurFuncReturnNode) {
+            // if return a struct that store address (ReturnOffset(%%rbp)) the data need to copy to
+            if (node->Type->GetBaseType()->IsStructType()){
+                rtStmt ->ReturnOffset = -1 * Type::VoidType->Size;
+            }
+            node -> ReturnStmts.push_back(rtStmt);
+            if (rtStmt -> ReturnVarExpr)
+                node ->ReturnVarMap[rtStmt -> ReturnVarExpr ->Name] = rtStmt -> ReturnVarExpr;
+            rtStmt -> Type = type->GetBaseType();
+            rtStmt ->Accept(&typeVisitor);
+            if (!Type::IsTypeEqual(type->GetBaseType(),rtStmt->Type)){
+                auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,rtStmt->Type->Align);
+                DiagLoc(Lex.SourceCode, rtStmt->Tk->Location,tips.c_str());
+            }
         }
+        CurFuncReturnNode.clear();
+    }
 
-        node -> ReturnStmts.push_back(returnNode);
-        returnNode -> Type = type->GetBaseType();
-        returnNode ->Accept(&typeVisitor);
-        if (!Type::IsTypeEqual(type->GetBaseType(),returnNode->Type)){
-            auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,returnNode->Type->Align);
-            DiagLoc(Lex.SourceCode, returnNode->Tk->Location,tips.c_str());
-        }
+    //if func return type is struct and just  one var return in func  direct set var address pointer to caller stack
+    //such as User getUser(){ User a ={xxx,xxx,xxx}; return a;} void main(){ getUser();} In this case, set a pointer to caller stack to write struct
+    if (node->ReturnVarMap.size() == 1){
+        auto varExprNode = node->ReturnStmts.front()->ReturnVarExpr;
+        varExprNode->VarObj->Offset = Type::Pointer->Size * -1;
+        varExprNode ->VarObj-> VarAttr -> isInit = true;
+        varExprNode ->VarObj-> VarAttr -> isReference = true;
     }
 
     auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(type));
@@ -405,6 +424,8 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
     Lex.ExceptToken(TokenKind::Identifier);
     Lex.ExceptToken(TokenKind::LParent);
     int i = 0;
+    if (funcType->IsFunctionType() && funcType->GetBaseType()->IsStructType())
+        i = 1; //if return struct first args is return struct write to address
     while(Lex.CurrentToken->Kind != TokenKind::RParent){
         if (Lex.CurrentToken ->Kind == TokenKind::Comma){
             Lex.GetNextToken();
@@ -617,7 +638,7 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
         //if return type is struct  set the first param is  struct offset
         if(funcType->GetBaseType()->IsStructType()){
             auto param = std::make_shared<Param>();
-            param -> Type = Type::Pointer;
+            param -> Type = std::make_shared<RecordType>();
             param ->TToken = std::make_shared<Token>();
             param ->TToken ->Content = "r_st";
             std::shared_ptr<Attr> paramAttr = std::make_shared<Attr>();
@@ -1221,18 +1242,14 @@ std::shared_ptr<AstNode> Parser::ParseIfElseStmt() {
     Lex.ExceptToken(TokenKind::LParent);
     node ->Cond = ParseExpr();
     Lex.ExceptToken(TokenKind::RParent);
-    Lex.ExceptToken(TokenKind::LBrace);
     if (Lex.CurrentToken ->Kind != TokenKind::RBrace){
-        node -> Then = ParseStatement();
+        node -> Then = ParseBlock();
     }
-    Lex.ExceptToken(TokenKind::RBrace);
     if (Lex.CurrentToken -> Kind == TokenKind::Else){
         Lex.GetNextToken();
-        Lex.ExceptToken(TokenKind::LBrace);
         if (Lex.CurrentToken -> Kind != TokenKind::RBrace){
-            node -> Else = ParseStatement();
+            node -> Else = ParseBlock();
         }
-        Lex.ExceptToken(TokenKind::RBrace);
     }
     if (node ->Then == nullptr && node ->Else == nullptr){
         return std::make_shared<EmptyNode>(Lex.CurrentToken);
@@ -1280,6 +1297,9 @@ std::shared_ptr<AstNode> Parser::ParseReturnStmt() {
     auto returnNode = std::make_shared<ReturnStmtNode>(Lex.CurrentToken);
     Lex.ExceptToken(TokenKind::Return);
     returnNode -> Lhs = ParseExpr();
+    auto varExprNode = GetVarExprNode(returnNode->Lhs);
+    returnNode ->ReturnVarExpr = varExprNode;
+    CurFuncReturnNode.push_back(returnNode);
     Lex.ExceptToken(TokenKind::Semicolon);
     return returnNode;
 }
@@ -1327,6 +1347,10 @@ std::shared_ptr<AstNode> Parser::ParseBlock() {
     Lex.GetNextToken();
     while (Lex.CurrentToken->Kind != TokenKind::RBrace){
         blockNode -> Stmts.push_back(ParseStatement());
+    }
+    if(auto returnNode = std::dynamic_pointer_cast<ReturnStmtNode>(blockNode->Stmts.back())){
+        blockNode -> Stmts.pop_back();
+        blockNode->ReturnNode = returnNode;
     }
     Lex.ExceptToken(TokenKind::RBrace);
     Scope::GetInstance() -> PopScope();

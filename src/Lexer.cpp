@@ -394,6 +394,10 @@ const char *Lexer::GetTokenName(TokenKind kind) {
             return "continue";
         case TokenKind::Enum:
             return "enum";
+        case TokenKind::RBrace:
+            return "{";
+        case TokenKind::LBrace:
+            return "}";
         default:
             assert(0);
     }

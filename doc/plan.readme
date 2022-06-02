@@ -128,3 +128,5 @@
      optimization test array constant Store
 - 2022-06-01
      optimization  func return struct lexer support Escape character
+- 2022-06-02
+     support the parameter of a function call can be a method that returns struct

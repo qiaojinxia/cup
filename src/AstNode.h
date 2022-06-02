@@ -19,6 +19,9 @@ namespace BDD{
     class AstVisitor;
     class Field;
     class FuncCallNode;
+    class ExprVarNode;
+    class ReturnStmtNode;
+    class BlockStmtNode;
     class AstNode {
     public:
         virtual ~AstNode() = default;
@@ -33,6 +36,7 @@ namespace BDD{
     public:
         bool isInit{false};
         bool isPublic{false};
+        bool isReference{false};
         bool isStatic{false};
     };
 
@@ -42,7 +46,6 @@ namespace BDD{
         std::string_view Name;
         std::string GlobalName;
         std::shared_ptr<Attr> VarAttr;
-        bool isPointer{false};
         int Offset;
     };
     class ProgramNode:public  AstNode{
@@ -59,7 +62,8 @@ namespace BDD{
         std::list<std::shared_ptr<Var>> Params;
         std::list<std::shared_ptr<Var>> Locals;
         std::list<std::shared_ptr<AstNode>> Stmts;
-        std::list<std::shared_ptr<AstNode>> ReturnStmts;
+        std::list<std::shared_ptr<ReturnStmtNode>> ReturnStmts;
+        std::map<std::string_view ,std::shared_ptr<ExprVarNode>> ReturnVarMap;
         std::list<std::shared_ptr<FuncCallNode>> InnerFunCallStmts; // Function calls inside functions
         void Accept(AstVisitor *visitor) override;
     };
@@ -193,10 +197,8 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<AstNode> Cond{nullptr};
         std::shared_ptr<AstNode> Then{nullptr};
         std::shared_ptr<AstNode> Else{nullptr};
-
         void Accept(AstVisitor *visitor) override;
     };
-
 
     class WhileStmtNode :public AstNode{
     public:
@@ -205,10 +207,12 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<AstNode> Then{nullptr};
         void Accept(AstVisitor *visitor) override;
     };
+
     class BlockStmtNode :public AstNode{
     public:
         explicit BlockStmtNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         std::list<std::shared_ptr<AstNode>> Stmts;
+        std::shared_ptr<ReturnStmtNode> ReturnNode;
         void Accept(AstVisitor *visitor) override;
     };
 
@@ -245,6 +249,7 @@ class BinaryNode :public  AstNode{
         std::shared_ptr<AstNode> Lhs;
         int ReturnOffset{0}; //if returnType is  struct that record the offset of rbp store the return Struct write address
         void Accept(AstVisitor *visitor) override;
+        std::shared_ptr<ExprVarNode> ReturnVarExpr;
     };
 
     class TernaryNode: public AstNode{

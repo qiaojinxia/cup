@@ -19,6 +19,7 @@ namespace BDD{
         std::shared_ptr<AstNode> VarStack;
         std::shared_ptr<Token> SymbolStack;
         std::list<std::shared_ptr<FuncCallNode>> CurFuncCall{};
+        std::list<std::shared_ptr<ReturnStmtNode>> CurFuncReturnNode{};
     public:
         Parser(Lexer &Lex):Lex(Lex){}
         std::shared_ptr<ProgramNode> Parse();
@@ -99,6 +100,8 @@ namespace BDD{
         bool IsTypeName();
 
         std::shared_ptr<ConstantNode> parseInitListExpr(std::shared_ptr<ConstantNode> root);
+
+        std::shared_ptr<ExprVarNode> GetVarExprNode(std::shared_ptr<AstNode> node);
     };
 
 }
