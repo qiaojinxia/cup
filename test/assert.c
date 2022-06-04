@@ -55,7 +55,7 @@ void print_s(char * a){
 }
 
 void print_i(int a){
-    printf("%c\n",a);
+    printf("%d\n",a);
 }
 
 

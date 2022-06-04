@@ -17,5 +17,5 @@ int main() {
     PrintLove lv = 0;
     lv = printLove;
     int m = lv();
-    return m;
+    return 0;
 }

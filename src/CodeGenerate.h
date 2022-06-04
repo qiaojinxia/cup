@@ -10,12 +10,22 @@
 #include "Scope.h"
 
 
-
 namespace BDD{
     void PushStoreOffsetTag(std::string_view label);
     void PopStoreOffsetTag();
     std::string_view CurrentOffsetTag();
     static std::list<std::string_view> OffsetTag;
+    class OffsetInfo{
+    private:
+        std::string reg;
+        bool isLoad;
+        int offset;
+    public:
+        OffsetInfo(std::string targetReg,int initOffset,bool ld):reg(targetReg),offset(initOffset),isLoad(ld){};
+        std::string GetOffset();
+        bool IsLoadAddTOReg();
+        std::string GetOffset(int offset1);
+    };
     class CodeGenerate:public AstVisitor{
     private:
         int StackLevel{0};
@@ -40,6 +50,7 @@ namespace BDD{
         std::list<std::string_view> ContinueStack;
         int Return2OffsetStack;
         bool IsDeclaration{false};
+        bool IsAssign{false};
         std::list<std::string> curTargetReg ={};
     public:
         CodeGenerate(){
@@ -70,7 +81,7 @@ namespace BDD{
         void Visitor(MemberAccessNode *node) override;
         void Visitor(BreakStmtNode *node) override;
         void Visitor(ContinueStmtNode *node) override;
-        void Visitor(ArefNode *node) override;
+        void Visitor(ArrayMemberNode *node) override;
         void Visitor(EmptyNode *node) override;
         void Visitor(AssignNode *node) override;
         void Visitor(AddNode *node) override;
@@ -105,12 +116,12 @@ namespace BDD{
 
         void Load(std::shared_ptr<AstNode> node);
         void Load(AstNode *node);
-        void Store(std::shared_ptr<AstNode> node);
+        void Store(std::shared_ptr<AstNode> node, OffsetInfo * offset);
 
         void GenerateAddress(AstNode *node);
 
 
-
+        bool IsInStack(std::shared_ptr<AstNode> node);
 
         void Load(std::shared_ptr<Type> type);
 
@@ -131,6 +142,12 @@ namespace BDD{
 
         const int GetStructReturn2Offset();
         const void SetStructReturn2Offset(int offset);
+
+        int GetVarStackOffset(std::shared_ptr<AstNode> node);
+
+        void SetAssignState();
+        void ClearAssignState();
+        bool ISAssignState();
 
     };
 }

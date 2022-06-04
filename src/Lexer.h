@@ -82,6 +82,7 @@ namespace BDD{
         And,
         Or,
         Static,
+        Void,
     };
     class SourceLocation{
     public:

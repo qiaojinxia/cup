@@ -389,7 +389,7 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
     }
 
 
-    if (node->ReturnStmts.empty() && node->Type != Type::VoidType)
+    if (node->ReturnStmts.empty() && node->Type->GetBaseType() != Type::VoidType)
         DiagLoc(Lex.SourceCode,FuncNameToken->Location, string_format("func %s excepted return ",std::string(funcSign ->FuncName).data()).data());
 
     Scope::GetInstance() ->PushFuncSign(funcSign);
@@ -466,6 +466,10 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(std::shared_ptr<Attr> attr) {
                 DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"invalid keyword !");
             attr->isStatic = true;
             Lex.GetNextToken();
+            continue;
+        }else if (Lex.CurrentToken -> Kind == TokenKind::Void){
+            Lex.GetNextToken();
+            baseType = (int) BuildInType::Kind::Void;
             continue;
         }else if (Lex.CurrentToken -> Kind == TokenKind::Int){
             Lex.GetNextToken();
@@ -729,6 +733,12 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
         case TokenKind::Tilde:
                 node -> Uop = UnaryOperator::BitNot;
             break;
+        case TokenKind::PPlus:
+            node -> Uop = UnaryOperator::Incr;
+            break;
+        case TokenKind::MMinus:
+            node -> Uop = UnaryOperator::Decr;
+            break;
         case TokenKind::ExclamationMark:
             node -> Uop = UnaryOperator::Not;
             break;
@@ -751,7 +761,7 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
         if (Lex.CurrentToken -> Kind == TokenKind::LParent){
             return ParseFuncCallNode();
         }else if (Lex.CurrentToken -> Kind == TokenKind::LBracket){
-            auto starNode = std::make_shared<ArefNode>(Lex.CurrentToken);
+            auto starNode = std::make_shared<ArrayMemberNode>(Lex.CurrentToken);
             Lex.GetNextToken();
             starNode -> Offset = ParseExpr();
             starNode -> Lhs = left;
@@ -1069,7 +1079,8 @@ bool Parser::IsTypeName() {
         || Lex.CurrentToken -> Kind == TokenKind::Struct || Lex.CurrentToken -> Kind == TokenKind::Union
         || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED
         || Lex.CurrentToken -> Kind == TokenKind::_Bool  || Lex.CurrentToken -> Kind == TokenKind::Enum
-        || Lex.CurrentToken -> Kind == TokenKind::Const  || Lex.CurrentToken -> Kind == TokenKind::Static){
+        || Lex.CurrentToken -> Kind == TokenKind::Const  || Lex.CurrentToken -> Kind == TokenKind::Static
+        || Lex.CurrentToken -> Kind == TokenKind::Void){
         return true;
     }
     if(Scope::GetInstance() -> FindTag(Lex.CurrentToken->Content)){

@@ -525,6 +525,19 @@ const std::string BDD::GetAdd(std::shared_ptr<Type> type) {
     return "add";
 }
 
+const std::string BDD::GetSuffix(int size) {
+    if (size == 8){
+        return "q";
+    }else if (size == 4){
+        return "l";
+    }else if (size == 2){
+        return "w";
+    }else if (size == 1){
+        return "b";
+    }
+    assert(0);
+}
+
 const std::string BDD::GetMul(std::shared_ptr<Type> type) {
     if (type -> IsFloatType()){
         return "mulss";

@@ -75,6 +75,9 @@ namespace BDD{
         Addr,
         BitNot,
         Not,
+        Incr,
+        Decr,
+
     };
 
     class UnaryNode : public AstNode{
@@ -305,9 +308,9 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
-    class ArefNode : public AstNode{
+    class ArrayMemberNode : public AstNode{
     public:
-        explicit ArefNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
+        explicit ArrayMemberNode(std::shared_ptr<Token> tk): AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs; //expr node
         std::shared_ptr<AstNode> Offset ;
         void Accept(AstVisitor *visitor) override;
@@ -445,7 +448,7 @@ class BinaryNode :public  AstNode{
         virtual void Visitor(MemberAccessNode *node){};
         virtual void Visitor(BreakStmtNode *node){};
         virtual void Visitor(ContinueStmtNode *node){};
-        virtual void Visitor(ArefNode *node){};
+        virtual void Visitor(ArrayMemberNode *node){};
         virtual void Visitor(EmptyNode *node){};
 
 

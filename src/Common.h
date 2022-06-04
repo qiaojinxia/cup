@@ -79,7 +79,7 @@ namespace BDD{
     std::string GetReverseJmp(BinaryOperator anOperator);
 
     const std::string GetMoveCode(int size);
-
+    const std::string GetSuffix(int size);
     const std::string RepeatN(std::string a, int n);
     std::string GetStoreCode(int size);
 }

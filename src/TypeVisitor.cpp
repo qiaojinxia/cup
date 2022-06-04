@@ -223,6 +223,10 @@ void TypeVisitor::Visitor(UnaryNode *node) {
         case UnaryOperator::Addr:
             node -> Type = std::make_shared<PointerType>(node -> Lhs ->Type);
             break;
+        case UnaryOperator::Decr:
+        case UnaryOperator::Incr:
+            node -> Type = node -> Lhs ->Type;
+            break;
         case UnaryOperator::BitNot:
             node -> Type = node -> Lhs -> Type;
             break;
@@ -263,13 +267,13 @@ void TypeVisitor::Visitor(CastNode *node) {
     node -> CstNode ->Accept(this);
 }
 
-void TypeVisitor::Visitor(ArefNode *node) {
+void TypeVisitor::Visitor(ArrayMemberNode *node) {
     node -> Lhs ->Accept(this);
     node -> Type  = node ->Lhs ->Type->GetBaseType();
     if (CurAssignType && node -> Type != CurAssignType && CurAssignType ->IsBInType()){
         auto castNode = std::make_shared<CastNode>(nullptr);
         castNode ->Type = CurAssignType;
-        castNode ->CstNode = std::make_shared<ArefNode>(*node);
+        castNode ->CstNode = std::make_shared<ArrayMemberNode>(*node);
     }
     CurAssignType = nullptr;
     node -> Offset ->Accept(this);

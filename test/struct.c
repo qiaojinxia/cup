@@ -12,7 +12,7 @@ typedef struct user{
 }User;
 
 int main(){
-    static int a[3] = {1,2};
+    int a[3] = {1,2};
     a[1] = 3;
     assert(3,a[1]);
     User a = {"xiaoli",{99,67,33},20,"book22!",92.0};

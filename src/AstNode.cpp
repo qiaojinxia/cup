@@ -154,7 +154,7 @@ void CastNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
 
-void ArefNode::Accept(AstVisitor *visitor) {
+void ArrayMemberNode::Accept(AstVisitor *visitor) {
     visitor->Visitor(this);
 }
 

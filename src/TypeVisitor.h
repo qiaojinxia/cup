@@ -32,7 +32,7 @@ namespace BDD{
         void Visitor(TernaryNode *node) override;
         void Visitor(BreakStmtNode *node) override;
         void Visitor(ContinueStmtNode *node) override;
-        void Visitor(ArefNode *node) override;
+        void Visitor(ArrayMemberNode *node) override;
         void Visitor(EmptyNode *node) override;
 
         void Visitor(AssignNode *node) override;
