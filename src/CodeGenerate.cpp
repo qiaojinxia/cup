@@ -512,11 +512,13 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             break;
         case UnaryOperator::Incr:
             printf("\t  add%s $1,%d(%%rbp)\n", GetSuffix(node->Lhs->Type->Size).data(),GetVarStackOffset(node->Lhs));
-            node->Lhs->Accept(this);//optimization point : if value no use after needn't load
+            if (node ->Level > 3)
+                node->Lhs->Accept(this);
             break;
         case UnaryOperator::Decr:
             printf("\t  sub%s $1,%d(%%rbp)\n", GetSuffix(node->Lhs->Type->Size).data(),GetVarStackOffset(node->Lhs));
-            node->Lhs->Accept(this); //optimization point : if value no use after needn't load
+            if (node ->Level > 3)
+                node->Lhs->Accept(this);
             break;
         case UnaryOperator::Not:
             node -> Lhs ->Accept(this);

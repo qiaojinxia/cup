@@ -29,6 +29,7 @@ namespace BDD{
         virtual void Accept(AstVisitor *visitor) {};
         std::shared_ptr<Type> Type;
         std::shared_ptr<Token> Tk;
+        int Level{0};
         bool isTypeInit{false};
     };
 
@@ -420,6 +421,7 @@ class BinaryNode :public  AstNode{
 
     class AstVisitor{
     public:
+        int CurLevel= {0};
         virtual ~AstVisitor()= default;;
         virtual void Visitor(ProgramNode *node){};
         virtual void Visitor(BinaryNode *node){};

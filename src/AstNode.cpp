@@ -13,7 +13,9 @@ int BDD::AlignTo(int size, int align) {
 }
 
 void ConstantNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 
@@ -70,40 +72,58 @@ bool ConstantNode::HasSetValue() {
 }
 
 void BinaryNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ProgramNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ExprStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ExprVarNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void IfElseStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 
 void BlockStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void WhileStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void DoWhileStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ForStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void FunctionNode::Accept(AstVisitor *visitor) {
@@ -111,110 +131,164 @@ void FunctionNode::Accept(AstVisitor *visitor) {
 }
 
 void FuncCallNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ReturnStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void DeclarationStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void StmtExprNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void UnaryNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void SizeOfExprNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void DeclarationAssignmentStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void MemberAccessNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void BreakStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ContinueStmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void CastNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ArrayMemberNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void EmptyNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void AssignNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void AddNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void MinusNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void MulNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void DivNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void ModNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void IncrNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void DecrNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void CmpNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void BitOpNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void TernaryNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void SwitchCaseSmtNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void AndNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 
 void OrNode::Accept(AstVisitor *visitor) {
+    visitor->CurLevel +=1;
     visitor->Visitor(this);
+    visitor->CurLevel -=1;
 }
 

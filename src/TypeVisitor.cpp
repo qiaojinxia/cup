@@ -206,6 +206,7 @@ void TypeVisitor::Visitor(StmtExprNode *node) {
 
 void TypeVisitor::Visitor(UnaryNode *node) {
     node ->Lhs ->Accept(this);
+    node -> Level = CurLevel;
     switch (node -> Uop) {
         case UnaryOperator::Plus:
         case UnaryOperator::Minus:
