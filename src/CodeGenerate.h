@@ -104,7 +104,7 @@ namespace BDD{
         void PopContinue();
         std::string_view currentContinueTarget();
 
-        void USeXmm();
+        void UseXmm();
         void ReleaseXmm();
         std::string GetCurTargetReg();
         void SetCurTargetReg(std::string reg);

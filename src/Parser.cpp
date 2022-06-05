@@ -208,7 +208,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             break;
         }
        default:
-            DiagLoc(Lex.SourceCode,Lex.GetLocation(),"snot support type",Lex.CurrentToken->Kind);
+           if (ThrowWaring)
+               DiagLoc(Lex.SourceCode,Lex.GetLocation(),"snot support type",Lex.CurrentToken->Kind);
     }
     return node;
 }
@@ -717,35 +718,42 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
 //ParseUnaryExpr ::= (+ | - | * | & | ～ ｜ ! )? ParseCastExpr | ParsePostFixExpr
 std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     auto node = std::make_shared<UnaryNode>(Lex.CurrentToken);
-    switch (Lex.CurrentToken -> Kind){
-        case TokenKind::Plus:
-            node -> Uop = UnaryOperator::Plus;
-            break;
-        case TokenKind::Minus:
-                node -> Uop = UnaryOperator::Minus;
+    int UnaryOp = 0 ;
+    while (true){
+        switch (Lex.CurrentToken -> Kind){
+            case TokenKind::Plus:
                 break;
-        case TokenKind::Asterisk:
-                node -> Uop = UnaryOperator::Deref;
+            case TokenKind::Minus:
+                UnaryOp ^= (int)UnaryOperator::Minus;
                 break;
-        case TokenKind::Amp:
-                node -> Uop = UnaryOperator::Addr;
+            case TokenKind::Asterisk:
+                UnaryOp += (int)UnaryOperator::Deref;
                 break;
-        case TokenKind::Tilde:
-                node -> Uop = UnaryOperator::BitNot;
-            break;
-        case TokenKind::PPlus:
-            node -> Uop = UnaryOperator::Incr;
-            break;
-        case TokenKind::MMinus:
-            node -> Uop = UnaryOperator::Decr;
-            break;
-        case TokenKind::ExclamationMark:
-            node -> Uop = UnaryOperator::Not;
-            break;
-        default:
-            return ParsePostFixExpr();
+            case TokenKind::Amp:
+                UnaryOp += (int)UnaryOperator::Addr;
+                break;
+            case TokenKind::Tilde:
+                UnaryOp += (int)UnaryOperator::BitNot;
+                break;
+            case TokenKind::PPlus:
+                UnaryOp += (int)UnaryOperator::Incr;
+                break;
+            case TokenKind::MMinus:
+                UnaryOp += (int)UnaryOperator::Decr;
+                break;
+            case TokenKind::ExclamationMark:
+                UnaryOp += (int)UnaryOperator::Not;
+                break;
+            default:
+                goto End;
+        }
+        Lex.GetNextToken();
     }
-    Lex.GetNextToken();
+    End:
+    if (!UnaryOp){
+        return ParsePostFixExpr();
+    }
+    node ->Uop = (UnaryOperator)UnaryOp;
     node -> Lhs = ParseCastExpr();
     return node;
 }
@@ -891,15 +899,39 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::Plus:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Add);
                 break;
+            case TokenKind::PlusAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Add);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Minus:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Minus);
                 break;
+            case TokenKind::MinusAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Minus);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Asterisk:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mul);
                 break;
+            case TokenKind::AsteriskAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mul);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Slash:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::IDiv);
                 break;
+            case TokenKind::SlashAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::IDiv);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Assign:
                 leftNode->Accept(&typeVisitor);
                 if (leftNode ->Type->IsConstant()){
@@ -956,6 +988,23 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
     return leftNode;
 }
 
+
+std::shared_ptr<AssignNode> Parser::Assign(std::shared_ptr<AstNode> left,std::shared_ptr<AstNode> right){
+    auto assignNode = std::make_shared<AssignNode>(Lex.CurrentToken);
+    assignNode -> Lhs = left;
+    assignNode -> Rhs = right;
+    //if assign rhs is func convert to &func
+    if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(assignNode ->Rhs)){
+        if(Scope::GetInstance()->GetFuncSign(exprNode->Name)){
+            auto  unaryNode = std::make_shared<UnaryNode>(exprNode->Tk);
+            unaryNode ->Lhs = assignNode->Rhs;
+            unaryNode->Uop = UnaryOperator::Addr;
+            assignNode ->Rhs = unaryNode;
+        }
+    }
+    return assignNode;
+}
+
 std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNode> left, BinaryOperator op) {
     auto curPriority =  TopPrecedence[Lex.CurrentToken->Kind];
     Lex.GetNextToken();
@@ -963,19 +1012,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
     switch (op){
         case BinaryOperator::Assign:
         {
-            auto assignNode = std::make_shared<AssignNode>(Lex.CurrentToken);
-            assignNode -> Lhs = left;
-            assignNode -> Rhs = ParseBinaryExpr(curPriority);
-            //if assign rhs is func convert to &func
-            if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(assignNode ->Rhs)){
-                if(Scope::GetInstance()->GetFuncSign(exprNode->Name)){
-                    auto  unaryNode = std::make_shared<UnaryNode>(exprNode->Tk);
-                    unaryNode ->Lhs = assignNode->Rhs;
-                    unaryNode->Uop = UnaryOperator::Addr;
-                    assignNode ->Rhs = unaryNode;
-                }
-            }
-            binaryNode = assignNode;
+            binaryNode = Assign(left,ParseBinaryExpr(curPriority));
             break;
         }
         case BinaryOperator::Add:
@@ -1108,7 +1145,7 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
     return ParseUnaryExpr();
 }
 
-
+//{xx,xx,xx}
 std::shared_ptr<ConstantNode> Parser::parseInitListExpr(std::shared_ptr<ConstantNode> root) {
     if(!root){
         root = std::make_shared<ConstantNode>(nullptr);
@@ -1128,6 +1165,9 @@ std::shared_ptr<ConstantNode> Parser::parseInitListExpr(std::shared_ptr<Constant
             nextNode ->Sub = nextNode->Next;
             Lex.ExceptToken(TokenKind::RBrace);
         }else {
+            if (!IsConstant()){
+                return nullptr;
+            }
             cursor->Next  = std::dynamic_pointer_cast<ConstantNode>(ParsePrimaryExpr());
             if (!cursor ->Next)
                 return nullptr;
@@ -1137,15 +1177,24 @@ std::shared_ptr<ConstantNode> Parser::parseInitListExpr(std::shared_ptr<Constant
     return root;
 }
 
+bool Parser::IsConstant() {
+    if (Lex.CurrentToken->Kind == TokenKind::CharNum ||Lex.CurrentToken->Kind == TokenKind::Num
+    ||Lex.CurrentToken->Kind == TokenKind::String || Lex.CurrentToken->Kind == TokenKind::FloatNum){
+        return true;
+    }
+    return false;
+}
 // ParseInitListExpr ::= "{" (ParsePrimaryExpr,",")* | (ParsePrimaryExpr:ParsePrimaryExpr ",")* "}"
 std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
     Lex.BeginPeekToken();
     if (Lex.CurrentToken -> Kind == TokenKind::LBrace){
         Lex.ExceptToken(TokenKind::LBrace);
         auto initCstNode = parseInitListExpr(nullptr);
-        Lex.ExceptToken(TokenKind::RBrace);
-        if(initCstNode ->HasSetValue()){
-            return initCstNode;
+        if (initCstNode){
+            Lex.ExceptToken(TokenKind::RBrace);
+            if(initCstNode ->HasSetValue()){
+                return initCstNode;
+            }
         }
         Lex.EndPeekToken();
     }

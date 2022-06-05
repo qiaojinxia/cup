@@ -32,6 +32,10 @@ void BDD::Lexer::GetNextToken() {
                 GetNextChar();
                 kind = TokenKind::PPlus;
                 break;
+            case '=':
+                GetNextChar();
+                kind = TokenKind::PlusAssign;
+                break;
             default:
                 kind = TokenKind::Plus;
         }
@@ -41,6 +45,10 @@ void BDD::Lexer::GetNextToken() {
             case '-':
                 GetNextChar();
                 kind = TokenKind::MMinus;
+                break;
+            case '=':
+                GetNextChar();
+                kind = TokenKind::MinusAssign;
                 break;
             case '>':
                 GetNextChar();
@@ -105,11 +113,27 @@ void BDD::Lexer::GetNextToken() {
             printf("excepted ' ");
         GetNextChar();
     }else if(CurChar == '*'){
-        kind = TokenKind::Asterisk;
         GetNextChar();
+        switch (CurChar) {
+            case '=':
+                kind = TokenKind::AsteriskAssign;
+                GetNextChar();
+                break;
+            default:
+                kind = TokenKind::Asterisk;
+                break;
+        }
     }else if(CurChar == '/'){
-        kind = TokenKind::Slash;
         GetNextChar();
+        switch (CurChar) {
+            case '=':
+                kind = TokenKind::SlashAssign;
+                GetNextChar();
+                break;
+            default:
+                kind = TokenKind::Slash;
+                break;
+        }
     }else if(CurChar == '%'){
         kind = TokenKind::Mod;
         GetNextChar();

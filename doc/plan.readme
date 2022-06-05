@@ -132,3 +132,5 @@
      support the parameter of a function call can be a method that returns struct
 - 2022-06-03
      support ++ -- case `int a = 3; ++a; --a;`
+- 2022-06-05
+     support += -= *= /=

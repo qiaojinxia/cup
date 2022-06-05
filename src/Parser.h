@@ -18,6 +18,7 @@ namespace BDD{
         BinaryOperator LastOperation{BinaryOperator::Eof};
         std::shared_ptr<AstNode> VarStack;
         std::shared_ptr<Token> SymbolStack;
+        bool ThrowWaring{true};
         std::list<std::shared_ptr<FuncCallNode>> CurFuncCall{};
         std::list<std::shared_ptr<ReturnStmtNode>> CurFuncReturnNode{};
     public:
@@ -102,6 +103,10 @@ namespace BDD{
         std::shared_ptr<ConstantNode> parseInitListExpr(std::shared_ptr<ConstantNode> root);
 
         std::shared_ptr<ExprVarNode> GetVarExprNode(std::shared_ptr<AstNode> node);
+
+        std::shared_ptr<AssignNode> Assign(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
+
+        bool IsConstant();
     };
 
 }

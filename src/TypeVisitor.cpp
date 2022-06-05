@@ -487,7 +487,7 @@ void TypeVisitor::Visitor(CmpNode *node) {
     binary.Accept(this);
     node ->Lhs = binary.Lhs;
     node ->Rhs = binary.Rhs;
-    node ->Type = Type::BoolType;
+    node ->Type = Type::IntType;
 }
 
 void TypeVisitor::Visitor(BitOpNode *node) {

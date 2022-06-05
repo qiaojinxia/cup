@@ -83,6 +83,16 @@ namespace BDD{
         Or,
         Static,
         Void,
+        PlusAssign,
+        MinusAssign,
+        AsteriskAssign,
+        SlashAssign,
+
+        AndAssign,
+        OrAssign,
+        SalAssign,
+        SarAssign,
+
     };
     class SourceLocation{
     public:

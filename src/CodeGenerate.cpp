@@ -12,7 +12,7 @@
 
 using namespace BDD;
 
-void CodeGenerate::USeXmm() {
+void CodeGenerate::UseXmm() {
     XmmPrevDepth = Depth;
 }
 
@@ -180,13 +180,13 @@ void CodeGenerate::Visitor(IfElseStmtNode *node) {
     }
     node -> Cond ->Accept(this);
     IsCmpJmpModule = false;
-    USeXmm();
+    UseXmm();
     node -> Then->Accept(this);
     ReleaseXmm();
     printf("\t jmp .L.end_%d\n",n);
     if (node -> Else){
         printf(".L.else_%d:\n",n);
-        USeXmm();
+        UseXmm();
         node ->Else->Accept(this);
         ReleaseXmm();
         printf("\t jmp .L.end_%d\n",n);
@@ -1178,7 +1178,7 @@ void CodeGenerate::Visitor(EmptyNode *node) {}
 
 
 void CodeGenerate::Visitor(AssignNode *node) {
-    USeXmm();
+    UseXmm();
     SetAssignState();
     auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node->Lhs);
     if (varExprNode && IsDeclaration)

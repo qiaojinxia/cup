@@ -70,14 +70,14 @@ namespace BDD{
     };
 
     enum class UnaryOperator {
-        Plus,
-        Minus,
-        Deref,
-        Addr,
-        BitNot,
-        Not,
-        Incr,
-        Decr,
+        Plus = 1,
+        Minus = -1,
+        Deref = 2,
+        Addr = 3,
+        BitNot = 4,
+        Not = 5,
+        Incr = 6,
+        Decr = 7,
 
     };
 
@@ -99,6 +99,10 @@ namespace BDD{
         FloatPointDiv,
         Div,
         Minus,
+        AddAssign,
+        MinusAssign,
+        MulAssign,
+        DivAssign,
         PointerSub,
         PointerDiff,
         Mul,
@@ -149,6 +153,13 @@ namespace BDD{
             {TokenKind::Eof,      13},
             {TokenKind::And,      11},
             {TokenKind::Or,      12},
+
+            {TokenKind::PlusAssign,      14},
+            {TokenKind::MinusAssign,      14},
+            {TokenKind::AsteriskAssign,      14},
+            {TokenKind::SlashAssign,      14},
+
+
     };
 
 class BinaryNode :public  AstNode{
