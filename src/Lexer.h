@@ -83,11 +83,12 @@ namespace BDD{
         Or,
         Static,
         Void,
+        CaretAssign,
         PlusAssign,
         MinusAssign,
         AsteriskAssign,
         SlashAssign,
-
+        ModAssign,
         AndAssign,
         OrAssign,
         SalAssign,

@@ -22,6 +22,7 @@ namespace BDD{
     class ExprVarNode;
     class ReturnStmtNode;
     class BlockStmtNode;
+    class ConstantNode;
     class AstNode {
     public:
         virtual ~AstNode() = default;
@@ -86,6 +87,7 @@ namespace BDD{
         explicit UnaryNode(std::shared_ptr<Token> tk):AstNode(tk){};
         UnaryOperator Uop;
         std::shared_ptr<AstNode> Lhs;
+        std::shared_ptr<ConstantNode> IncrOrDecrConstantTag;
         void Accept(AstVisitor *visitor) override;
     };
     enum class BinaryOperator{
@@ -160,6 +162,14 @@ namespace BDD{
             {TokenKind::SlashAssign,      14},
 
 
+            {TokenKind::ModAssign,      14}, //%=
+            {TokenKind::AndAssign,      14},  // &=
+            {TokenKind::OrAssign,      14}, // |=
+            {TokenKind::SarAssign,      14},// >>=
+            {TokenKind::SalAssign,      14}, // <<=
+
+
+
     };
 
 class BinaryNode :public  AstNode{
@@ -180,6 +190,7 @@ class BinaryNode :public  AstNode{
         bool isRoot{};
         bool isStore{};
         int Offset{};
+        std::string_view refStatic;
         unsigned long Value{};
         bool isChange{};
         bool isChar{false};

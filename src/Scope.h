@@ -70,6 +70,8 @@ namespace BDD{
 
         std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<ConstantNode>>>
         GetStaticTable();
+
+        std::shared_ptr<ConstantNode> GetStaticVar(std::string name);
     };
 
 }

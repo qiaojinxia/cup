@@ -69,14 +69,29 @@ void CodeGenerate::CmpZero(std::shared_ptr<AstNode> node){
     printf("\t  je  %s\n",GetJmpLabel().data());
 }
 
+//if var is build in type get value if is pointer get pointer value if is func record array get begin address
 void CodeGenerate::Visitor(ExprVarNode *node) {
-    if (node ->Type -> IsFunctionType() || node -> Type -> IsStructType() ){
-        GenerateAddress(node);
-    }else if (node -> Type -> IsPointerType()){
-        printf("\t  mov %d(%%rbp),%%rax\n",node -> VarObj -> Offset);
+    auto nd = std::make_shared<ExprVarNode>(*node);
+    if (IsInStack(nd)){
+        if (nd->Type->IsFloatPointNum()){
+            printf("\t  %s %d(%%rbp),%s\n", GetMoveCode2(nd->Type).data(), GetVarStackOffset(nd),Xmm[Depth++]);
+        }else if(node ->Type -> IsFunctionType() || node -> Type -> IsRecordType() ||  node -> Type -> IsArrayType()){
+            printf("\t  lea %d(%%rbp),%%rax\n", GetVarStackOffset(nd));
+        }else{
+            printf("\t  mov%s %d(%%rbp),%s\n", GetSuffix(nd->Type->Size).data(), GetVarStackOffset(nd), GetRax(nd->Type).data());
+        }
     }else{
-        GenerateAddress(node);
-        Load(node);
+        if (node->VarObj->VarAttr->isStatic){
+            if (node->Type->IsFloatPointNum()){
+                printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(node->Type).data(),node->VarObj->GlobalName.data(),Xmm[Depth++]);
+            }else if(node ->Type -> IsFunctionType() || node -> Type -> IsRecordType() ||  node -> Type -> IsArrayType()){
+                printf("\t  mov %s(%%rip),%%rax\n", node->VarObj->GlobalName.data());
+            }else{
+                printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(node->Type).data(),node->VarObj->GlobalName.data(), GetRax(node->Type).data());
+            }
+            return;
+        }
+        printf("\t  mov %s(%%rbp),%%rax\n",node->VarObj->GlobalName.data());
     }
 }
 
@@ -85,6 +100,7 @@ void printCharPointer(std::shared_ptr<ConstantNode>& node);
 void printString(std::shared_ptr<ConstantNode>& node);
 void printBuildIn(std::shared_ptr<ConstantNode>& node);
 void printArray(std::shared_ptr<ConstantNode>& node);
+void printPointer(std::shared_ptr<ConstantNode>& node);
 void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     if (!cstNode){
         return;
@@ -99,6 +115,8 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
         printBuildIn(cstNode);
     }else if (cstNode->Type->IsArrayType()){
         printArray(cstNode ->Next);
+    }else if (cstNode->Type->IsPointerType()){
+        printPointer(cstNode ->Next);
     }else{
         assert(0);
     }
@@ -500,8 +518,8 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             }
             break;
         case UnaryOperator::Deref:
-            GenerateAddress(node -> Lhs.get());
-            Load(node -> Lhs);
+            node->Lhs->Accept(this);
+            Load(node->Lhs);
             break;
         case UnaryOperator::Addr:
             GenerateAddress(node -> Lhs.get());
@@ -511,14 +529,58 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             printf("\t  xor $-1,%s\n", GetRax(node -> Lhs->Type).data());
             break;
         case UnaryOperator::Incr:
-            printf("\t  add%s $1,%d(%%rbp)\n", GetSuffix(node->Lhs->Type->Size).data(),GetVarStackOffset(node->Lhs));
-            if (node ->Level > 3)
+            if (node->Lhs->Type->IsFloatPointNum()){
                 node->Lhs->Accept(this);
+                printf("\t  %s %s(%%rip), %s\n", GetMoveCode2(node->Lhs->Type).data(),node->IncrOrDecrConstantTag->Name.data(),Xmm[Depth]);
+                printf("\t  %s %s, %s\n", GetAdd(node->Lhs->Type).data(),Xmm[Depth],Xmm[Depth-1]);
+                Depth -= 1;
+                if (IsInStack(node->Lhs)){
+                    printf("\t  %s %s, %d(%%rbp)\n", GetMoveCode2(node->Lhs->Type).data(),Xmm[Depth], GetVarStackOffset(node->Lhs));
+                }else{
+                    GenerateAddress(node->Lhs.get());
+                    printf("\t  %s %s, (%%rax)\n", GetMoveCode2(node->Lhs->Type).data(),Xmm[Depth]);
+                }
+            }else{
+                int size = 1;
+                if (node->Lhs->Type->IsPointerType()){
+                    size = node->Lhs->Type->GetBaseType()->Size;
+                }
+                if (IsInStack(node->Lhs)){
+                    printf("\t  add%s $%d,%d(%%rbp)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
+                }else{
+                    GenerateAddress(node->Lhs.get());
+                    printf("\t  add%s $%d,%d(%%rax)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
+                }
+                if (node ->Level > 3)
+                    node->Lhs->Accept(this);
+            }
             break;
         case UnaryOperator::Decr:
-            printf("\t  sub%s $1,%d(%%rbp)\n", GetSuffix(node->Lhs->Type->Size).data(),GetVarStackOffset(node->Lhs));
-            if (node ->Level > 3)
+            if (node->Lhs->Type->IsFloatPointNum()){
                 node->Lhs->Accept(this);
+                printf("\t  %s %s(%%rip), %s\n", GetMoveCode2(node->Lhs->Type).data(),node->IncrOrDecrConstantTag->Name.data(),Xmm[Depth]);
+                printf("\t  %s %s, %s\n", GetMinus(node->Lhs->Type).data(),Xmm[Depth],Xmm[Depth-1]);
+                Depth -= 1;
+                if (IsInStack(node->Lhs)){
+                    printf("\t  %s %s, %d(%%rbp)\n", GetMoveCode2(node->Lhs->Type).data(),Xmm[Depth], GetVarStackOffset(node->Lhs));
+                }else{
+                    GenerateAddress(node->Lhs.get());
+                    printf("\t  %s %s, (%%rax)\n", GetMoveCode2(node->Lhs->Type).data(),Xmm[Depth]);
+                }
+            }else{
+                int size = 1;
+                if (node->Lhs->Type->IsPointerType()){
+                    size = node->Lhs->Type->GetBaseType()->Size;
+                }
+                if (IsInStack(node->Lhs)){
+                    printf("\t  sub%s $%d,%d(%%rbp)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
+                }else{
+                    GenerateAddress(node->Lhs.get());
+                    printf("\t  sub%s $%d,%d(%%rax)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
+                }
+                if (node ->Level > 3)
+                    node->Lhs->Accept(this);
+            }
             break;
         case UnaryOperator::Not:
             node -> Lhs ->Accept(this);
@@ -647,16 +709,15 @@ void CodeGenerate::Load(std::shared_ptr<AstNode> node) {
     while (auto castNode = std::dynamic_pointer_cast<CastNode>(cursor)){ //int a = 0; in b = 3;(long) a + long(b)  load from memory a is int
         cursor = castNode ->CstNode;
     }
-    Load(cursor ->Type);
+    Load(cursor ->Type->GetBaseType());
 }
 
 void CodeGenerate::Load(std::shared_ptr<Type> type){
     if (type->GetBaseType()->IsFloatPointNum()){
         printf("\t  %s (%%rax),%s\n", GetMoveCode(type ->GetBaseType()).data(),Xmm[Depth++]);
-        return;
     }else if(type -> IsPointerType()){
-        printf("\t  mov (%%rax),%%rax\n");
-        return;
+        printf("\t  mov (%%rax),%s\n", GetRax(type->GetBaseType()).data());
+    }else if(type -> IsArrayType() || type -> IsRecordType()){
     }else{
         printf("\t  mov (%%rax),%s\n", GetRax(type ->GetBaseType()->Size).data());
     }
@@ -684,7 +745,12 @@ void HandleStore(std::shared_ptr<ConstantNode>& node, OffsetInfo * offset,
 }
 
 void printBuildIn(std::shared_ptr<ConstantNode>& node){
-    printf("\t %s   %s\n", GetStoreCode(node ->Type ->Size).data(),node->GetValue().data());
+    if (node ->refStatic.size()){
+        printf("\t %s   %s\n", GetStoreCode(node ->Type ->Size).data(),std::string(node ->refStatic).data());
+        return;
+    }else{
+        printf("\t %s   %s\n", GetStoreCode(node ->Type ->Size).data(),node->GetValue().data());
+    }
 }
 
 
@@ -707,6 +773,9 @@ std::string MergeCharArray(std::shared_ptr<ConstantNode>& node){
     return content;
 }
 
+void printPointer(std::shared_ptr<ConstantNode>& node){
+    printf("\t .quad   %s\n",std::string(node->refStatic).data());
+}
 
 void printString(std::shared_ptr<ConstantNode>& node){
     int size = node->Type->Size;
@@ -1115,10 +1184,9 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     }
     if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
         size = Type::VoidType->Size;
-    }else{
-        printf("\t  sub $%d, %%rsp          #Push %s\n",size,GetRax(ty).data());
-        printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
     }
+    printf("\t  sub $%d, %%rsp          #Push %s\n",size,GetRax(ty).data());
+    printf("\t  mov %s,(%%rsp)\n",GetRax(ty).data());
     StackLevel ++;
 }
 

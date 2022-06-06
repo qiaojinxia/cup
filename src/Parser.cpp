@@ -69,6 +69,20 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
                 auto cstNode = std::dynamic_pointer_cast<ConstantNode>(valueNode);
                 TypeVisitor typeVisitor;
                 n  ->Accept(&typeVisitor);
+                //if declaration rhs not a constNode for example  : static int * m = &m;
+                if (!cstNode){
+                    auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(valueNode);
+                    if(auto refVar = std::dynamic_pointer_cast<ExprVarNode>(unaryNode->Lhs)){
+                        if (refVar && refVar->VarObj->VarAttr->isStatic){
+                            auto snd = Scope::GetInstance() ->GetStaticVar(leftDec->VarObj->GlobalName);
+                            auto nNode = std::make_shared<ConstantNode>(nullptr);
+                            nNode ->refStatic = refVar->VarObj->GlobalName;
+                            nNode -> Type = unaryNode->Type;
+                            snd ->Next = nNode;
+                            cstNode = snd;
+                        }
+                    }
+                }
                 Scope::GetInstance() -> PushStaticVar(leftDec->VarObj->GlobalName, cstNode);
             }else{
                 multiAssignNode ->AssignNodes.push_back(n);
@@ -755,6 +769,7 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     }
     node ->Uop = (UnaryOperator)UnaryOp;
     node -> Lhs = ParseCastExpr();
+
     return node;
 }
 
@@ -942,18 +957,42 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::Mod:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mod);
                 break;
+            case TokenKind::ModAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Mod);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::VerticalBar:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitOr);
                 break;
             case TokenKind::Caret:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitXor);
                 break;
+            case TokenKind::CaretAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitXor);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Sal:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitSal);
                 break;
+            case TokenKind::SalAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitSal);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Sar:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitSar);
                 break;
+            case TokenKind::SarAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitSar);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Amp:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitAnd);
                 break;
@@ -978,9 +1017,21 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::And:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::And);
                 break;
+            case TokenKind::AndAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::And);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Or:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
                 break;
+            case TokenKind::OrAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             default:
                 return leftNode;
         }

@@ -88,6 +88,13 @@ std::unordered_map<std::string, std::shared_ptr<ConstantNode>> Scope::GetConstan
     return ConstTable;
 }
 
+std::shared_ptr<ConstantNode>  Scope::GetStaticVar(std::string name){
+    auto stZVar = GetStaticZeroVarTable().find(name);
+    if (stZVar != GetStaticZeroVarTable().end()){
+        return stZVar->second;
+    }
+    return nullptr;
+}
 
 void Scope::PushStaticVar(std::string name,std::shared_ptr<ConstantNode> cstNode){
     if (cstNode ->Value == 0 && !cstNode ->HasSetValue()){

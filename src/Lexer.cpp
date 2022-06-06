@@ -135,19 +135,27 @@ void BDD::Lexer::GetNextToken() {
                 break;
         }
     }else if(CurChar == '%'){
-        kind = TokenKind::Mod;
         GetNextChar();
+        if (CurChar == '='){
+            GetNextChar();
+            kind = TokenKind::ModAssign;
+        }else{
+            kind = TokenKind::Mod;
+        }
     }else if(CurChar == '('){
         kind = TokenKind::LParent;
         GetNextChar();
     }else if(CurChar == '&'){
-        if (PeekChar(1)=='&'){
+        GetNextChar();
+        if (CurChar =='&'){
             GetNextChar();
             kind = TokenKind::And;
+        }else if (CurChar =='='){
+            GetNextChar();
+            kind = TokenKind::AndAssign;
         }else{
             kind = TokenKind::Amp;
         }
-        GetNextChar();
     }else if(CurChar == ')'){
         kind = TokenKind::RParent;
         GetNextChar();
@@ -170,16 +178,24 @@ void BDD::Lexer::GetNextToken() {
         kind = TokenKind::Period;
         GetNextChar();
     }else if(CurChar == '|'){
-        if (PeekChar(1)=='|'){
+        GetNextChar();
+        if (CurChar =='|'){
             GetNextChar();
             kind = TokenKind::Or;
+        }else if (CurChar =='='){
+            GetNextChar();
+            kind = TokenKind::OrAssign;
         }else{
             kind = TokenKind::VerticalBar;
         }
-        GetNextChar();
     }else if(CurChar == '^'){
-        kind = TokenKind::Caret;
         GetNextChar();
+        if (CurChar =='='){
+            GetNextChar();
+            kind = TokenKind::CaretAssign;
+        }else{
+            kind = TokenKind::Caret;
+        }
     }else if(CurChar == '~'){
         kind = TokenKind::Tilde;
         GetNextChar();
@@ -247,33 +263,43 @@ void BDD::Lexer::GetNextToken() {
             }
         }
     }else if (CurChar == '>'){
-        switch (PeekChar(1)) {
+        GetNextChar();
+        switch (CurChar) {
             case '=':
                 GetNextChar();
                 kind = TokenKind::GreaterEqual;
                 break;
             case '>':
                 GetNextChar();
-                kind = TokenKind::Sar;
+                if (CurChar =='='){
+                    GetNextChar();
+                    kind = TokenKind::SarAssign;
+                }else{
+                    kind = TokenKind::Sar;
+                }
                 break;
             default:
                 kind = TokenKind::Greater;
         }
-        GetNextChar();
     }else if (CurChar == '<'){
-        switch (PeekChar(1)) {
+        GetNextChar();
+        switch (CurChar) {
             case '=':
                 GetNextChar();
                 kind = TokenKind::LesserEqual;
                 break;
             case '<':
                 GetNextChar();
-                kind = TokenKind::Sal;
+                if (CurChar =='='){
+                    GetNextChar();
+                    kind = TokenKind::SalAssign;
+                }else{
+                    kind = TokenKind::Sal;
+                }
                 break;
             default:
                 kind = TokenKind::Lesser;
         }
-        GetNextChar();
     }else if(CurChar == '"'){
         GetNextChar();
         while(CurChar !='"'){

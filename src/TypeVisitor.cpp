@@ -5,6 +5,8 @@
 #include "TypeVisitor.h"
 #include "Diag.h"
 #include "Type.h"
+#include "Scope.h"
+
 using namespace BDD;
 
 void TypeVisitor::Visitor(ExprStmtNode *node) {
@@ -234,6 +236,14 @@ void TypeVisitor::Visitor(UnaryNode *node) {
         case UnaryOperator::Not:
             node -> Type = Type::BoolType;
             break;
+    }
+    if (node->Lhs->Type->IsFloatPointNum()){
+        auto cstNode = std::make_shared<ConstantNode>(nullptr);
+        cstNode ->Type = node->Lhs->Type;
+        cstNode ->Value = 1065353216;
+        cstNode ->isChange = true;
+        Scope::GetInstance()->PutToConstantTable(cstNode);
+        node -> IncrOrDecrConstantTag = cstNode;
     }
 }
 

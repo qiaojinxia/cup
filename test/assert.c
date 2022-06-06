@@ -79,6 +79,10 @@ void print_float(float a){
     printf("output:%f\n",a);
 }
 
+void print_p(void * a){
+    printf("output:%p\n",a);
+}
+
 void print_lfloat(double a){
     printf("output:%lf\n",a);
 }
