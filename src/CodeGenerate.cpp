@@ -660,10 +660,11 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         GenerateAddress(memberAccessNode -> Lhs.get());
         auto field = record -> GetField(memberAccessNode -> fieldName);
         printf("\t  add  $%d,%s\n", field ->Offset,GetCurTargetReg().data());
-    }else if (auto arefNode = dynamic_cast<ArrayMemberNode *>(node)){
-        auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(arefNode ->Lhs);
-        arefNode -> Offset ->Accept(this);
-        if (arefNode ->Offset ->Type ->Size == Type::IntType ->Size){
+    }else if (auto arrayMemNode = dynamic_cast<ArrayMemberNode *>(node)){
+        auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(arrayMemNode ->Lhs);
+        arrayMemNode -> Offset ->Accept(this);
+        //if load index less than 4 bytes need empty high bit
+        if (arrayMemNode ->Offset ->Type ->Size <= Type::IntType ->Size){
             printf("\t  cdqe\n");
         }
         if(varExprNode->VarObj->VarAttr->isStatic ||varExprNode ->Type ->IsPointerType()){
@@ -774,7 +775,11 @@ std::string MergeCharArray(std::shared_ptr<ConstantNode>& node){
 }
 
 void printPointer(std::shared_ptr<ConstantNode>& node){
-    printf("\t .quad   %s\n",std::string(node->refStatic).data());
+    if (node->refStatic.size()){
+        printf("\t .quad   %s\n",std::string(node->refStatic).data());
+    }else{
+        printf("\t .zero   %d\n",Type::VoidType->Size);
+    }
 }
 
 void printString(std::shared_ptr<ConstantNode>& node){
