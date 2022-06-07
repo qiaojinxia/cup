@@ -72,7 +72,7 @@ void CodeGenerate::CmpZero(std::shared_ptr<AstNode> node){
 //if var is build in type get value if is pointer get pointer value if is func record array get begin address
 void CodeGenerate::Visitor(ExprVarNode *node) {
     auto nd = std::make_shared<ExprVarNode>(*node);
-    if (IsInStack(nd)){
+    if (IsDirectInStack(nd)){
         if (nd->Type->IsFloatPointNum()){
             printf("\t  %s %d(%%rbp),%s\n", GetMoveCode2(nd->Type).data(), GetVarStackOffset(nd),Xmm[Depth++]);
         }else if(node ->Type -> IsFunctionType() || node -> Type -> IsRecordType() ||  node -> Type -> IsArrayType()){
@@ -534,7 +534,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
                 printf("\t  %s %s(%%rip), %s\n", GetMoveCode2(node->Lhs->Type).data(),node->IncrOrDecrConstantTag->Name.data(),Xmm[Depth]);
                 printf("\t  %s %s, %s\n", GetAdd(node->Lhs->Type).data(),Xmm[Depth],Xmm[Depth-1]);
                 Depth -= 1;
-                if (IsInStack(node->Lhs)){
+                if (IsDirectInStack(node->Lhs)){
                     printf("\t  %s %s, %d(%%rbp)\n", GetMoveCode2(node->Lhs->Type).data(),Xmm[Depth], GetVarStackOffset(node->Lhs));
                 }else{
                     GenerateAddress(node->Lhs.get());
@@ -545,11 +545,11 @@ void CodeGenerate::Visitor(UnaryNode *node) {
                 if (node->Lhs->Type->IsPointerType()){
                     size = node->Lhs->Type->GetBaseType()->Size;
                 }
-                if (IsInStack(node->Lhs)){
+                if (IsDirectInStack(node->Lhs)){
                     printf("\t  add%s $%d,%d(%%rbp)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
                 }else{
                     GenerateAddress(node->Lhs.get());
-                    printf("\t  add%s $%d,%d(%%rax)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
+                    printf("\t  add%s $%d,(%%rax)\n",GetSuffix(node->Lhs->Type->Size).data(),size);
                 }
                 if (node ->Level > 3)
                     node->Lhs->Accept(this);
@@ -561,7 +561,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
                 printf("\t  %s %s(%%rip), %s\n", GetMoveCode2(node->Lhs->Type).data(),node->IncrOrDecrConstantTag->Name.data(),Xmm[Depth]);
                 printf("\t  %s %s, %s\n", GetMinus(node->Lhs->Type).data(),Xmm[Depth],Xmm[Depth-1]);
                 Depth -= 1;
-                if (IsInStack(node->Lhs)){
+                if (IsDirectInStack(node->Lhs)){
                     printf("\t  %s %s, %d(%%rbp)\n", GetMoveCode2(node->Lhs->Type).data(),Xmm[Depth], GetVarStackOffset(node->Lhs));
                 }else{
                     GenerateAddress(node->Lhs.get());
@@ -572,11 +572,11 @@ void CodeGenerate::Visitor(UnaryNode *node) {
                 if (node->Lhs->Type->IsPointerType()){
                     size = node->Lhs->Type->GetBaseType()->Size;
                 }
-                if (IsInStack(node->Lhs)){
+                if (IsDirectInStack(node->Lhs)){
                     printf("\t  sub%s $%d,%d(%%rbp)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
                 }else{
                     GenerateAddress(node->Lhs.get());
-                    printf("\t  sub%s $%d,%d(%%rax)\n",GetSuffix(node->Lhs->Type->Size).data(),size,GetVarStackOffset(node->Lhs));
+                    printf("\t  sub%s $%d,(%%rax)\n",GetSuffix(node->Lhs->Type->Size).data(),size);
                 }
                 if (node ->Level > 3)
                     node->Lhs->Accept(this);
@@ -590,15 +590,21 @@ void CodeGenerate::Visitor(UnaryNode *node) {
     }
 }
 
-
-bool  CodeGenerate::IsInStack(std::shared_ptr<AstNode> node){
+//if can Direct positioning through rbp register return true for example int long double store in local stack
+// if var is static not direct need first generateAddress then dereference
+// for exmaple static var store in data segment 、*y .s all can't index by %d(%rbp) need dereference first
+bool  CodeGenerate::IsDirectInStack(std::shared_ptr<AstNode> node){
     if(auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node)){
         if (varExprNode->VarObj->VarAttr->isReference || varExprNode->VarObj->VarAttr->isStatic)
             return false;
     }else if(auto memberAccessNode = std::dynamic_pointer_cast<MemberAccessNode>(node)){
-        return IsInStack(memberAccessNode->Lhs);
+        return IsDirectInStack(memberAccessNode->Lhs);
     }else if(auto arrayMemberNode = std::dynamic_pointer_cast<ArrayMemberNode>(node)){
-        return IsInStack(arrayMemberNode->Lhs);
+        return IsDirectInStack(arrayMemberNode->Lhs);
+    }else if(auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node)){
+        if (unaryNode->Uop == UnaryOperator::Deref)
+            return false;
+        return IsDirectInStack(unaryNode->Lhs);
     }
     return true;
 }
@@ -622,6 +628,9 @@ int CodeGenerate::GetVarStackOffset(std::shared_ptr<AstNode> node){
         int _aOffset = GetVarStackOffset(arrMemberNode->Lhs);
         int _fOffset = GetVarStackOffset(arrMemberNode->Offset) * arrMemberNode->Lhs->Type->GetBaseType()->Size;
         return _aOffset + _fOffset;
+    }else if(auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node)){
+        int _aOffset = GetVarStackOffset(unaryNode->Lhs);
+        return _aOffset ;
     }
     assert(0);
 }
@@ -1272,7 +1281,7 @@ void CodeGenerate::Visitor(AssignNode *node) {
     std::string offset;
     OffsetInfo oi = *(OffsetInfo *)alloca(sizeof(OffsetInfo));
     //if var not in cur stack locad it's address to %rdi
-    if (!IsInStack(node ->Lhs)){
+    if (!IsDirectInStack(node->Lhs)){
         SetCurTargetReg("%rdi");
         GenerateAddress(node ->Lhs.get());
         ClearCurTargetReg();
@@ -1301,7 +1310,7 @@ void CodeGenerate::Visitor(AddNode *node) {
         node -> Lhs -> Accept(this);
         Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
         if (node -> BinOp == BinaryOperator::PointerAdd){
-            printf("\t  imul $%d,%s\n", node -> Type ->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
+            printf("\t  imul $%d,%s\n", node ->Lhs-> Type ->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
             printf("\t  add %%rdi,%%rax\n");
 
         }else{
@@ -1328,9 +1337,8 @@ void CodeGenerate::Visitor(MinusNode *node) {
         node -> Lhs -> Accept(this);
         Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
         if (node -> BinOp == BinaryOperator::PointerSub){
-            printf("\t  imul $%d,%s\n", node -> Type ->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
+            printf("\t  imul $%d,%s\n", node -> Lhs-> Type->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
             printf("\t  sub %%rdi,%%rax\n");
-
         }else if(node-> BinOp == BinaryOperator::PointerDiff){
             printf("\t  sub %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
             printf("\t  sar $%d, %s\n", (int)log2(node -> Lhs -> Type -> GetBaseType() ->Size), GetRax(node -> Lhs->Type).data());
@@ -1429,7 +1437,7 @@ void CodeGenerate::Visitor(DecrNode *node) {
     node -> Lhs -> Accept(this);
     auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
     auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
-    printf("\t mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
+    printf("\t  mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
     printf("\t  sub $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
     printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varExprNode ->Type).data(), varExprNode-> VarObj -> Offset);
 }

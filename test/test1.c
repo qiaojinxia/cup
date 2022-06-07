@@ -1,6 +1,6 @@
-//
-// Created by qiaojinxia on 2022/5/11.
-//
+
+ //Created by qiaojinxia on 2022/5/11.
+
 
 //int testFloatCmp(){
 //    float a = 1.0;
@@ -21,12 +21,12 @@
 //    assert(77,m[99]);
 //    free(m);
 //}
-
+//
 //int testString(){
 //    char m[30] = "hello,world!";
 //    print_s(&m);
 //}
-
+//
 //int testTypeDef(){
 //    float caomaofloat;
 //    int x = 3.0;
@@ -81,3 +81,7 @@
 //    assert_char(1,book.index);
 //}
 //
+
+int main(){
+    testFuncCall();
+}

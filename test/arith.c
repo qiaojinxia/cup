@@ -43,8 +43,21 @@ int main() {
     assert(6, ({ int i=3; i*=2; }));
     assert(3, ({ int i=6; i/=2; i; }));
     assert(3, ({ int i=6; i/=2; }));
-
+    assert(1, ({ int i=7; i%=2; }));
+    assert(16, ({ int i=4; i<<=2; }));
+    assert(7, ({ int i=28; i>>=2; }));
+    assert(-12, ({ int i=-10; i^=2; }));
+    assert(6, ({ int i=2; i|=4; }));
+    assert(2, ({ int i=7; i&=10; }));
     assert(3, ({ int i=2; ++i; }));
+    assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1;++*p; }));
+    assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; --*p; }));
+    assert(2, ({ int i=2; i++; }));
+    assert(2, ({ int i=2; i--; }));
+    assert(3, ({ int i=2; i++; i; }));
+    assert(1, ({ int i=2; i--; i; }));
+    assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++;*p; }));
+    assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p--;*p; }));
 
     return 0;
 }

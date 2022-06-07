@@ -152,7 +152,7 @@ void BDD::Lexer::GetNextToken() {
             kind = TokenKind::And;
         }else if (CurChar =='='){
             GetNextChar();
-            kind = TokenKind::AndAssign;
+            kind = TokenKind::AmpAssign;
         }else{
             kind = TokenKind::Amp;
         }
@@ -184,7 +184,7 @@ void BDD::Lexer::GetNextToken() {
             kind = TokenKind::Or;
         }else if (CurChar =='='){
             GetNextChar();
-            kind = TokenKind::OrAssign;
+            kind = TokenKind::VerticalBarAssign;
         }else{
             kind = TokenKind::VerticalBar;
         }

@@ -89,8 +89,8 @@ namespace BDD{
         AsteriskAssign,
         SlashAssign,
         ModAssign,
-        AndAssign,
-        OrAssign,
+        AmpAssign,
+        VerticalBarAssign,
         SalAssign,
         SarAssign,
 

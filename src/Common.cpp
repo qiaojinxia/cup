@@ -327,6 +327,8 @@ const std::string BDD::GetRdi(std::shared_ptr<Type> type) {
     }else if (type ->Size == 8){
         return "%rdi";
     } else{
+        if (type->IsArrayType() || type ->IsRecordType())
+            return "%rdi";
         assert(0);
     }
 }
@@ -341,6 +343,8 @@ const std::string BDD::GetRcx(std::shared_ptr<Type> type) {
     }else if (type -> Size == 8){
         return "%rcx";
     } else{
+        if (type->IsArrayType() || type ->IsRecordType())
+            return "%rcx";
         assert(0);
     }
 }

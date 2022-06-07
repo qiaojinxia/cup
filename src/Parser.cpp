@@ -734,11 +734,19 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     auto node = std::make_shared<UnaryNode>(Lex.CurrentToken);
     int UnaryOp = 0 ;
     while (true){
+        if (Lex.CurrentToken -> Kind == TokenKind::Plus){
+        }else if(Lex.CurrentToken -> Kind == TokenKind::Minus){
+            UnaryOp ^= (int)UnaryOperator::Minus;
+        }else{
+            break;
+        }
+        Lex.GetNextToken();
+    }
+    if (!UnaryOp){
         switch (Lex.CurrentToken -> Kind){
             case TokenKind::Plus:
                 break;
             case TokenKind::Minus:
-                UnaryOp ^= (int)UnaryOperator::Minus;
                 break;
             case TokenKind::Asterisk:
                 UnaryOp += (int)UnaryOperator::Deref;
@@ -816,9 +824,12 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             if (left ->Type->IsConstant()){
                 DiagLoc(Lex.SourceCode, Lex.GetLocation(), "constant can't change!");
             }
+            int incrSize = 1;
+            if (left ->Type->IsPointerType())
+                incrSize = left ->Type->GetBaseType()->Size;
             incrNode -> Lhs = left;
             auto constNode  =  std::make_shared<ConstantNode>(nullptr);
-            constNode -> Value = 1;
+            constNode -> Value = incrSize;
             constNode ->Type = Type::IntType;
             incrNode -> Rhs = constNode;
             incrNode -> BinOp = BinaryOperator::Incr;
@@ -827,9 +838,12 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
         }else if(Lex.CurrentToken -> Kind == TokenKind::MMinus){
             auto decrNode = std::make_shared<DecrNode>(Lex.CurrentToken);
             Lex.GetNextToken();
+            int incrSize = 1;
+            if (left ->Type->IsPointerType())
+                incrSize = left ->Type->GetBaseType()->Size;
             decrNode -> Lhs = left;
             auto constNode  =  std::make_shared<ConstantNode>(nullptr);
-            constNode -> Value = -1;
+            constNode -> Value = incrSize;
             constNode ->Type = Type::IntType;
             decrNode -> Rhs = constNode;
             decrNode -> BinOp = BinaryOperator::Decr;
@@ -966,6 +980,12 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::VerticalBar:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitOr);
                 break;
+            case TokenKind::VerticalBarAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitOr);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Caret:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitXor);
                 break;
@@ -996,6 +1016,12 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::Amp:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitAnd);
                 break;
+            case TokenKind::AmpAssign:
+            {
+                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::BitAnd);
+                leftNode = Assign(leftNode,rightNode);
+                break;
+            }
             case TokenKind::Greater:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Greater);
                 break;
@@ -1017,21 +1043,9 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
             case TokenKind::And:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::And);
                 break;
-            case TokenKind::AndAssign:
-            {
-                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::And);
-                leftNode = Assign(leftNode,rightNode);
-                break;
-            }
             case TokenKind::Or:
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
                 break;
-            case TokenKind::OrAssign:
-            {
-                auto rightNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
-                leftNode = Assign(leftNode,rightNode);
-                break;
-            }
             default:
                 return leftNode;
         }

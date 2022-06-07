@@ -153,7 +153,7 @@ std::shared_ptr<FuncSign> Scope::GetFuncSign(std::string_view funcName) {
 
 std::string Scope::PushStaticVar(std::string_view name,std::shared_ptr<Type> type) {
     auto cstNode = std::make_shared<ConstantNode>(nullptr);
-    cstNode->isChange = true;
+    cstNode->isModify = true;
     cstNode ->Value = 0;
     cstNode ->Type = type;
     std::string varName(name);

@@ -153,20 +153,20 @@ namespace BDD{
             {TokenKind::Caret, 9},
             {TokenKind::Amp, 8},
             {TokenKind::Eof,      13},
-            {TokenKind::And,      11},
-            {TokenKind::Or,      12},
+            {TokenKind::And,               11},
+            {TokenKind::Or,                12},
 
-            {TokenKind::PlusAssign,      14},
-            {TokenKind::MinusAssign,      14},
-            {TokenKind::AsteriskAssign,      14},
-            {TokenKind::SlashAssign,      14},
+            {TokenKind::PlusAssign,        14},
+            {TokenKind::MinusAssign,       14},
+            {TokenKind::AsteriskAssign,    14},
+            {TokenKind::SlashAssign,       14},
 
 
-            {TokenKind::ModAssign,      14}, //%=
-            {TokenKind::AndAssign,      14},  // &=
-            {TokenKind::OrAssign,      14}, // |=
-            {TokenKind::SarAssign,      14},// >>=
-            {TokenKind::SalAssign,      14}, // <<=
+            {TokenKind::ModAssign,         14}, //%=
+            {TokenKind::AmpAssign,         14},  // &=
+            {TokenKind::VerticalBarAssign, 14}, // |=
+            {TokenKind::SarAssign,         14},// >>=
+            {TokenKind::SalAssign,         14}, // <<=
 
 
 
@@ -192,7 +192,7 @@ class BinaryNode :public  AstNode{
         int Offset{};
         std::string_view refStatic;
         unsigned long Value{};
-        bool isChange{};
+        bool isModify{};
         bool isChar{false};
         std::string GetValue();
         bool HasSetValue();

@@ -36,6 +36,11 @@ void TypeVisitor::Visitor(BinaryNode *node) {
         hasUnsigned = true;
     }
 
+    if (node -> Lhs -> Type -> IsArrayType() && node->Rhs->Type->IsIntegerNum()){
+        node ->Type = Type::Pointer;
+        return;
+    }
+
     //auto convert if lhs type not equal to rhs type,set type to same
     if (node -> Lhs ->Type != node ->Rhs ->Type){
         if (hasFloatPoint){
@@ -64,6 +69,7 @@ void TypeVisitor::Visitor(BinaryNode *node) {
                 }
         }
     }
+    node ->Type = node->Lhs->Type;
 }
 
 void TypeVisitor::Visitor(ConstantNode *node) {
@@ -241,7 +247,7 @@ void TypeVisitor::Visitor(UnaryNode *node) {
         auto cstNode = std::make_shared<ConstantNode>(nullptr);
         cstNode ->Type = node->Lhs->Type;
         cstNode ->Value = 1065353216;
-        cstNode ->isChange = true;
+        cstNode ->isModify = true;
         Scope::GetInstance()->PutToConstantTable(cstNode);
         node -> IncrOrDecrConstantTag = cstNode;
     }
@@ -327,6 +333,8 @@ void TypeVisitor::Visitor(AssignNode *node) {
 
 
 void TypeVisitor::Visitor(AddNode *node) {
+    auto bak = CurAssignType;
+    CurAssignType = nullptr;
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     if (node -> Lhs -> Type ->IsFloatPointNum() || node->Rhs->Type->IsFloatPointNum()){
@@ -346,11 +354,14 @@ void TypeVisitor::Visitor(AddNode *node) {
     binary.Accept(this);
     node ->Lhs = binary.Lhs;
     node ->Rhs = binary.Rhs;
-    node ->Type = node ->Lhs ->Type;
+    node ->Type = binary.Type;
+    CurAssignType = bak;
 }
 
 
 void TypeVisitor::Visitor(MinusNode *node) {
+    auto bak = CurAssignType;
+    CurAssignType = nullptr;
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     if(node -> Lhs -> Type -> IsPointerType() && node -> Rhs -> Type -> IsPointerType()){
@@ -371,7 +382,8 @@ void TypeVisitor::Visitor(MinusNode *node) {
     binary.Accept(this);
     node ->Lhs = binary.Lhs;
     node ->Rhs = binary.Rhs;
-    node ->Type = node ->Lhs ->Type;
+    node ->Type = binary.Type;
+    CurAssignType = bak;
 }
 
 void TypeVisitor::Visitor(MulNode *node) {
@@ -448,8 +460,8 @@ void TypeVisitor::Visitor(IncrNode *node) {
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     auto ConstNode =  std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
-    ConstNode ->isChange = true;
-    if (!node ->Lhs ->Type ->IsBInType()){
+    ConstNode ->isModify = true;
+    if (!node ->Lhs ->Type ->IsBInType() && !node->Lhs->Type->IsPointerType()){
         printf("IncrNode lhs error!");
         assert(0);
     }
@@ -460,8 +472,8 @@ void TypeVisitor::Visitor(DecrNode *node) {
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
     auto ConstNode =  std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
-    ConstNode ->isChange = true;
-    if (!node ->Lhs ->Type ->IsBInType()){
+    ConstNode ->isModify = true;
+    if (!node ->Lhs ->Type ->IsBInType() && !node->Lhs->Type->IsPointerType()){
         printf("IncrNode lhs error!");
         assert(0);
     }

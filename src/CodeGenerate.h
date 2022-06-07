@@ -121,7 +121,7 @@ namespace BDD{
         void GenerateAddress(AstNode *node);
 
 
-        bool IsInStack(std::shared_ptr<AstNode> node);
+        bool IsDirectInStack(std::shared_ptr<AstNode> node);
 
         void Load(std::shared_ptr<Type> type);
 
