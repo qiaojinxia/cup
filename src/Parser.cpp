@@ -777,7 +777,8 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     }
     node ->Uop = (UnaryOperator)UnaryOp;
     node -> Lhs = ParseCastExpr();
-
+    TypeVisitor typeVisitor;
+    node->Accept(&typeVisitor);
     return node;
 }
 
@@ -818,36 +819,39 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             Lex.ExceptToken(TokenKind::Identifier);
             left = memberNode;
             break;
-        }else if(Lex.CurrentToken -> Kind == TokenKind::PPlus){
-            auto incrNode = std::make_shared<IncrNode>(Lex.CurrentToken);
+        }else if(Lex.CurrentToken -> Kind == TokenKind::PPlus || Lex.CurrentToken -> Kind == TokenKind::MMinus){
+            auto token = Lex.CurrentToken;
             Lex.GetNextToken();
             if (left ->Type->IsConstant()){
                 DiagLoc(Lex.SourceCode, Lex.GetLocation(), "constant can't change!");
             }
             int incrSize = 1;
-            if (left ->Type->IsPointerType())
+            auto cstNode  =  std::make_shared<ConstantNode>(nullptr);
+            cstNode -> Value = incrSize;
+            if (left ->Type->IsPointerType()){
                 incrSize = left ->Type->GetBaseType()->Size;
-            incrNode -> Lhs = left;
-            auto constNode  =  std::make_shared<ConstantNode>(nullptr);
-            constNode -> Value = incrSize;
-            constNode ->Type = Type::IntType;
-            incrNode -> Rhs = constNode;
-            incrNode -> BinOp = BinaryOperator::Incr;
-            left = incrNode;
-            break;
-        }else if(Lex.CurrentToken -> Kind == TokenKind::MMinus){
-            auto decrNode = std::make_shared<DecrNode>(Lex.CurrentToken);
-            Lex.GetNextToken();
-            int incrSize = 1;
-            if (left ->Type->IsPointerType())
-                incrSize = left ->Type->GetBaseType()->Size;
-            decrNode -> Lhs = left;
-            auto constNode  =  std::make_shared<ConstantNode>(nullptr);
-            constNode -> Value = incrSize;
-            constNode ->Type = Type::IntType;
-            decrNode -> Rhs = constNode;
-            decrNode -> BinOp = BinaryOperator::Decr;
-            left = decrNode;
+                cstNode ->Type = Type::IntType;
+            }else if(left ->Type->IsFloatPointNum()){
+                cstNode ->Type = left ->Type;
+            }else{
+                cstNode ->Type = Type::IntType;
+            }
+            cstNode ->Value = incrSize;
+            if (token->Kind  == TokenKind::PPlus){
+                auto postIncrNode = std::make_shared<IncrNode>(token);
+                postIncrNode -> Lhs = left;
+                postIncrNode -> Rhs = cstNode;
+                postIncrNode -> BinOp = BinaryOperator::Incr;
+                left = postIncrNode;
+            }else{
+                auto postDcrNode = std::make_shared<DecrNode>(token);
+                postDcrNode -> Lhs = left;
+                postDcrNode -> Rhs = cstNode;
+                postDcrNode -> BinOp = BinaryOperator::Decr;
+                left = postDcrNode;
+            }
+            if ( cstNode ->Type->IsFloatPointNum())
+                Scope::GetInstance() -> PutToConstantTable(cstNode);
             break;
         }else{
             break;

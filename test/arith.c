@@ -1,6 +1,7 @@
 //
 // Created by qiaojinxia on 2022/6/3.
 //
+extern float assert_f(float  excepted,float actual);
 extern int  assert(int  excepted,int actual);
 int main() {
     assert(0, 0);
@@ -58,6 +59,15 @@ int main() {
     assert(1, ({ int i=2; i--; i; }));
     assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p++;*p; }));
     assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; *p--;*p; }));
-
+    assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--;a[1];}));
+    assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*(p--))--; a[1]; }));
+    assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p)--; a[2]; }));
+    assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p)--; p++; *p; }));
+    assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--; a[0]; }));
+    assert(0, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--; a[1]; }));
+    assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--; a[2]; }));
+    assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--; *p; }));
+    assert_f(3.0, ({ float i=2.0; i++; i; }));
+    assert_f(1.0, ({ float i=2.0; i--; i; }));
     return 0;
 }

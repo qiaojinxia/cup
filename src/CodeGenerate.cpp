@@ -658,8 +658,9 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         std::string constName =  std::string(constNode->Name);
         printf("\t  lea %s(%%rip),%s\n",constName.data(),GetCurTargetReg().data());
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
+        GenerateAddress(unaryNode ->Lhs.get());
         if (unaryNode -> Uop == UnaryOperator::Deref){
-            unaryNode ->Lhs->Accept(this);
+            printf("\t  mov (%%rax),%%rax\n");
         }else{
             printf("unaryNode must be defer!\n");
             assert(0);
@@ -687,6 +688,10 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
 
     }else if (auto funcNode = dynamic_cast<FuncCallNode *>(node)){
         printf("\t  lea %d(%%rbp),%s\n",funcNode->ReturnStructOffset,GetCurTargetReg().data());
+    }else if (auto incrNode = dynamic_cast<IncrNode *>(node)){
+        GenerateAddress(incrNode->Lhs.get());
+    }else if (auto decrNode = dynamic_cast<DecrNode *>(node)){
+        GenerateAddress(decrNode->Lhs.get());
     }else{
         printf("not a value\n");
         assert(0);
@@ -1425,21 +1430,87 @@ void CodeGenerate::Visitor(ModNode *node) {
 }
 
 void CodeGenerate::Visitor(IncrNode *node) {
-   node -> Lhs -> Accept(this);
-   auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
-   auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
-   printf("\t  mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
-   printf("\t  add $%s,%s\n",constNode->GetValue().data(), GetRcx(varExprNode ->Type).data());
-   printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varExprNode ->Type).data(), varExprNode->VarObj -> Offset);
+    auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
+    auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node->Lhs);
+    if (unaryNode && unaryNode->Uop == UnaryOperator::Deref){
+        unaryNode ->Lhs->Accept(this);
+        if (unaryNode->Type->IsFloatPointNum()){
+            printf("\t  %s (%%rax),%s\n",  GetMoveCode2(constNode->Type).data(),Xmm[Depth++]);
+            printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(constNode->Type).data(),constNode->Name.data(),Xmm[Depth]);
+            printf("\t  %s %s,%s\n", GetAdd(constNode->Type).data(),Xmm[Depth],Xmm[Depth-1]);
+            Depth-=1;
+        }else{
+            printf("\t  mov (%%rax),%s\n", GetRcx(node -> Lhs ->Type).data());
+            printf("\t  add $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
+        }
+    }else{
+        node -> Lhs -> Accept(this);
+        if (node->Lhs->Type->IsPointerType()){
+            printf("\t  lea %s(%%rax),%%rcx\n",constNode->GetValue().data());
+        }else if(node->Lhs->Type->IsFloatPointNum()){
+            printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(constNode->Type).data(),constNode->Name.data(),Xmm[Depth]);
+            printf("\t  %s %s,%s\n", GetAdd(constNode->Type).data(),Xmm[Depth],Xmm[Depth-1]);
+            Depth-=1;
+        }else{
+            printf("\t  mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
+            printf("\t  add $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
+        }
+    }
+    if (IsDirectInStack(node->Lhs)){
+        if (node->Lhs->Type->IsFloatPointNum()){
+            printf("\t  mov %s,%d(%%rbp)\n", Xmm[Depth], GetVarStackOffset(node->Lhs));
+        }else{
+            printf("\t  mov %s,%d(%%rbp)\n", GetRcx(node->Lhs->Type).data(), GetVarStackOffset(node->Lhs));
+        }
+    }else{
+        if (node->Lhs->Type->IsFloatPointNum()){
+            printf("\t  mov %s,(%%rax)\n",  Xmm[Depth]);
+        }else {
+            printf("\t  mov %s,(%%rax)\n", GetRcx(node->Lhs->Type).data());
+        }
+    }
 }
 
 void CodeGenerate::Visitor(DecrNode *node) {
-    node -> Lhs -> Accept(this);
-    auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node -> Lhs);
     auto constNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
-    printf("\t  mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
-    printf("\t  sub $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
-    printf("\t  mov %s,%d(%%rbp)\n", GetRcx(varExprNode ->Type).data(), varExprNode-> VarObj -> Offset);
+    auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node->Lhs);
+    if (unaryNode && unaryNode->Uop == UnaryOperator::Deref){
+        unaryNode ->Lhs->Accept(this);
+        if (unaryNode->Type->IsFloatPointNum()){
+            printf("\t  %s (%%rax),%s\n",  GetMoveCode2(constNode->Type).data(),Xmm[Depth++]);
+            printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(constNode->Type).data(),constNode->Name.data(),Xmm[Depth]);
+            printf("\t  %s %s,%s\n", GetMinus(constNode->Type).data(),Xmm[Depth],Xmm[Depth-1]);
+            Depth-=1;
+        }else{
+            printf("\t  mov (%%rax),%s\n", GetRcx(node -> Lhs ->Type).data());
+            printf("\t  sub $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
+        }
+    }else{
+        node -> Lhs -> Accept(this);
+        if (node->Lhs->Type->IsPointerType()){
+            printf("\t  lea -%s(%%rax),%%rcx\n",constNode->GetValue().data());
+        }else if(node->Lhs->Type->IsFloatPointNum()){
+            printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(constNode->Type).data(),constNode->Name.data(),Xmm[Depth]);
+            printf("\t  %s %s,%s\n", GetMinus(constNode->Type).data(),Xmm[Depth],Xmm[Depth-1]);
+            Depth-=1;
+        }else{
+            printf("\t  mov %s,%s\n", GetRax(node -> Lhs ->Type).data(), GetRcx(node -> Lhs ->Type).data());
+            printf("\t  sub $%s,%s\n",constNode->GetValue().data(), GetRcx(node -> Lhs ->Type).data());
+        }
+    }
+    if (IsDirectInStack(node->Lhs)){
+        if (node->Lhs->Type->IsFloatPointNum()){
+            printf("\t  mov %s,%d(%%rbp)\n", Xmm[Depth], GetVarStackOffset(node->Lhs));
+        }else{
+            printf("\t  mov %s,%d(%%rbp)\n", GetRcx(node->Lhs->Type).data(), GetVarStackOffset(node->Lhs));
+        }
+    }else{
+        if (node->Lhs->Type->IsFloatPointNum()){
+            printf("\t  mov %s,(%%rax)\n",  Xmm[Depth]);
+        }else {
+            printf("\t  mov %s,(%%rax)\n", GetRcx(node->Lhs->Type).data());
+        }
+    }
 }
 
 void CodeGenerate::Visitor(CmpNode *node) {
@@ -1558,17 +1629,17 @@ void CodeGenerate::Visitor(OrNode *node) {
 }
 
 
-const void CodeGenerate::PushJmpLabel(std::string labelName) {
+void CodeGenerate::PushJmpLabel(std::string labelName) {
     JmpStack.push_back(labelName);
 }
 
-const std::string CodeGenerate::PopJmpLabel() {
+std::string CodeGenerate::PopJmpLabel() {
     auto backLabel = GetJmpLabel();
     JmpStack.pop_back();
     return std::string(backLabel);
 }
 
-const std::string CodeGenerate::GetJmpLabel() {
+std::string CodeGenerate::GetJmpLabel() {
     auto backLabel = JmpStack.back();
     return std::string(backLabel);
 }
@@ -1580,7 +1651,7 @@ std::string CodeGenerate::GetCurTargetReg() {
     return curTargetReg.back();
 }
 
-void CodeGenerate::SetCurTargetReg(std::string reg) {
+void CodeGenerate::SetCurTargetReg(const std::string& reg) {
     curTargetReg.push_back(reg);
 }
 
@@ -1589,11 +1660,11 @@ void CodeGenerate::ClearCurTargetReg(){
     curTargetReg.pop_back();
 }
 
-const int CodeGenerate::GetStructReturn2Offset() {
+int CodeGenerate::GetStructReturn2Offset() const {
     return Return2OffsetStack ;
 }
 
-const void CodeGenerate::SetStructReturn2Offset(int offset) {
+void CodeGenerate::SetStructReturn2Offset(int offset) {
     Return2OffsetStack = offset;
 }
 
@@ -1634,6 +1705,6 @@ std::string OffsetInfo::GetOffset(int offset1) {
     return string_format("%d(%s)",_offset,reg.data());
 }
 
-bool OffsetInfo::IsLoadAddTOReg() {
+bool OffsetInfo::IsLoadAddTOReg() const {
     return isLoad;
 }

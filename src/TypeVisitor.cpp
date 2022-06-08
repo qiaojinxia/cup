@@ -209,7 +209,8 @@ void TypeVisitor::Visitor(StmtExprNode *node) {
     for(auto &stmt:node ->Stmts){
         stmt ->Accept(this);
     }
-    node ->Type = node ->Stmts .back()->Type;
+    if (!node->Stmts.empty())
+        node ->Type = node ->Stmts .back()->Type;
 }
 
 void TypeVisitor::Visitor(UnaryNode *node) {

@@ -23,7 +23,7 @@ namespace BDD{
     public:
         OffsetInfo(std::string targetReg,int initOffset,bool ld):reg(targetReg),offset(initOffset),isLoad(ld){};
         std::string GetOffset();
-        bool IsLoadAddTOReg();
+        bool IsLoadAddTOReg() const;
         std::string GetOffset(int offset1);
     };
     class CodeGenerate:public AstVisitor{
@@ -107,7 +107,7 @@ namespace BDD{
         void UseXmm();
         void ReleaseXmm();
         std::string GetCurTargetReg();
-        void SetCurTargetReg(std::string reg);
+        void SetCurTargetReg(const std::string& reg);
         void ClearCurTargetReg();
 
         void Push(std::shared_ptr<Type> ty);
@@ -127,9 +127,9 @@ namespace BDD{
 
 
 
-        const void PushJmpLabel(std::string labelName);
-        const std::string PopJmpLabel();
-        const std::string GetJmpLabel();
+        void PushJmpLabel(std::string labelName);
+        std::string PopJmpLabel();
+        std::string GetJmpLabel();
 
 
         void CmpZero(std::shared_ptr<AstNode> node);
@@ -140,8 +140,8 @@ namespace BDD{
 
         void Push(std::shared_ptr<Type> ty, const char *reg);
 
-        const int GetStructReturn2Offset();
-        const void SetStructReturn2Offset(int offset);
+        int GetStructReturn2Offset() const;
+        void SetStructReturn2Offset(int offset);
 
         int GetVarStackOffset(std::shared_ptr<AstNode> node);
 
