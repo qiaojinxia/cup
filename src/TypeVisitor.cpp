@@ -247,7 +247,7 @@ void TypeVisitor::Visitor(UnaryNode *node) {
     if (node->Lhs->Type->IsFloatPointNum()){
         auto cstNode = std::make_shared<ConstantNode>(nullptr);
         cstNode ->Type = node->Lhs->Type;
-        cstNode ->Value = 1065353216;
+        cstNode ->Value = 1;
         cstNode ->isModify = true;
         Scope::GetInstance()->PutToConstantTable(cstNode);
         node -> IncrOrDecrConstantTag = cstNode;
