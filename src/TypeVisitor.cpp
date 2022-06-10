@@ -6,6 +6,7 @@
 #include "Diag.h"
 #include "Type.h"
 #include "Scope.h"
+#include "Common.h"
 
 using namespace BDD;
 
@@ -38,6 +39,11 @@ void TypeVisitor::Visitor(BinaryNode *node) {
 
     if (node -> Lhs -> Type -> IsArrayType() && node->Rhs->Type->IsIntegerNum()){
         node ->Type = Type::Pointer;
+        return;
+    }else if(node -> Lhs -> Type -> IsPointerType() && node->Rhs->Type->IsIntegerNum()){
+        node ->Type = node->Lhs->Type;
+        node->Rhs = CreateCastNode(node->Rhs->Type,
+                                   Type::LongType,node->Rhs);
         return;
     }
 
@@ -175,10 +181,24 @@ void TypeVisitor::Visitor(FunctionNode *node) {
     CurFuncType = nullptr;
 }
 
+
 void TypeVisitor::Visitor(FuncCallNode *node) {
     CurAssignType = nullptr;
+    auto funcType = std::dynamic_pointer_cast<FunctionType>(node->Type);
+    int i = 0;
     for(auto &arg:node ->Args){
-        arg ->Accept(this);
+        if (funcType->Params[i]->Type != arg->Type){
+            auto _arg = CreateCastNode(arg->Type,funcType->Params[i]->Type,arg);
+            if (_arg){
+                _arg->Accept(this);
+                node ->Args[i] = _arg;
+            }else{
+//                assert(0);
+            }
+        }else{
+            arg ->Accept(this);
+        }
+        i++;
     }
     if (node ->FuncPointerOffset)
         node ->FuncPointerOffset->Accept(this);
@@ -255,8 +275,9 @@ void TypeVisitor::Visitor(UnaryNode *node) {
 }
 
 void TypeVisitor::Visitor(SizeOfExprNode *node) {
+        CurAssignType = nullptr;
         node -> Lhs ->Accept(this);
-        node ->Type = Type::IntType;
+        node ->Type = node->Lhs->Type;
 }
 
 void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
@@ -525,20 +546,24 @@ void TypeVisitor::Visitor(TernaryNode *node) {
     node -> isTypeInit = true;
     node ->Cond ->Accept(this);
     node ->Then ->Accept(this);
-    if (node ->Then ->Type != CurAssignType){
+    if (CurAssignType && node ->Then ->Type != CurAssignType){
         auto castNode = std::make_shared<CastNode>(nullptr);
-        castNode -> Type = node ->Type;
+        castNode -> Type = CurAssignType;
         castNode ->CstNode = node ->Then;
         node ->Then = castNode;
     }
     node ->Else ->Accept(this);
-    if (node ->Else ->Type != CurAssignType){
+    if (CurAssignType && node ->Else ->Type != CurAssignType){
         auto castNode = std::make_shared<CastNode>(nullptr);
-        castNode -> Type = node ->Type;
-        castNode ->CstNode = node ->Then;
+        castNode -> Type = CurAssignType;
+        castNode ->CstNode = node ->Else;
         node ->Else = castNode;
     }
-    node  ->Type = CurAssignType;
+    if(CurAssignType){
+        node  ->Type = CurAssignType;
+    }else{
+        node ->Type = node->Then->Type;
+    }
 }
 
 void TypeVisitor::Visitor(SwitchCaseSmtNode *node) {

@@ -138,3 +138,5 @@
      support ^= |= &= >>=  >>= %
 - 2022-06-08
      add float pointer ++ --
+- 2022-06-10
+     add test cast

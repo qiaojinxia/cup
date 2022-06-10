@@ -39,14 +39,17 @@ void BDD::CodeGenerate::Visitor(BDD::ConstantNode *node) {
             return;
         }
         printf("\t  mov $%s, %%rax   #Constant %s\n",node->GetValue().c_str(),node->GetValue().c_str());
-    }else if (node->Type->IsPtrCharType()){
+    }else if (node->Type->IsStringType()){
         printf("\t  lea %s(%%rip),%%rax\n", node->Name.data());
+    }else if (node->Type->IsPointerType()){
+        printf("\t  mov $%s, %%rax   #Pointer %s\n",node->GetValue().c_str(),node->GetValue().c_str());
     }
 }
 
 void BDD::CodeGenerate::Visitor(BDD::ExprStmtNode *node) {
     if (node->Lhs){
         node->Lhs ->Accept(this);
+        Depth =0;
     }
 }
 
@@ -1300,7 +1303,6 @@ void CodeGenerate::Visitor(AssignNode *node) {
 }
 
 void CodeGenerate::Visitor(AddNode *node) {
-
     if (node ->BinOp == BinaryOperator::FloatPointAdd){
         node -> Lhs -> Accept(this);
         node -> Rhs -> Accept(this);
@@ -1527,8 +1529,13 @@ void CodeGenerate::Visitor(CmpNode *node) {
         printf("\t  cmp %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());
     }
     if(!IsCmpJmpModule){
+        if (node->Rhs->Type->IsUnsignedNum() || node->Rhs->Type->IsPointerType()){
+            printf("\t  %s  %%al\n", GetUnsignedSet(node -> BinOp).data());
+            printf("\t  movzbl %%al,%%eax\n");
+        }else{
             printf("\t  %s  %%al\n", GetSet(node -> BinOp).data());
             printf("\t  movzx %%al,%%eax\n");
+        }
     }else {
         printf("\t  %s %s\n", GetReverseJmp(node->BinOp).data(), GetJmpLabel().data());
     }
@@ -1568,6 +1575,7 @@ void CodeGenerate::Visitor(TernaryNode *node) {
     std::string branchLabel = string_format(".LT.else%d",n);
     PushJmpLabel(branchLabel);
     node ->Cond->Accept(this);
+    CmpZero(node->Cond);
     node ->Then->Accept(this);
     printf("\t  jmp .LT.end_%d\n",n);
     if (node ->Else){
@@ -1575,6 +1583,7 @@ void CodeGenerate::Visitor(TernaryNode *node) {
         node ->Else->Accept(this);
     }
     printf(".LT.end_%d:\n",n);
+    IsCmpJmpModule = false;
     PopJmpLabel();
 }
 
