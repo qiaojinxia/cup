@@ -57,16 +57,26 @@ std::string  BDD::string_format(const char *format, ...)
 }
 
 long BDD::hexToDec(std::basic_string_view<char> content, int length){
+    std::string ct(content);
+    int start = 0;
+    if (is_contains_str(ct,"0x")){
+        start = 2;
+    }
     unsigned long result = 0;
-    for (int i = 0; i < length; i++) {
+    for (int i = start; i < length; i++) {
         result += hexToDec(content[i]) * (1 << (4 * (length - i -1)));
     }
     return result;
 }
 
 long BDD::binToDec(std::basic_string_view<char> content, int length){
+    std::string ct(content);
+    int start = 0;
+    if (is_contains_str(ct,"0b")){
+        start = 2;
+    }
     unsigned long result = 0;
-    for (int i = 0; i < length; i++) {
+    for (int i = start; i < length; i++) {
         result += (content[i] - '0') << (length - i -1);
     }
     return result;
@@ -396,7 +406,7 @@ const std::string BDD::GetMoveCode2(std::shared_ptr<Type>  type) {
         }else if (type -> Size == 8){
             return "movsd";
         }
-    }else if (type->IsIntegerNum()){
+    }else if (type->IsIntegerNum() || type -> IsUnsignedNum()){
         if (type -> Size == 1){
             return "movb";
         }else if (type -> Size == 2){
@@ -529,21 +539,40 @@ const std::string BDD::RepeatN(std::string a,int  n) {
     return rt;
 }
 
-std::shared_ptr<BDD::AstNode> BDD::CreateCastNode(
+std::shared_ptr<BDD::AstNode> BDD::CastNodeType(
         std::shared_ptr<Type> srcType,std::shared_ptr<Type> destType,std::shared_ptr<BDD::AstNode> destNode) {
     std::shared_ptr<CastNode> castNode;
-    if (srcType->IsBoolType() && destType->IsIntType()){
-    }else if (srcType->IsIntegerNum() && destType->IsLongType()){
-    }else if (srcType->IsIntegerNum() && destType->IsPointerType()){
-    }else{
-        return nullptr;
+    if (destType ->IsAliasType())
+        destType = destType->GetBaseType();
+    if (srcType ->IsAliasType())
+        srcType = srcType->GetBaseType();
+    if (srcType == destType)
+        return destNode;
+    auto fromToType = string_format("%s->%s",srcType->Alias,destType->Alias).c_str();
+    auto canConvert = castMap.find(fromToType);
+    if (canConvert == castMap.end()){
+        if (srcType->IsPointerType() && destType->IsPointerType() && srcType->GetBaseType() != destType->GetBaseType()){
+        }else if (srcType->IsPointerType() && destType->IsPointerType() && srcType->GetBaseType() == destType->GetBaseType()){
+            return destNode;
+        }else if (srcType->IsIntType() && destType->IsUnsignedNum()){
+        }else if (srcType->IsUnsignedNum() && destType->IsIntegerNum()){
+        }else if (srcType->IsLongType() && destType->IsUIntType()){
+        }else if (srcType->IsBInType() && destType->IsBoolType()){
+        }else{assert(0);}
     }
-    if (std::dynamic_pointer_cast<ConstantNode>(destNode)){
-        destNode->Type = destType;
+    if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(destNode)){
+        if (auto dType = std::dynamic_pointer_cast<BuildInType>(destType)){
+            cstNode -> CastValue(dType);
+        }else if(auto pType = std::dynamic_pointer_cast<PointerType>(destType)){
+            cstNode -> CastValue(Type::ULongType);
+            cstNode ->Type = pType;
+        }else{
+            assert(0);
+        }
         return destNode;
     }
     castNode = std::make_shared<CastNode>(destNode->Tk);
-    castNode->CstNode=destNode;
+    castNode->CstNode = destNode;
     castNode->Type = destType;
     return castNode;
 }

@@ -33,11 +33,14 @@ std::string BDD::PreProcessing::Scan() {
             auto headContent = read_file(includePath);
             insertContent = headContent;
         }else{
+            if (i >= originCode.size()){
+                break;
+            }
             i++;
             continue;
         }
         auto _tmp1 = originCode.substr(0, begin );
-        auto _tmp2 = originCode.substr(i - begin +1, originCode.size());
+        auto _tmp2 = originCode.substr(i , originCode.size());
         originCode = _tmp1 + insertContent + _tmp2;
         i = begin;
     }

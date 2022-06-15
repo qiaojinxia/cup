@@ -448,13 +448,14 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
         auto argNType = funcType ->Params[i]->Type;
         TypeVisitor typeVisitor;
         auto arg = ParseExpr();
-        typeVisitor.CurAssignType = argNType;
         arg ->Accept(&typeVisitor);
-
         if (!Type::IsTypeEqual(argNType, arg->Type)){
-            auto tips =  string_format("Input type of parameter is incorrect. It should be %s "
+            arg = CastNodeType(arg->Type,argNType,arg);
+            if (arg->Type != argNType){
+                auto tips =  string_format("Input type of parameter is incorrect. It should be %s "
                                            "instead of %s. Please check!", argNType->Alias, arg->Type->Alias);
-            DiagLoc(Lex.SourceCode, arg->Tk->Location,tips.c_str());
+                DiagLoc(Lex.SourceCode, arg->Tk->Location,tips.c_str());
+            }
         }
         node -> Args.push_back(arg);
     }
@@ -574,6 +575,10 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(std::shared_ptr<Attr> attr) {
 }
 
 std::shared_ptr<Type> Parser::GenerateType(int baseType,bool isConstant) const {
+    //if const a = 3; default type is int
+    if (isConstant && baseType ==0 ){
+        baseType = (int) BuildInType::Kind::Int;
+    }
     std::shared_ptr<Type> type;
     switch ((BuildInType::Kind)baseType) {
         case BuildInType::Kind::Void:
@@ -777,6 +782,15 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     }
     node ->Uop = (UnaryOperator)UnaryOp;
     node -> Lhs = ParseCastExpr();
+    //if -n n is constantNode mul -1 to constantNode
+    if (node->Uop == UnaryOperator::Minus){
+        if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node -> Lhs)){
+            cstNode->Value *=-1;
+            cstNode ->isModify = true;
+            cstNode->CastValue(Type::IntType);
+            return node->Lhs;
+        }
+    }
     TypeVisitor typeVisitor;
     node->Accept(&typeVisitor);
     return node;
@@ -1199,13 +1213,15 @@ bool Parser::IsTypeName() {
 std::shared_ptr<AstNode> Parser::ParseCastExpr() {
     Lex.BeginPeekToken();
     if (Lex.CurrentToken -> Kind == TokenKind::LParent){
-        auto castNode = std::make_shared<CastNode>(Lex.CurrentToken);
+        auto token = Lex.CurrentToken;
         Lex.GetNextToken();
         if (IsTypeName()){
             auto type = ParseDeclarationSpec(nullptr);
-            castNode -> Type  = type;
-            Lex.SkipToken(TokenKind::RParent);
-            castNode -> CstNode = ParseCastExpr();
+            Lex.ExceptToken(TokenKind::RParent);
+            auto lNode = ParseCastExpr();
+            auto castNode = CastNodeType(lNode->Type,type,lNode);
+            if (std::dynamic_pointer_cast<CastNode>(castNode))
+                castNode-> Tk = token;
             return castNode;
         }else{
             Lex.EndPeekToken();

@@ -118,7 +118,9 @@ namespace BDD{
         void Load(AstNode *node);
         void Store(std::shared_ptr<AstNode> node, OffsetInfo * offset);
 
+
         void GenerateAddress(AstNode *node);
+        void GenerateAddress(AstNode *node,bool LValue);
 
 
         bool IsDirectInStack(std::shared_ptr<AstNode> node);

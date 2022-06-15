@@ -55,10 +55,10 @@ int main(int argc,char *argv[]) {
     }
 
 
-//    PreProcessing preProcess(source);
-//    std::string afterPreProcessCode = preProcess.Scan();
+    PreProcessing preProcess(source);
+    std::string afterPreProcessCode = preProcess.Scan();
 
-    Lexer lex(source);
+    Lexer lex(afterPreProcessCode.c_str());
     lex.GetNextToken();
 
     Parser parser(lex);

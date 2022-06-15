@@ -27,12 +27,14 @@ namespace BDD{
 
 
             {"i32->i8", "movsx %al, %rax"},
+            {"i32->u8","NULL"},
+
             {"i32->i16", "movsx %ax, %rax"},
             {"i32->u32", "NULL"},
 
             {"i32->u64", "NULL"},
             {"u64->i32", "NULL"},
-
+            {"u32->i32", "NULL"},
             {"u16->i32", "movzwl %ax, %eax"},
 
             {"u64->i64", "NULL"},
@@ -41,7 +43,7 @@ namespace BDD{
             {"i32->f64","cvtsi2sdl %eax, %xmm0"},
 
             {"u32->f32","mov %eax, %eax; cvtsi2ssq %rax, %xmm0"},
-            {"u32->i64","movzx %eax, %rax"},
+            {"u32->i64","NULL"},
             {"u32->f64","movzx %eax, %rax; cvtsi2sdq %rax, %xmm0"},
 
             {"i64->f32","cvtsi2ssq %rax, %xmm0"},
@@ -149,7 +151,8 @@ namespace BDD{
     const std::string RepeatN(std::string a, int n);
     std::string GetStoreCode(int size);
 
-    std::shared_ptr<BDD::AstNode> CreateCastNode(std::shared_ptr<Type> srcType,std::shared_ptr<Type> destType,std::shared_ptr<BDD::AstNode>);
+    std::shared_ptr<BDD::AstNode> CastNodeType(std::shared_ptr<Type> srcType, std::shared_ptr<Type> destType,
+                                               std::shared_ptr<BDD::AstNode> destNode);
 }
 
 

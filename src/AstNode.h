@@ -116,6 +116,8 @@ namespace BDD{
         BitXor,
         BitSal,
         BitSar,
+        BitShr,
+        BitShl,
         Assign,
         Equal,
         FloatPointEqual,
@@ -181,6 +183,8 @@ class BinaryNode :public  AstNode{
         void Accept(AstVisitor *visitor) override;
     };
 
+
+
     class ConstantNode : public AstNode{
     public:
         explicit ConstantNode(std::shared_ptr<Token> tk): AstNode(std::move(tk)){};
@@ -191,12 +195,23 @@ class BinaryNode :public  AstNode{
         bool isStore{};
         int Offset{};
         std::string_view refStatic;
-        unsigned long Value{};
+        unsigned long  Value{};
         bool isModify{};
         bool isChar{false};
         std::string GetValue();
         bool HasSetValue();
         void Accept(AstVisitor *visitor) override;
+        template<typename T>
+        T GetValueT();
+
+
+        std::string GetValueStr(std::shared_ptr<BuildInType> tp, const char *s_num);
+
+        void CastValue(std::shared_ptr<BuildInType> toType);
+        template<typename T>
+        T GetValue(std::shared_ptr<BuildInType> tp, const char *s_num);
+        template<typename T>
+        unsigned long ConvertToType(T num, std::shared_ptr<BuildInType> toType);
     };
 
 

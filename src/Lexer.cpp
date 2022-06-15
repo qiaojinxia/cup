@@ -58,6 +58,15 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::Minus;
         }
         GetNextChar();
+//        // - xxx is num
+//        if (kind == TokenKind::Minus){
+//            if (IsDigit()){
+//                GetNextToken();
+//            }
+//            auto curTk = CurrentToken;
+//            kind = curTk->Kind;
+//            value = curTk->Value * -1;
+//        }
     }else if (CurChar == ','){
         kind = TokenKind::Comma;
         GetNextChar();

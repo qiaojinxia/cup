@@ -42,6 +42,7 @@ namespace BDD{
             AryType,
             RecordType,
             AliasType,
+            BoolType,
             ConstType,
         };
         enum class TypeSize{

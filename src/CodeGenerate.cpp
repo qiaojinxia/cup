@@ -520,11 +520,11 @@ void CodeGenerate::Visitor(UnaryNode *node) {
                 printf("\t  neg %s\n", GetRax(node -> Lhs -> Type).data());
             }
             break;
-        case UnaryOperator::Deref:
+        case UnaryOperator::Deref://*
             node->Lhs->Accept(this);
             Load(node->Lhs);
             break;
-        case UnaryOperator::Addr:
+        case UnaryOperator::Addr://&
             GenerateAddress(node -> Lhs.get());
             break;
         case UnaryOperator::BitNot:
@@ -639,6 +639,10 @@ int CodeGenerate::GetVarStackOffset(std::shared_ptr<AstNode> node){
 }
 
 void CodeGenerate::GenerateAddress(AstNode *node) {
+    GenerateAddress(node, false);
+}
+
+void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
     while (auto castNode = dynamic_cast<CastNode *>(node)){
         node = castNode->CstNode.get();
     }
@@ -658,19 +662,27 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
             printf("\t  lea %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());
         }
     }else if(auto constNode = dynamic_cast<ConstantNode *>(node)){
-        std::string constName =  std::string(constNode->Name);
-        printf("\t  lea %s(%%rip),%s\n",constName.data(),GetCurTargetReg().data());
+        if (constNode->Type->IsPointerType()){
+            printf("\t  mov $%s,%s\n",constNode->GetValue().data(),GetCurTargetReg().data());
+        } if (constNode->Type->IsBInType()){
+            printf("\t  mov $%s,%s\n",constNode->GetValue().data(),GetCurTargetReg().data());
+        }else{
+            std::string constName =  std::string(constNode->Name);
+            printf("\t  lea %s(%%rip),%s\n",constName.data(),GetCurTargetReg().data());
+        }
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         GenerateAddress(unaryNode ->Lhs.get());
         if (unaryNode -> Uop == UnaryOperator::Deref){
-            printf("\t  mov (%%rax),%%rax\n");
+            if (!LValue)
+                printf("\t  mov (%%rax),%%rax\n");
+        }else if (unaryNode -> Uop == UnaryOperator::Addr){
         }else{
             printf("unaryNode must be defer!\n");
             assert(0);
         }
     }else if (auto memberAccessNode = dynamic_cast<MemberAccessNode *>(node)){
         auto record = std::dynamic_pointer_cast<RecordType>(memberAccessNode -> Lhs -> Type ->GetBaseType());
-        GenerateAddress(memberAccessNode -> Lhs.get());
+        GenerateAddress(memberAccessNode -> Lhs.get(),LValue);
         auto field = record -> GetField(memberAccessNode -> fieldName);
         printf("\t  add  $%d,%s\n", field ->Offset,GetCurTargetReg().data());
     }else if (auto arrayMemNode = dynamic_cast<ArrayMemberNode *>(node)){
@@ -682,7 +694,7 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
         }
         if(varExprNode->VarObj->VarAttr->isStatic ||varExprNode ->Type ->IsPointerType()){
             SetCurTargetReg("%rdi");
-            GenerateAddress(varExprNode.get());
+            GenerateAddress(varExprNode.get(),LValue);
             ClearCurTargetReg();
             printf("\t  lea (%%rdi,%%rax,%d),%s\n",node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
         }else{
@@ -692,9 +704,9 @@ void CodeGenerate::GenerateAddress(AstNode *node) {
     }else if (auto funcNode = dynamic_cast<FuncCallNode *>(node)){
         printf("\t  lea %d(%%rbp),%s\n",funcNode->ReturnStructOffset,GetCurTargetReg().data());
     }else if (auto incrNode = dynamic_cast<IncrNode *>(node)){
-        GenerateAddress(incrNode->Lhs.get());
+        GenerateAddress(incrNode->Lhs.get(),LValue);
     }else if (auto decrNode = dynamic_cast<DecrNode *>(node)){
-        GenerateAddress(decrNode->Lhs.get());
+        GenerateAddress(decrNode->Lhs.get(),LValue);
     }else{
         printf("not a value\n");
         assert(0);
@@ -869,7 +881,7 @@ void printStruct(std::shared_ptr<ConstantNode>& node){
 }
 
 void storeBuildIn(std::shared_ptr<ConstantNode>& node, OffsetInfo * offset){
-    if (node->Type->IsIntegerNum()){
+    if (node->Type->IsIntegerNum() || node->Type->IsUnsignedNum()){
         if (node ->isStore){
             printf("\t  mov %%rax,%s\n",offset->GetOffset().data());
         }else{
@@ -1291,7 +1303,7 @@ void CodeGenerate::Visitor(AssignNode *node) {
     //if var not in cur stack locad it's address to %rdi
     if (!IsDirectInStack(node->Lhs)){
         SetCurTargetReg("%rdi");
-        GenerateAddress(node ->Lhs.get());
+        GenerateAddress(node ->Lhs.get(), true);
         ClearCurTargetReg();
         offset = "%rdi";
         oi = OffsetInfo("%rdi",0, true);
@@ -1534,7 +1546,7 @@ void CodeGenerate::Visitor(CmpNode *node) {
             printf("\t  movzbl %%al,%%eax\n");
         }else{
             printf("\t  %s  %%al\n", GetSet(node -> BinOp).data());
-            printf("\t  movzx %%al,%%eax\n");
+            printf("\t  movzbl %%al,%%eax\n");
         }
     }else {
         printf("\t  %s %s\n", GetReverseJmp(node->BinOp).data(), GetJmpLabel().data());
@@ -1560,6 +1572,14 @@ void CodeGenerate::Visitor(BitOpNode *node) {
         case BinaryOperator::BitSal:
             printf("\t  mov %%dil,%%cl\n");
             printf("\t  sal %%cl,%s\n",GetRax(node -> Lhs->Type).data());
+            break;
+        case BinaryOperator::BitShl:
+            printf("\t  mov %%dil,%%cl\n");
+            printf("\t  shl %%cl,%s\n",GetRax(node -> Lhs->Type).data());
+            break;
+        case BinaryOperator::BitShr:
+            printf("\t  mov %%dil,%%cl\n");
+            printf("\t  shr %%cl,%s\n",GetRax(node -> Lhs->Type).data());
             break;
         case BinaryOperator::BitXor:
             printf("\t  xor %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());

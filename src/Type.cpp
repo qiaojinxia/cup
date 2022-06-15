@@ -9,13 +9,13 @@
 using namespace BDD;
 
 std::shared_ptr<BuildInType> Type::VoidType = std::make_shared<BuildInType>(BuildInType::Kind::Void,8,8 ,"u64");
-std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(BuildInType::Kind::Char,1,1 ,"i8");
+std::shared_ptr<BuildInType> Type::CharType = std::make_shared<BuildInType>(BuildInType::Kind::Char,1,1 ,"u8");
 std::shared_ptr<BuildInType> Type::BoolType = std::make_shared<BuildInType>(BuildInType::Kind::Bool,1,1 ,"bool");
 std::shared_ptr<BuildInType> Type::ShortType = std::make_shared<BuildInType>(BuildInType::Kind::Short ,2,2 ,"i16");
 std::shared_ptr<BuildInType> Type::IntType = std::make_shared<BuildInType>(BuildInType::Kind::Int,4,4 ,"i32");
 std::shared_ptr<BuildInType> Type::LongType = std::make_shared<BuildInType>(BuildInType::Kind::Long,8,8 ,"i64");
 std::shared_ptr<BuildInType> Type::UCharType = std::make_shared<BuildInType>(BuildInType::Kind::UInt,1,1 ,"u8");
-std::shared_ptr<BuildInType> Type::UShortType = std::make_shared<BuildInType>(BuildInType::Kind::UShort,2,2 ,"u8");
+std::shared_ptr<BuildInType> Type::UShortType = std::make_shared<BuildInType>(BuildInType::Kind::UShort,2,2 ,"u16");
 std::shared_ptr<BuildInType> Type::UIntType = std::make_shared<BuildInType>(BuildInType::Kind::UInt,4,4 ,"u32");
 std::shared_ptr<BuildInType> Type::ULongType = std::make_shared<BuildInType>(BuildInType::Kind::ULong,8,8 ,"u64");
 std::shared_ptr<BuildInType> Type::FloatType = std::make_shared<BuildInType>(BuildInType::Kind::Float ,4,4 ,"f32");
@@ -39,6 +39,7 @@ bool Type::IsIntegerNum() const {
     }
     return false;
 }
+
 
 bool Type::IsUnsignedNum() const {
     if (TypeC == TypeClass::AliasType){
@@ -275,7 +276,11 @@ bool Type::IsAliasType() const {
 }
 
 bool Type::IsBoolType() const {
-    return TypeC == TypeClass::BInType;
+    if (TypeC == TypeClass::BInType){
+        auto build_in_type = dynamic_cast<const BuildInType *>(this);
+        return  build_in_type -> GetKind() == BuildInType::Kind::Bool;
+    }
+    return false;
 }
 
 Type::TypeClass Type::GetTypeC() const {
@@ -382,6 +387,9 @@ std::shared_ptr<Type> RecordType::GetBaseType() {
 }
 
 std::shared_ptr<Type> AliasType::GetBaseType() {
+    if (this->IsConstant()){
+        return Base->GetBaseType();
+    }
     return Base;
 }
 
