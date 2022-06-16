@@ -142,3 +142,5 @@
      add test cast
 - 2022-06-15
      optimization constant cast and add test case
+- 2022-06-16
+     add float test case

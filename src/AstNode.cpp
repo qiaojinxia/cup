@@ -4,7 +4,7 @@
 
 #include "AstNode.h"
 #include "Common.h"
-
+#include <limits>
 using namespace BDD;
 
 
@@ -66,33 +66,6 @@ void ConstantNode::CastValue(std::shared_ptr<BuildInType> toType) {
 }
 
 template<typename T>
-unsigned long ConstantNode::ConvertToType(T num, std::shared_ptr<BuildInType> toType){
-    if (toType == Type::CharType ){
-        return (char)num;
-    }else if(toType == Type::BoolType){
-        return (bool)num;
-    }else if(toType == Type::UCharType){
-        return (unsigned char)num;
-    }else if(toType == Type::ShortType){
-        return (short)num;
-    }else if(toType == Type::UShortType){
-        return (unsigned short)num;
-    }else if(toType == Type::IntType){
-        return (int)num;
-    }else if(toType == Type::UIntType){
-        return (unsigned int)num;
-    }else if(toType == Type::LongType){
-        return (long)num;
-    }else if(toType == Type::ULongType){
-        return (unsigned long)num;
-    }else if(toType == Type::FloatType){
-        return (float)num;
-    }else if(toType == Type::DoubleType){
-       return (double)num;
-    }
-    return 0;
-}
-template<typename T>
 T ConstantNode::GetValue(std::shared_ptr<BuildInType> tp, const char *s_num) {
     if (tp == Type::CharType){
         return (char)atoi(s_num);
@@ -151,9 +124,9 @@ std::string ConstantNode::GetValueStr(std::shared_ptr<BuildInType> tp, const cha
     }else if(tp == Type::ULongType){
         return  string_format("%lu",GetValue<unsigned long>(tp,s_num));
     }else if(tp == Type::FloatType){
-        return string_format("%u",GetValue<float>(tp,s_num));
+        return s_num;
     }else if(tp == Type::DoubleType){
-        return string_format("%lu",GetValue<double>(tp,s_num));
+        return s_num;
     }
     assert(0);
 }
@@ -174,17 +147,23 @@ T ConstantNode::GetValueT() {
             long x = binToDec(s_num,strlen(s_num));
             s_num = string_format("%lu",x).c_str();
         }
+        if (Tk &&is_contains_str(std::string(Tk->Content),"e")){
+            long num_d = atof(s_num);
+            s_num = string_format("%lu",num_d).c_str();
+        }
         if (this->isChar){
             return this->Value;
         }
         if (Type ->IsFloatType()){
-            float m = atof(s_num);
-            auto * ui = (unsigned int *)&m;
-            s_num = string_format("%ld",*ui).c_str();
-        }else if(Type ->IsDoubleType()) {
-            double m = atof(s_num);
-            auto * ul = reinterpret_cast<unsigned long *>(&m);
-            s_num = string_format("%lu",*ul).c_str();
+            double num_d = atof(s_num);
+            if (num_d > std::numeric_limits<float>::max()){
+                auto * ul = reinterpret_cast<unsigned long *>(&num_d);
+                s_num = string_format("%lu",*ul).c_str();
+            }else{
+                float num_f = num_d;
+                auto * ui = (unsigned int *)&num_f;
+                s_num = string_format("%u",*ui).c_str();
+            }
         }
     }
     auto type = std::dynamic_pointer_cast<BuildInType>(this->Type->GetBaseType());
@@ -224,14 +203,27 @@ std::string ConstantNode::GetValue() {
         if (Tk && is_contains_str(s_num,"0x")){
             long x = hexToDec(s_num,strlen(s_num));
             s_num = string_format("%lu",x).c_str();
-        }
-        if (Tk &&is_contains_str(std::string(Tk->Content),"0b")){
+        }else if (Tk &&is_contains_str(std::string(Tk->Content),"0b")){
             long x = binToDec(s_num,strlen(s_num));
             s_num = string_format("%lu",x).c_str();
         }
         if (this->isChar){
             return string_format("%d",this->Value);
         }
+        if (Type ->IsFloatType()){
+            double num_d = atof(s_num);
+            if (num_d > std::numeric_limits<float>::max()){
+                auto * ul = reinterpret_cast<unsigned long *>(&num_d);
+                s_num = string_format("%lu",*ul).c_str();
+            }else{
+                float num_f = num_d;
+                auto * ui = (unsigned int *)&num_f;
+                s_num = string_format("%u",*ui).c_str();
+            }
+        }
+    }
+    if (this->Type->IsPointerType()){
+        return GetValueStr(std::dynamic_pointer_cast<BuildInType>(Type::LongType), s_num);
     }
     return GetValueStr(std::dynamic_pointer_cast<BuildInType>(this->Type->GetBaseType()), s_num);
 }

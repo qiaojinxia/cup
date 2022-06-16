@@ -58,13 +58,13 @@ std::string  BDD::string_format(const char *format, ...)
 
 long BDD::hexToDec(std::basic_string_view<char> content, int length){
     std::string ct(content);
-    int start = 0;
     if (is_contains_str(ct,"0x")){
-        start = 2;
+        string_replace(ct,"0x","");
     }
     unsigned long result = 0;
-    for (int i = start; i < length; i++) {
-        result += hexToDec(content[i]) * (1 << (4 * (length - i -1)));
+    length = ct.size();
+    for (int i = 0; i < length; i++) {
+        result += hexToDec(ct[i]) * ((unsigned long)1 << (4 * (length - i -1)));
     }
     return result;
 }
@@ -558,13 +558,14 @@ std::shared_ptr<BDD::AstNode> BDD::CastNodeType(
         }else if (srcType->IsUnsignedNum() && destType->IsIntegerNum()){
         }else if (srcType->IsLongType() && destType->IsUIntType()){
         }else if (srcType->IsBInType() && destType->IsBoolType()){
+        }else if (srcType->IsBInType() && destType->IsFloatPointNum()){
         }else{assert(0);}
     }
     if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(destNode)){
         if (auto dType = std::dynamic_pointer_cast<BuildInType>(destType)){
             cstNode -> CastValue(dType);
         }else if(auto pType = std::dynamic_pointer_cast<PointerType>(destType)){
-            cstNode -> CastValue(Type::ULongType);
+            cstNode -> CastValue(Type::LongType);
             cstNode ->Type = pType;
         }else{
             assert(0);

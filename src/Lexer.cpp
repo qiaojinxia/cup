@@ -254,6 +254,7 @@ void BDD::Lexer::GetNextToken() {
             } while (IsHex());
             value = binToDec(SourceCode.substr(begin, count), count);
         }else{
+            NumWhile:
             do {
                 if (kind == TokenKind::FloatNum){
                     n+= 1;
@@ -269,6 +270,21 @@ void BDD::Lexer::GetNextToken() {
                 float a = value / pow(10,n);
                 int *m = (int*)&a;
                 value = *m;
+            }
+            Begin:
+            if (CurChar == 'L' || CurChar == 'l'){
+                GetNextChar();
+                kind = TokenKind::Long;
+            }else if(CurChar == 'F' || CurChar == 'f'){
+                GetNextChar();
+                kind = TokenKind::FloatNum;
+            }else if(CurChar == '.'){
+                GetNextChar();
+                kind = TokenKind::FloatNum;
+                goto Begin;
+            }else if(CurChar == 'e'){
+                GetNextChar();
+                goto NumWhile;
             }
         }
     }else if (CurChar == '>'){
@@ -358,7 +374,7 @@ void BDD::Lexer::GetNextToken() {
             }else if(content == "float"){
                 kind = TokenKind::Float;
             }else if(content == "double"){
-                kind = TokenKind::Double;
+                kind = TokenKind::DoubleNum;
             }else if(content == "signed"){
                 kind = TokenKind::SIGNED;
             }else if(content == "unsigned"){

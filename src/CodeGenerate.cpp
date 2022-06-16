@@ -664,7 +664,7 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
     }else if(auto constNode = dynamic_cast<ConstantNode *>(node)){
         if (constNode->Type->IsPointerType()){
             printf("\t  mov $%s,%s\n",constNode->GetValue().data(),GetCurTargetReg().data());
-        } if (constNode->Type->IsBInType()){
+        }else if (constNode->Type->IsBInType()){
             printf("\t  mov $%s,%s\n",constNode->GetValue().data(),GetCurTargetReg().data());
         }else{
             std::string constName =  std::string(constNode->Name);

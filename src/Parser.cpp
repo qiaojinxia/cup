@@ -180,6 +180,15 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
            node =  constNode;
            break;
        }
+        case TokenKind::Long :
+        {
+            auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
+            constNode -> Value = Lex.CurrentToken -> Value;
+            constNode -> Type = Type::LongType;
+            Lex.GetNextToken();
+            node =  constNode;
+            break;
+        }
         case TokenKind::String:
         {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
@@ -515,7 +524,7 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(std::shared_ptr<Attr> attr) {
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Float;
             continue;
-        }else if(Lex.CurrentToken -> Kind == TokenKind::Double){
+        }else if(Lex.CurrentToken -> Kind == TokenKind::DoubleNum){
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Double;
             continue;
@@ -841,16 +850,17 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             }
             int incrSize = 1;
             auto cstNode  =  std::make_shared<ConstantNode>(nullptr);
-            cstNode -> Value = incrSize;
+            auto tp = left ->Type;
             if (left ->Type->IsPointerType()){
                 incrSize = left ->Type->GetBaseType()->Size;
-                cstNode ->Type = Type::IntType;
+                tp =  Type::LongType;
             }else if(left ->Type->IsFloatPointNum()){
-                cstNode ->Type = left ->Type;
+                tp = left ->Type;
             }else{
-                cstNode ->Type = Type::IntType;
+                tp = Type::IntType;
             }
-            cstNode ->Value = incrSize;
+            cstNode -> Value = incrSize;
+            cstNode ->CastValue(std::dynamic_pointer_cast<BuildInType>(tp));
             if (token->Kind  == TokenKind::PPlus){
                 auto postIncrNode = std::make_shared<IncrNode>(token);
                 postIncrNode -> Lhs = left;
@@ -1195,7 +1205,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
 bool Parser::IsTypeName() {
     if (Lex.CurrentToken -> Kind == TokenKind::Int || Lex.CurrentToken -> Kind == TokenKind::Char
         || Lex.CurrentToken -> Kind == TokenKind::Short  || Lex.CurrentToken -> Kind == TokenKind::Long
-        || Lex.CurrentToken -> Kind == TokenKind::Float  || Lex.CurrentToken -> Kind == TokenKind::Double
+        || Lex.CurrentToken -> Kind == TokenKind::Float  || Lex.CurrentToken -> Kind == TokenKind::DoubleNum
         || Lex.CurrentToken -> Kind == TokenKind::Struct || Lex.CurrentToken -> Kind == TokenKind::Union
         || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED
         || Lex.CurrentToken -> Kind == TokenKind::_Bool  || Lex.CurrentToken -> Kind == TokenKind::Enum

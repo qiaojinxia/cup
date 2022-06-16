@@ -4,7 +4,6 @@
 #include <string>
 #include "Type.h"
 #include "AstNode.h"
-
 #ifndef BODDY_COMMON_H
 #define BODDY_COMMON_H
 

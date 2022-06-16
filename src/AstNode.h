@@ -210,8 +210,7 @@ class BinaryNode :public  AstNode{
         void CastValue(std::shared_ptr<BuildInType> toType);
         template<typename T>
         T GetValue(std::shared_ptr<BuildInType> tp, const char *s_num);
-        template<typename T>
-        unsigned long ConvertToType(T num, std::shared_ptr<BuildInType> toType);
+
     };
 
 

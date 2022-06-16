@@ -1,7 +1,9 @@
 //
 // Created by qiaojinxia on 2022/6/11.
 //
-#include "head.h"
+extern float assert_f(float  excepted,float actual);
+extern int  assert(int  excepted,int actual);
+
 int main() {
     assert(131585, (int)8590066177);
     assert(513, (short)8590066177);
@@ -9,12 +11,12 @@ int main() {
     assert(1, (long)1);
 
     assert(3, ({int ab = 3;(int)*(int *)&ab;}));
-//    assert(0, (long)&*(int *)0);
+    assert(0, (long)&*(int *)0);
     assert(513, ({ int x=512; *(char *)&x=1; x; }));
     assert(5, ({ int x=5; long y=(long)&x; *(int *)y; }));
-//
+
 //    (void)1;
-//
+
     assert(-1, (char)255);
     assert(-1, (signed char)255);
     assert(255, (unsigned char)255);
@@ -51,14 +53,14 @@ int main() {
     assert(3, (char)3.0);
     assert(1000, (short)1000.3);
     assert(3, (int)3.99);
-//    assert(2000000000000000, (long)2e15);
+    assert(2000000000000000, (long)2e15);
     assert(3, (float)3.5);
     assert(5, (double)5.5);
     assert(3, (float)3);
-//    assert(3, (double)3);
-//    ASSERT(3, (float)3L);
-//    ASSERT(3, (double)3L);
-//
+    assert(3, (double)3);
+    assert(3, (float)3L);
+    assert(3, (double)3L);
+
 //    printf("OK\n");
     return 0;
 }
