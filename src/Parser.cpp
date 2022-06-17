@@ -794,9 +794,17 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     //if -n n is constantNode mul -1 to constantNode
     if (node->Uop == UnaryOperator::Minus){
         if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node -> Lhs)){
-            cstNode->Value *=-1;
-            cstNode ->isModify = true;
-            cstNode->CastValue(Type::IntType);
+            if (cstNode->Type->IsFloatType()){
+                cstNode->Value |= 0x80000000;
+                cstNode ->isModify = true;
+            }else if(cstNode->Type->IsDoubleType()){
+                cstNode->Value |= 0x8000000000000000;
+                cstNode ->isModify = true;
+            }else{
+                cstNode->Value  *= -1;
+                cstNode ->isModify = true;
+                cstNode->CastValue(std::dynamic_pointer_cast<BuildInType>(cstNode->Type));
+            }
             return node->Lhs;
         }
     }

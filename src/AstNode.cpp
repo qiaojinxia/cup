@@ -95,7 +95,7 @@ T ConstantNode::GetValue(std::shared_ptr<BuildInType> tp, const char *s_num) {
         return _tmp;
     }else if(tp == Type::FloatType){
         char *end_ptr = NULL;
-        unsigned long _tmp = strtoll(s_num, &end_ptr, 10);
+        unsigned int _tmp = strtoll(s_num, &end_ptr, 10);
         float * f = reinterpret_cast<float *>(&_tmp);
         return *f;
     }else if(tp == Type::DoubleType){

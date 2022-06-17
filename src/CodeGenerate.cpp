@@ -1531,7 +1531,14 @@ void CodeGenerate::Visitor(CmpNode *node) {
     if (node->Lhs->Type->IsFloatPointNum() || node->Rhs->Type->IsFloatPointNum()){
         node -> Lhs -> Accept(this);
         node -> Rhs -> Accept(this);
-        printf("\t  ucomiss %s, %s\n",Xmm[Depth - 1] ,Xmm[Depth - 2]);
+        if (node->BinOp ==BinaryOperator::FloatPointLesser || node->BinOp ==BinaryOperator::FloatPointLesserEqual){
+            printf("\t  ucomiss %s, %s\n",Xmm[Depth - 2] ,Xmm[Depth - 1]);
+            node->BinOp == BinaryOperator::FloatPointLesser ? node->BinOp =BinaryOperator::FloatPointGreater : node->BinOp =BinaryOperator::FloatPointGreaterEqual;
+        }else if (node->BinOp ==BinaryOperator::FloatPointGreater || node->BinOp == BinaryOperator::FloatPointGreaterEqual){
+            printf("\t  ucomiss %s, %s\n",Xmm[Depth - 1] ,Xmm[Depth - 2]);
+        }else{
+            printf("\t  ucomiss %s, %s\n",Xmm[Depth - 1] ,Xmm[Depth - 2]);
+        }
         Depth -=2;
     }else{
         node -> Rhs -> Accept(this);

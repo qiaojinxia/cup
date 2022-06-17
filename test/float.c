@@ -36,5 +36,42 @@ int main(){
     assert(35, (int)(double)35);
     assert(35, (long)(double)35);
     assert(35, (unsigned char)(double)35);
+
+    assert(-2147483648, (double)(unsigned long)(long)-1);
+
+//
+    assert(1, 2e3==2e3);
+    assert(0, 2e3==2e5);
+    assert(1, 2.0==2);
+    assert(0, 5.1<5);
+    assert(0, 5.0<5);
+    assert(1, 4.9<5);
+    assert(0, 5.1<=5);
+    assert(1, 5.0<=5);
+    assert(1, 4.9<=5);
+
+    assert(1, 2e3f==2e3);
+    assert(0, 2e3f==2e5);
+    assert(1, 2.0f==2);
+    assert(0, 5.1f<5);
+    assert(0, 5.0f<5);
+    assert(1, 4.9f<5);
+    assert(0, 5.1f<=5);
+    assert(1, 5.0f<=5);
+    assert(1, 4.9f<=5);
+
+    assert(6, 2.3+3.8);
+    assert(-1, 2.3-3.8);
+    assert(-3, -3.8);
+    assert(13, 3.3*4);
+    assert(2, 5.0/2);
+
+    assert(6, 2.3f+3.8f);
+    assert(6, 2.3f+3.8);
+    assert(-1, 2.3f-3.8);
+    assert(-3, -3.8f);
+    assert(13, 3.3f*4);
+    assert(2, 5.0f/2);
+
     return 0;
 }

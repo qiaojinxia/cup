@@ -21,7 +21,7 @@ void BDD::Lexer::GetNextChar() {
 
 void BDD::Lexer::GetNextToken() {
     SkipWhiteSpace();
-    long value = 0;
+    unsigned long value = 0;
     TokenKind kind;
     int startPos = Cursor -1;
     if (CurChar == '\0'){
@@ -233,6 +233,7 @@ void BDD::Lexer::GetNextToken() {
     }else if(isdigit(CurChar)){
         kind = TokenKind::Num;
         value = 0;
+        std::string sValue;
         int n = 0;
         int  begin ;
         if (CurChar == '0' && PeekChar(1) =='x'){
@@ -260,15 +261,17 @@ void BDD::Lexer::GetNextToken() {
                     n+= 1;
                 }
                 value = value * 10 + CurChar - '0';
+                sValue += CurChar;
                 GetNextChar();
                 if (CurChar == '.'){
+                    sValue += CurChar;
                     kind = TokenKind::FloatNum;
                     GetNextChar();
                 }
             }while (isdigit(CurChar));
             if (kind == TokenKind::FloatNum){
-                float a = value / pow(10,n);
-                int *m = (int*)&a;
+                float a = atof(sValue.c_str());
+                unsigned int *m = (unsigned int *)&a;
                 value = *m;
             }
             Begin:

@@ -260,11 +260,13 @@ const std::string BDD::GetSet(BinaryOperator op) {
         case BinaryOperator::LesserEqual:
             return "setle";
         case BinaryOperator::Equal:
-        case BinaryOperator::FloatPointEqual:
             return "sete";
+        case BinaryOperator::FloatPointEqual:
+            return "setnp";
         case BinaryOperator::NotEqual:
-        case BinaryOperator::FloatPointNotEqual:
             return "setne";
+        case BinaryOperator::FloatPointNotEqual:
+            return "setp";
         default:
             assert(0);
     }
