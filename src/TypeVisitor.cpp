@@ -390,13 +390,13 @@ void TypeVisitor::Visitor(AddNode *node) {
         node ->Type = node -> Lhs -> Type;
     }else if (node -> Lhs -> Type -> IsArrayType() && (node->Rhs->Type->IsIntegerNum() || node->Rhs->Type->IsUnsignedNum()) ){
         node -> BinOp = BinaryOperator::PointerAdd;
-        node ->Type = std::make_shared<PointerType>(node -> Lhs -> Type->GetBaseType());
+        node ->Type = node -> Lhs -> Type;
     }else if (node->Lhs->Type->IsIntegerNum() && node -> Rhs -> Type -> IsArrayType()) {
         auto temp = node->Lhs;
         node->Lhs = node->Rhs;
         node->Rhs = temp;
         node->BinOp = BinaryOperator::PointerAdd;
-        node->Type = std::make_shared<PointerType>(node->Rhs->Type);
+        node->Type = node->Rhs->Type;
     }
 }
 
@@ -411,6 +411,7 @@ void TypeVisitor::Visitor(MinusNode *node) {
     node ->Type = binary.Type;
     if(node -> Lhs -> Type -> IsPointerType() && node -> Rhs -> Type -> IsPointerType()){
         node -> BinOp = BinaryOperator::PointerDiff;
+        node ->Type = Type::LongType;
     }else if (node ->Lhs ->Type ->IsFloatPointNum() || node ->Rhs->Type->IsFloatPointNum()){
         node -> BinOp = BinaryOperator::FloatPointMinus;
     }else if (node -> Lhs -> Type ->IsPointerType() && (node->Rhs->Type->IsIntegerNum() || node->Rhs->Type->IsUnsignedNum()) ){

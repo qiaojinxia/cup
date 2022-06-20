@@ -118,7 +118,7 @@ bool Type::IsRecordType() const {
 bool Type::IsStructType() const {
     if (TypeC == TypeClass::AliasType){
         auto alias_type = dynamic_cast<const AliasType *>(this);
-        return alias_type ->Base->IsStructType();
+        return alias_type ->Base->IsRecordType();
     }
     if (IsRecordType()){
         auto ry = dynamic_cast<const RecordType *>(this);

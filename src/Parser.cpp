@@ -131,7 +131,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                 Lex.EndPeekToken();
                 auto funcCallNode =  ParseFuncCallNode();
                 //to record funcall node if return is structType to distribution  memory in stack
-                if (funcCallNode ->Type->GetBaseType()->IsStructType())
+                if (funcCallNode ->Type->GetBaseType()->IsRecordType())
                     CurFuncCall.push_back(std::dynamic_pointer_cast<FuncCallNode>(funcCallNode));
                 return  funcCallNode;
             }
@@ -379,7 +379,7 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
             continue;
         for (auto &rtStmt:CurFuncReturnNode) {
             // if return a struct that store address (ReturnOffset(%%rbp)) the data need to copy to
-            if (node->Type->GetBaseType()->IsStructType()){
+            if (node->Type->GetBaseType()->IsRecordType()){
                 rtStmt ->ReturnOffset = -1 * Type::VoidType->Size;
             }
             node -> ReturnStmts.push_back(rtStmt);
@@ -448,7 +448,7 @@ std::shared_ptr<AstNode> Parser::ParseFuncCallNode() {
     Lex.ExceptToken(TokenKind::Identifier);
     Lex.ExceptToken(TokenKind::LParent);
     int i = 0;
-    if (funcType->IsFunctionType() && funcType->GetBaseType()->IsStructType())
+    if (funcType->IsFunctionType() && funcType->GetBaseType()->IsRecordType())
         i = 1; //if return struct first args is return struct write to address
     while(Lex.CurrentToken->Kind != TokenKind::RParent){
         if (Lex.CurrentToken ->Kind == TokenKind::Comma){
@@ -669,7 +669,7 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
         }
         auto funcType = std::make_shared<FunctionType>(baseType);
         //if return type is struct  set the first param is  struct offset
-        if(funcType->GetBaseType()->IsStructType()){
+        if(funcType->GetBaseType()->IsRecordType()){
             auto param = std::make_shared<Param>();
             param -> Type = std::make_shared<RecordType>();
             param ->TToken = std::make_shared<Token>();

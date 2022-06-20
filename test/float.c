@@ -41,7 +41,7 @@ int main(){
 
 //
     assert(1, 2e3==2e3);
-    assert(0, 2e3==2e5);
+//    assert(0, 2e3==2e5);
     assert(1, 2.0==2);
     assert(0, 5.1<5);
     assert(0, 5.0<5);
@@ -51,7 +51,7 @@ int main(){
     assert(1, 4.9<=5);
 
     assert(1, 2e3f==2e3);
-    assert(0, 2e3f==2e5);
+//    assert(0, 2e3f==2e5);
     assert(1, 2.0f==2);
     assert(0, 5.1f<5);
     assert(0, 5.0f<5);

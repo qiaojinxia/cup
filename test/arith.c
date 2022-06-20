@@ -127,6 +127,8 @@ int main() {
     assert(-20, ({ int x; int *p=&x; p-20-p; }));
     assert(1, ({ int x; int *p=&x; p-20-p<0; }));
 
+
+
     assert(15, (char *)0xffffffffffffffff - (char *)0xfffffffffffffff0);
     assert(-15, (char *)0xfffffffffffffff0 - (char *)0xffffffffffffffff);
     assert(1, (void *)0xffffffffffffffff > (void *)0);

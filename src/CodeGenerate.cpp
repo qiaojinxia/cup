@@ -108,7 +108,7 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     if (!cstNode){
         return;
     }
-    if (cstNode->Type->IsStructType()){
+    if (cstNode->Type->IsRecordType()){
         printStruct(cstNode);
     } else if (cstNode->Type->IsPtrCharType()){
         printString(cstNode);
@@ -137,7 +137,7 @@ void preProcessCstNode(std::shared_ptr<ConstantNode> node, bool isInStructOrArra
         Scope::GetInstance()->PutToConstantTable(strNode);
         node ->Name = strNode->Name;
     }
-    if(node ->Type->IsStructType() || node ->Type->IsArrayType())
+    if(node ->Type->IsRecordType() || node ->Type->IsArrayType())
         isInStructOrArray = true;
     preProcessCstNode(node->Sub,isInStructOrArray);
     preProcessCstNode(node->Next,isInStructOrArray);
@@ -357,7 +357,7 @@ void CodeGenerate::Visitor(FunctionNode *node) {
     //release use reg
     Depth = 0;
     printf(".LReturn_%s:\n",CurrentFuncName.data());
-    if (node->Type->GetBaseType()->IsStructType())
+    if (node->Type->GetBaseType()->IsRecordType())
         printf("\t  mov  -8(%%rbp),%%rax\n");
     printf("\t  mov %%rbp,%%rsp\n");
     printf("\t  pop %%rbp\n");
@@ -373,7 +373,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
     //if arg is func need load first
     for(int i = node->Args.size() -1;i>=0;i--){
         //if arg is struct copy origin struct as value reference
-         if(node->Args[i] ->Type ->IsStructType() || node->Args[i] ->Type->IsUnionType()){
+         if(node->Args[i] ->Type ->IsRecordType() || node->Args[i] ->Type->IsUnionType()){
             SetCurTargetReg("%rdi");
             GenerateAddress(node->Args[i].get());
             ClearCurTargetReg();
@@ -381,7 +381,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
             tmp_rsp += node->Args[i] -> Type->Size;
         }
     }
-    if( node ->Type->GetBaseType()->IsStructType()){
+    if( node ->Type->GetBaseType()->IsRecordType()){
         useReg.push_back(GetReg(Type::Pointer->Size,count_i++));
     }
 
@@ -390,7 +390,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         auto  arg = node->Args[i];
         bool loadToReg = false;
         auto argType = arg ->Type;
-        if(arg ->Type ->IsStructType() || arg ->Type->IsUnionType()){
+        if(arg ->Type ->IsRecordType() || arg ->Type->IsUnionType()){
             continue;
         }
         //Allocation register
@@ -404,7 +404,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         }
         if (argType->IsFloatPointNum()){
             useReg.push_back(Xmm[count_f++]);
-        }else if( argType -> IsArrayType() || argType -> IsStructType()){
+        }else if( argType -> IsArrayType() || argType -> IsRecordType()){
             //array type pass pointer
             useReg.push_back(GetReg(Type::VoidType->Size,count_i++));
         }else{
@@ -415,7 +415,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
             //push arg
             if (argType ->IsFloatPointNum()){
                 Push(argType->GetBaseType(),Xmm[0]);
-            }else if(argType -> IsStructType() || argType -> IsUnionType()){
+            }else if(argType -> IsRecordType() || argType -> IsUnionType()){
                 Push(Type::VoidType, GetRax(Type::VoidType).data());
             }else{
                 Push(argType, GetRax(argType).data());
@@ -423,7 +423,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
         }else{
             //handle just one arg
             if (argType ->IsFloatPointNum()){
-            }else if(argType -> IsStructType() || argType -> IsUnionType()){
+            }else if(argType -> IsRecordType() || argType -> IsUnionType()){
                 printf("\t  %s  %s,%s\n", GetMoveCode2(Type::VoidType).data(), GetRax(Type::VoidType).data(),useReg.back().data());
             }else{
                 printf("\t  %s  %s,%s\n", GetMoveCode2(argType).data(), GetRax(argType).data(),useReg.back().data());
@@ -434,7 +434,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 
     int seq = 0;
     //if return struct set first addrss to %%rdi
-    if( node ->Type->GetBaseType()->IsStructType()){
+    if( node ->Type->GetBaseType()->IsRecordType()){
         int varOffset = GetStructReturn2Offset();
         if (varOffset != 0){
             printf("\t  lea %d(%%rbp),%s\n",varOffset,useReg[seq].data());
@@ -446,7 +446,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 
     for(auto &arg:node -> Args){
         if (node -> Args.size() != 1){
-            if (arg->Type->IsStructType() || arg->Type->IsUnionType()) {
+            if (arg->Type->IsRecordType() || arg->Type->IsUnionType()) {
                 continue;
             }else if(arg->Type->IsPointerType() || arg -> Type->IsArrayType()){
                 Pop(Type::Pointer,useReg[seq].data());
@@ -477,7 +477,7 @@ void CodeGenerate::Visitor(FuncCallNode *node) {
 
 
 void CodeGenerate::Visitor(ReturnStmtNode *node) {
-     if (node->Type->IsStructType() && node->ReturnOffset){
+     if (node->Type->IsRecordType() && node->ReturnOffset){
         SetCurTargetReg("%rsi");
         GenerateAddress(node->Lhs.get());
         ClearCurTargetReg();
@@ -671,11 +671,12 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
             printf("\t  lea %s(%%rip),%s\n",constName.data(),GetCurTargetReg().data());
         }
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
-        GenerateAddress(unaryNode ->Lhs.get());
         if (unaryNode -> Uop == UnaryOperator::Deref){
-            if (!LValue)
-                printf("\t  mov (%%rax),%%rax\n");
+            ClearCurTargetReg();
+            SetCurTargetReg("%rax");
+            unaryNode ->Lhs->Accept(this);
         }else if (unaryNode -> Uop == UnaryOperator::Addr){
+            GenerateAddress(unaryNode ->Lhs.get());
         }else{
             printf("unaryNode must be defer!\n");
             assert(0);
@@ -707,6 +708,9 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
         GenerateAddress(incrNode->Lhs.get(),LValue);
     }else if (auto decrNode = dynamic_cast<DecrNode *>(node)){
         GenerateAddress(decrNode->Lhs.get(),LValue);
+    }else if (auto binaryNode = dynamic_cast<BinaryNode *>(node)){
+        SetCurTargetReg("%rax");
+        node->Accept(this);
     }else{
         printf("not a value\n");
         assert(0);
@@ -739,7 +743,7 @@ void CodeGenerate::Load(std::shared_ptr<AstNode> node) {
     while (auto castNode = std::dynamic_pointer_cast<CastNode>(cursor)){ //int a = 0; in b = 3;(long) a + long(b)  load from memory a is int
         cursor = castNode ->CstNode;
     }
-    Load(cursor ->Type->GetBaseType());
+    Load(cursor ->Type);
 }
 
 void CodeGenerate::Load(std::shared_ptr<Type> type){
@@ -747,7 +751,10 @@ void CodeGenerate::Load(std::shared_ptr<Type> type){
         printf("\t  %s (%%rax),%s\n", GetMoveCode(type ->GetBaseType()).data(),Xmm[Depth++]);
     }else if(type -> IsPointerType()){
         printf("\t  mov (%%rax),%s\n", GetRax(type->GetBaseType()).data());
-    }else if(type -> IsArrayType() || type -> IsRecordType()){
+    }else if( type -> IsRecordType() ){
+    }else if( type -> GetBaseType()->IsArrayType()){
+    }else if (type->IsArrayType() && type ->GetBaseType() ->IsBInType()){
+        printf("\t  mov (%%rax),%s\n", GetRax(type ->GetBaseType()->Size).data());
     }else{
         printf("\t  mov (%%rax),%s\n", GetRax(type ->GetBaseType()->Size).data());
     }
@@ -838,7 +845,7 @@ void printArray(std::shared_ptr<ConstantNode>& node){
     auto cursor = node;
     auto aryType = node->Type;//array fisr element type as arrayType
     void (* p) (std::shared_ptr<ConstantNode>& node);
-    if (cursor->Type->IsStructType()){
+    if (cursor->Type->IsRecordType()){
         p =  printStruct;
     } else if (cursor->Type->IsPtrCharType()){
         p = printCharPointer;
@@ -861,7 +868,7 @@ void printStruct(std::shared_ptr<ConstantNode>& node){
     while(cursor){
         int gap = cursor->Offset - offset;
         printZero(gap);
-        if (cursor->Type->IsStructType()){
+        if (cursor->Type->IsRecordType()){
             printStruct(cursor);
         } else if (cursor->Type->IsPtrCharType()){
             printCharPointer(cursor);
@@ -875,7 +882,7 @@ void printStruct(std::shared_ptr<ConstantNode>& node){
         offset += cursor->Type->Size + gap;
         cursor = cursor ->Next;
     }
-    if (node->Type->IsStructType())
+    if (node->Type->IsRecordType())
         printZero(node->Type->Size - offset);
 
 }
@@ -940,7 +947,7 @@ void storeStruct(std::shared_ptr<ConstantNode>& node, OffsetInfo * offset) {
             HandleStore(node,offset,storeBuildIn, false);
         }else if(node->Type->IsPointerType()){
             HandleStore(node,offset,storePointer, false);
-        }else if(node->Type->IsStructType()){
+        }else if(node->Type->IsRecordType()){
             HandleStore(node,offset, storeStruct, true);
         }else if(node->Type->IsStringType()){
             HandleStore(node,offset,storeString, false);
@@ -969,7 +976,7 @@ void storeHandle(std::shared_ptr<ConstantNode>& node, OffsetInfo * oi) {
             HandleStore(node, oi, storeBuildIn, false);
         }else if(node->Type->IsPointerType()){
             HandleStore(node, oi, storePointer, false);
-        }else if(node->Type->IsStructType()){
+        }else if(node->Type->IsRecordType()){
             HandleStore(node, oi, storeStruct, true);
         }else if(node->Type->IsStringType()){
             HandleStore(node, oi, storeString, false);
@@ -1072,8 +1079,8 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node, OffsetInfo * oi) {
     }else if(type->IsFloatPointNum()){
         printf("\t  %s %s,%s\n", GetMoveCode(type).data(),Xmm[Depth-1],oi->GetOffset().data());
         return;
-    }else if((type->IsFunctionType() && type ->GetBaseType()->IsStructType())
-            || type ->IsArrayType() || type ->IsStructType() || type ->IsUnionType()){
+    }else if((type->IsFunctionType() && type ->GetBaseType()->IsRecordType())
+    || type ->IsRecordType()){
         if (IsDeclaration){
             return;
         }
@@ -1082,9 +1089,13 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node, OffsetInfo * oi) {
         printf("\t  mov $%d,%%rcx\n",type ->GetBaseType()->Size);
         printf("\t  call _mempcy\n");
         return;
+    }else if(type ->IsArrayType()){
+        printf("\t  mov %s,%s\n",GetRax(type).data(),oi->GetOffset().data());
+        return;
     }else if(type ->IsFunctionType() && type ->GetBaseType()->IsBInType()){
         printf("\t  %s %s,%s\n", GetMoveCode2(node->Type).data(), GetRax(node->Type).data(),oi->GetOffset().data());
-    }{
+        return;
+    }else{
         printf("\t  mov %s,%s\n",GetRax(type).data(),oi->GetOffset().data());
         return;
     }
@@ -1198,7 +1209,7 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty,const char * reg) {
     if (ty ->IsAliasType()){
         ty = std::dynamic_pointer_cast<AliasType>(ty)->Base;
     }
-    if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
+    if (ty ->IsRecordType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
         size = Type::VoidType->Size;
     }
     if(ty ->IsFloatPointNum()){
@@ -1216,7 +1227,7 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     if (ty ->IsAliasType()){
         ty = std::dynamic_pointer_cast<AliasType>(ty)->Base;
     }
-    if (ty ->IsStructType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
+    if (ty ->IsRecordType() || ty ->IsPointerType() || ty ->IsArrayType() || ty->IsPtrCharType() ){
         size = Type::VoidType->Size;
     }
     printf("\t  sub $%d, %%rsp          #Push %s\n",size,GetRax(ty).data());
@@ -1227,7 +1238,7 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
 void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
     printf("\t  mov(%%rsp),%s           #Pop %s\n",GetRax(ty).data(),GetRax(ty).data());
     StackLevel --;
-    if (ty->IsStructType() || ty ->IsArrayType() || ty -> IsPointerType()){
+    if (ty->IsRecordType() || ty ->IsArrayType() || ty -> IsPointerType()){
         printf("\t  add $%d, %%rsp\n",Type::VoidType->Size);
         return;
     }
@@ -1289,7 +1300,7 @@ void CodeGenerate::Visitor(AssignNode *node) {
     if (!constantNode){
         node -> Rhs -> Accept(this);
         if(auto funcCall = std::dynamic_pointer_cast<FuncCallNode>(node->Rhs)){
-            if (funcCall->Type->GetBaseType()->IsStructType()){
+            if (funcCall->Type->GetBaseType()->IsRecordType()){
                 SetCurTargetReg("%rsi");// when rhs is fun call and return struct eval rhs  and load rhs struct beginaddress
                 GenerateAddress(node -> Rhs.get());
                 ClearCurTargetReg();
@@ -1298,15 +1309,13 @@ void CodeGenerate::Visitor(AssignNode *node) {
     }
     SetStructReturn2Offset(0);
     ClearAssignState();
-    std::string offset;
     OffsetInfo oi = *(OffsetInfo *)alloca(sizeof(OffsetInfo));
     //if var not in cur stack locad it's address to %rdi
     if (!IsDirectInStack(node->Lhs)){
         SetCurTargetReg("%rdi");
         GenerateAddress(node ->Lhs.get(), true);
+        oi = OffsetInfo(GetCurTargetReg(),0, true);
         ClearCurTargetReg();
-        offset = "%rdi";
-        oi = OffsetInfo("%rdi",0, true);
     }else {
         oi = OffsetInfo("%rbp", GetVarStackOffset(node->Lhs), false);
     }
@@ -1693,7 +1702,8 @@ void CodeGenerate::SetCurTargetReg(const std::string& reg) {
 
 
 void CodeGenerate::ClearCurTargetReg(){
-    curTargetReg.pop_back();
+    if (!curTargetReg.empty())
+        curTargetReg.pop_back();
 }
 
 int CodeGenerate::GetStructReturn2Offset() const {
