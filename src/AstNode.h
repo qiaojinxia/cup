@@ -349,7 +349,6 @@ class BinaryNode :public  AstNode{
     public:
         explicit ArrayMemberNode(std::shared_ptr<Token> tk): AstNode(std::move(tk)){};
         std::shared_ptr<AstNode> Lhs; //expr node
-        std::shared_ptr<AstNode> Offset ;
         void Accept(AstVisitor *visitor) override;
     };
 

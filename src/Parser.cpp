@@ -824,12 +824,25 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
         if (Lex.CurrentToken -> Kind == TokenKind::LParent){
             return ParseFuncCallNode();
         }else if (Lex.CurrentToken -> Kind == TokenKind::LBracket){
-            auto starNode = std::make_shared<ArrayMemberNode>(Lex.CurrentToken);
-            Lex.GetNextToken();
-            starNode -> Offset = ParseExpr();
-            starNode -> Lhs = left;
+            auto arrayMemberNode = std::make_shared<ArrayMemberNode>(Lex.CurrentToken);
+            bool first = true;
+            do{
+                if (!first){
+                    auto deferArrayNode = std::make_shared<UnaryNode>(Lex.CurrentToken);
+                    deferArrayNode->Uop = UnaryOperator::Deref;
+                    deferArrayNode ->Lhs = left;
+                }
+                auto addNode = std::make_shared<AddNode>(Lex.CurrentToken);
+                Lex.GetNextToken();
+                addNode ->BinOp = BinaryOperator::Add;
+                addNode ->Lhs = left;
+                addNode ->Rhs = ParsePrimaryExpr();
+                left = addNode;
+                first = false;
+            }while(Lex.CurrentToken -> Kind == TokenKind::LBracket);
+            arrayMemberNode ->Lhs = left;
             Lex.ExceptToken(TokenKind::RBracket);
-            left = starNode;
+            left = arrayMemberNode;
             continue;
         }else if(Lex.CurrentToken -> Kind == TokenKind::Period){
             auto memberNode = std::make_shared<MemberAccessNode>(Lex.CurrentToken);

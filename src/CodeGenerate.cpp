@@ -608,6 +608,10 @@ bool  CodeGenerate::IsDirectInStack(std::shared_ptr<AstNode> node){
         if (unaryNode->Uop == UnaryOperator::Deref)
             return false;
         return IsDirectInStack(unaryNode->Lhs);
+    }else if(auto binaryNode = std::dynamic_pointer_cast<BinaryNode>(node)){
+        if (binaryNode ->Type->IsPointerType())
+            return false;
+       return IsDirectInStack(binaryNode->Lhs) && IsDirectInStack(binaryNode->Rhs);
     }
     return true;
 }
@@ -628,12 +632,20 @@ int CodeGenerate::GetVarStackOffset(std::shared_ptr<AstNode> node){
         int _fOffset = field->Offset;
         return _mOffset + _fOffset * -1;
     }else if(auto arrMemberNode = std::dynamic_pointer_cast<ArrayMemberNode>(node)){
-        int _aOffset = GetVarStackOffset(arrMemberNode->Lhs);
-        int _fOffset = GetVarStackOffset(arrMemberNode->Offset) * arrMemberNode->Lhs->Type->GetBaseType()->Size;
-        return _aOffset + _fOffset;
+        return GetVarStackOffset(arrMemberNode->Lhs) ;
     }else if(auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node)){
         int _aOffset = GetVarStackOffset(unaryNode->Lhs);
         return _aOffset ;
+    }else if(auto addNode = std::dynamic_pointer_cast<AddNode>(node)){
+        int _lOffset = GetVarStackOffset(addNode->Lhs);
+        int _rOffset = GetVarStackOffset(addNode->Rhs) ;
+        if (addNode->Lhs->Type->IsArrayType())
+            _rOffset *= addNode->Lhs->Type->GetBaseType()->Size;
+        return _lOffset + _rOffset ;
+    }else if(auto minusNode = std::dynamic_pointer_cast<MinusNode>(node)){
+        int _lOffset = GetVarStackOffset(minusNode->Lhs);
+        int _rOffset = GetVarStackOffset(minusNode->Rhs);
+        return _lOffset - _rOffset ;
     }
     assert(0);
 }
@@ -687,21 +699,7 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
         auto field = record -> GetField(memberAccessNode -> fieldName);
         printf("\t  add  $%d,%s\n", field ->Offset,GetCurTargetReg().data());
     }else if (auto arrayMemNode = dynamic_cast<ArrayMemberNode *>(node)){
-        auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(arrayMemNode ->Lhs);
-        arrayMemNode -> Offset ->Accept(this);
-        //if load index less than 4 bytes need empty high bit
-        if (arrayMemNode ->Offset ->Type ->Size <= Type::IntType ->Size){
-            printf("\t  cdqe\n");
-        }
-        if(varExprNode->VarObj->VarAttr->isStatic ||varExprNode ->Type ->IsPointerType()){
-            SetCurTargetReg("%rdi");
-            GenerateAddress(varExprNode.get(),LValue);
-            ClearCurTargetReg();
-            printf("\t  lea (%%rdi,%%rax,%d),%s\n",node-> Type->GetBaseType()->Size,GetCurTargetReg().data());
-        }else{
-            printf("\t  lea %d(%%rdi,%%rax,%d),%s\n", varExprNode ->VarObj ->Offset, node-> Type->GetBaseType()->Size, GetCurTargetReg().data());
-        }
-
+        GenerateAddress(arrayMemNode->Lhs.get(),LValue);
     }else if (auto funcNode = dynamic_cast<FuncCallNode *>(node)){
         printf("\t  lea %d(%%rbp),%s\n",funcNode->ReturnStructOffset,GetCurTargetReg().data());
     }else if (auto incrNode = dynamic_cast<IncrNode *>(node)){
@@ -1266,24 +1264,12 @@ void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
 
 void CodeGenerate::Visitor(ArrayMemberNode *node) {
     auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node ->Lhs);
-    node -> Offset ->Accept(this);
-    //use rax as index so if index is eax need extend
-    if (node ->Offset ->Type ->Size == Type::IntType ->Size){
-        printf("\t  cdqe\n");
-    }
-    auto tarSeg = GetRax(node->Type).data();
-    if (node->Type->IsFloatPointNum())
-        tarSeg = Xmm[Depth++];
-    if (varExprNode && !varExprNode->VarObj->VarAttr->isStatic){
-            printf("\t  %s %d(%%rbp,%%rax,%d),%s\n",
-                   GetMoveCode2(node-> Type).data(),varExprNode ->VarObj ->Offset,
-                   node-> Type->GetBaseType()->Size,tarSeg);
+    if (IsDirectInStack(node->Lhs)){
+        auto offset = GetVarStackOffset(node ->Lhs);
+        printf("\t  mov %d(%%rbp),%s\n",offset, GetRax(node->Lhs->Type).data());
     }else{
-        SetCurTargetReg("%rdi");
-        GenerateAddress(node ->Lhs.get());
-        ClearCurTargetReg();
-        printf("\t  %s (%%rdi,%%rax,%d),%s\n",
-               GetMoveCode2(node-> Type).data(),node-> Type->GetBaseType()->Size,tarSeg);
+        node ->Lhs->Accept(this);
+        Load(node->Lhs);
     }
 }
 

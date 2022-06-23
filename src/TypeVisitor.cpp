@@ -27,6 +27,13 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     if (node->Lhs->Type->IsArrayType() && node->Rhs->Type->IsIntegerNum()){
         return;
     }
+    if (node->Lhs->Type->IsIntegerNum() && node -> Rhs -> Type -> IsArrayType()) {
+        auto temp = node->Lhs;
+        node->Lhs = node->Rhs;
+        node->Rhs = temp;
+        node->BinOp = BinaryOperator::PointerAdd;
+        node->Type = node->Rhs->Type;
+    }
     //if lhs is 4 bytes rhs is 8 bytes convert lhs to 8bytes , always  convert to maxSize bytes size between lhs and rhs
     auto maxBitSize = node -> Lhs ->Type ->Size;
     if (node -> Rhs ->Type ->Size > maxBitSize){
@@ -330,20 +337,12 @@ void TypeVisitor::Visitor(CastNode *node) {
 void TypeVisitor::Visitor(ArrayMemberNode *node) {
     node -> Lhs ->Accept(this);
     node -> Type  = node ->Lhs ->Type->GetBaseType();
-    if (CurAssignType && node -> Type != CurAssignType && CurAssignType ->IsBInType()){
-        auto castNode = std::make_shared<CastNode>(nullptr);
-        castNode ->Type = CurAssignType;
-        castNode ->CstNode = std::make_shared<ArrayMemberNode>(*node);
-    }
+//    if (CurAssignType && node -> Type != CurAssignType && CurAssignType ->IsBInType()){
+//        auto castNode = std::make_shared<CastNode>(nullptr);
+//        castNode ->Type = CurAssignType;
+//        castNode ->CstNode = std::make_shared<ArrayMemberNode>(*node);
+//    }
     CurAssignType = nullptr;
-    node -> Offset ->Accept(this);
-    //set the varName[index] index must greater eq then 4  to load by eax
-    if (node ->Offset ->Type ->Size < Type::IntType->Size){
-        auto castNode = std::make_shared<CastNode>(nullptr);
-        castNode ->CstNode = node ->Offset;
-        castNode ->Type = Type::IntType;
-        node ->Offset= castNode;
-    }
 }
 
 void TypeVisitor::Visitor(EmptyNode *node) {
@@ -391,12 +390,6 @@ void TypeVisitor::Visitor(AddNode *node) {
     }else if (node -> Lhs -> Type -> IsArrayType() && (node->Rhs->Type->IsIntegerNum() || node->Rhs->Type->IsUnsignedNum()) ){
         node -> BinOp = BinaryOperator::PointerAdd;
         node ->Type = node -> Lhs -> Type;
-    }else if (node->Lhs->Type->IsIntegerNum() && node -> Rhs -> Type -> IsArrayType()) {
-        auto temp = node->Lhs;
-        node->Lhs = node->Rhs;
-        node->Rhs = temp;
-        node->BinOp = BinaryOperator::PointerAdd;
-        node->Type = node->Rhs->Type;
     }
 }
 
