@@ -128,7 +128,7 @@ namespace BDD{
     public:
         std::shared_ptr<Token> CurrentToken;
         std::string_view SourceCode;
-
+        std::shared_ptr<Token> EmptyToken = std::make_shared<Token>();
         SourceLocation GetLocation();
 
     public:

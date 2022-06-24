@@ -212,10 +212,12 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             auto sizeOfNode = std::make_shared<SizeOfExprNode>(Lex.CurrentToken);
             Lex.GetNextToken();
             if (Lex.CurrentToken ->Kind == TokenKind::LParent){
+                Lex.GetNextToken();
                 if (IsTypeName()){
-                    Lex.GetNextToken();
+                    auto tokens = std::list<std::shared_ptr<Token>>();
                     std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
-                    auto type = ParseDeclarationSpec(varAttr);
+                    auto baseType = ParseDeclarator(ParseDeclarationSpec(varAttr),&tokens);
+                    auto type = ParseTypeSuffix(baseType);
                     auto emptyNode= std::make_shared<EmptyNode>(nullptr);
                     emptyNode ->Type = type;
                     sizeOfNode -> Lhs = emptyNode;
@@ -659,10 +661,16 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
     if (Lex.CurrentToken -> Kind == TokenKind::LParent){
         Lex.BeginPeekToken();
         Lex.GetNextToken();
+        //parse pointer  name (* p_name)
         if (Lex.CurrentToken -> Kind == TokenKind::Asterisk){
             Lex.GetNextToken();
-            FuncPointerName = Lex.CurrentToken;
-            Lex.GetNextToken();
+            //handle xxx (*) xx
+            if ( Lex.CurrentToken->Kind == TokenKind::RParent){
+                FuncPointerName = Lex.EmptyToken;
+            }else{
+                FuncPointerName = Lex.CurrentToken;
+                Lex.GetNextToken();
+            }
             Lex.ExceptToken(TokenKind::RParent);
         }else{
             Lex.EndPeekToken();
@@ -726,19 +734,35 @@ std::shared_ptr<Type> Parser::ParseDeclarator(std::shared_ptr<Type> baseType, st
     }else if (Lex.CurrentToken ->Kind == TokenKind::LParent){
         Lex.BeginPeekToken();
         Lex.GetNextToken();
-        if (Lex.CurrentToken ->Kind != TokenKind::RParent){
+        //handle type ([* ｜ * a])
+        std::shared_ptr<Token> PointerToken ;
+        if (Lex.CurrentToken ->Kind == TokenKind::Asterisk){
+            PointerToken = Lex.CurrentToken;
             Lex.GetNextToken();
-            if(Lex.CurrentToken ->Kind == TokenKind::Identifier){
+            Lex.BeginPeekToken();
+        }
+        if (Lex.CurrentToken ->Kind != TokenKind::RParent){
+            while(Lex.CurrentToken ->Kind == TokenKind::Identifier){
                 (*nameTokens).push_back(Lex.CurrentToken);
-            }else{
-                DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except func pointer name!");
+                Lex.GetNextToken();
+                if (Lex.CurrentToken->Kind == TokenKind::Comma)
+                    Lex.GetNextToken();
             }
+            Lex.BeginPeekToken();
+        }
+        if (Lex.CurrentToken ->Kind == TokenKind::RParent){
+            Lex.GetNextToken();
+            Lex.BeginPeekToken();
+        }
+        if (PointerToken){
+            type = std::make_shared<PointerType>(ParseTypeSuffix(type));
+            Lex.BeginPeekToken();
         }
         Lex.EndPeekToken();
     }else if (Lex.CurrentToken ->Kind == TokenKind::RParent){
         return type;
     }else{
-        DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except variable name!");
+//        DiagLoc(Lex.SourceCode,Lex.CurrentToken->Location,"except variable name!");
     }
     return ParseTypeSuffix(type);
 }
