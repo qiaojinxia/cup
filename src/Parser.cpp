@@ -198,11 +198,16 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             node =  constNode;
             break;
         }
-       case TokenKind::FloatNum:
+        case TokenKind::DoubleNum:
+        case TokenKind::FloatNum:
         {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
             constNode -> Value = Lex.CurrentToken -> Value;
-            constNode -> Type = Type::FloatType;
+            if (constNode->Tk->Kind == TokenKind::FloatNum){
+                constNode -> Type = Type::FloatType;
+            }else if(constNode->Tk->Kind == TokenKind::DoubleNum){
+                constNode -> Type = Type::DoubleType;
+            }
             Lex.GetNextToken();
             node =  constNode;
             break;
@@ -223,7 +228,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                     sizeOfNode -> Lhs = emptyNode;
                     Lex.ExceptToken(TokenKind::RParent);
                 }else{
-                    sizeOfNode -> Lhs = ParseCastExpr();
+                    sizeOfNode -> Lhs = ParseExpr();
+                    Lex.ExceptToken(TokenKind::RParent);
                 }
             }else{
                 sizeOfNode -> Lhs = ParsePrimaryExpr();
@@ -600,7 +606,7 @@ std::shared_ptr<Type> Parser::GenerateType(int baseType,bool isConstant) const {
             type = Type::CharType;
             break;
         case BuildInType::Kind::UnSigned + BuildInType::Kind::Char:
-            type = Type::UIntType;
+            type = Type::UCharType;
             break;
         case BuildInType::Kind::Short:
         case BuildInType::Kind::Short + BuildInType::Kind::Int:
@@ -1250,7 +1256,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
 bool Parser::IsTypeName() {
     if (Lex.CurrentToken -> Kind == TokenKind::Int || Lex.CurrentToken -> Kind == TokenKind::Char
         || Lex.CurrentToken -> Kind == TokenKind::Short  || Lex.CurrentToken -> Kind == TokenKind::Long
-        || Lex.CurrentToken -> Kind == TokenKind::Float  || Lex.CurrentToken -> Kind == TokenKind::DoubleNum
+        || Lex.CurrentToken -> Kind == TokenKind::Float  || Lex.CurrentToken -> Kind == TokenKind::Double
         || Lex.CurrentToken -> Kind == TokenKind::Struct || Lex.CurrentToken -> Kind == TokenKind::Union
         || Lex.CurrentToken -> Kind == TokenKind::SIGNED || Lex.CurrentToken -> Kind == TokenKind::UNSIGNED
         || Lex.CurrentToken -> Kind == TokenKind::_Bool  || Lex.CurrentToken -> Kind == TokenKind::Enum

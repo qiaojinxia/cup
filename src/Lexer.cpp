@@ -257,7 +257,7 @@ void BDD::Lexer::GetNextToken() {
         }else{
             NumWhile:
             do {
-                if (kind == TokenKind::FloatNum){
+                if (kind == TokenKind::FloatNum || kind == TokenKind::DoubleNum){
                     n+= 1;
                 }
                 value = value * 10 + CurChar - '0';
@@ -265,13 +265,17 @@ void BDD::Lexer::GetNextToken() {
                 GetNextChar();
                 if (CurChar == '.'){
                     sValue += CurChar;
-                    kind = TokenKind::FloatNum;
+                    kind = TokenKind::DoubleNum;
                     GetNextChar();
                 }
             }while (isdigit(CurChar));
             if (kind == TokenKind::FloatNum){
                 float a = atof(sValue.c_str());
                 unsigned int *m = (unsigned int *)&a;
+                value = *m;
+            }else if(kind == TokenKind::DoubleNum){
+                double a = atof(sValue.c_str());
+                unsigned long *m = (unsigned long *)&a;
                 value = *m;
             }
             Begin:
@@ -283,7 +287,7 @@ void BDD::Lexer::GetNextToken() {
                 kind = TokenKind::FloatNum;
             }else if(CurChar == '.'){
                 GetNextChar();
-                kind = TokenKind::FloatNum;
+                kind = TokenKind::DoubleNum;
                 goto Begin;
             }else if(CurChar == 'e'){
                 GetNextChar();
@@ -377,7 +381,7 @@ void BDD::Lexer::GetNextToken() {
             }else if(content == "float"){
                 kind = TokenKind::Float;
             }else if(content == "double"){
-                kind = TokenKind::DoubleNum;
+                kind = TokenKind::Double;
             }else if(content == "signed"){
                 kind = TokenKind::SIGNED;
             }else if(content == "unsigned"){

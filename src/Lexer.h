@@ -44,6 +44,7 @@ namespace BDD{
         Short,
         Long,
         Float,
+        Double,
         DoubleNum,
         CharNum,
         _Bool,

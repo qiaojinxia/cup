@@ -24,6 +24,40 @@ std::shared_ptr<PointerType> Type::Pointer = std::make_shared<PointerType>(ULong
 std::shared_ptr<PointerType> Type::PtrCharType = std::make_shared<PointerType>(CharType);
 std::shared_ptr<ArrayType> Type::StringType = std::make_shared<ArrayType>(CharType,0);
 
+//Compare two type return the Upward type if type small then int return int
+std::shared_ptr<Type> Type::TakeUpwardType(std::shared_ptr<Type> type1, std::shared_ptr<Type> type2) {
+    if (!type1 ->IsBInType() || !type2 ->IsBInType())
+        assert(0);
+    std::shared_ptr<Type> largerType = type1;
+    bool hasUnsigned = false;
+    if (type1->IsUnsignedNum() || type2->IsUnsignedNum())
+        hasUnsigned = true;
+    if (largerType ->Size < type2->Size)
+        largerType = type2;
+    if (largerType->Size < Type::IntType->Size){
+        return Type::IntType;
+    }else {
+        if (hasUnsigned)
+            largerType = ConvertToUnsignedType(largerType);
+        return largerType;
+    }
+}
+
+std::shared_ptr<Type> Type::ConvertToUnsignedType(std::shared_ptr<Type> type){
+    if (!type->IsBInType())
+        assert(0);
+    if(type->IsCharType()){
+        return UCharType;
+    }else if(type->IsShortType()){
+        return UShortType;
+    }else if(type->IsIntType()){
+        return UIntType;
+    }else if(type->IsLongType()){
+        return ULongType;
+    }else{
+        return  type;
+    }
+}
 
 bool Type::IsIntegerNum() const {
     if (TypeC == TypeClass::AliasType){
@@ -290,6 +324,7 @@ Type::TypeClass Type::GetTypeC() const {
 bool Type::IsConstant() const {
     return TypeC == TypeClass::AliasType && constant;
 }
+
 
 std::shared_ptr<Field> RecordType::GetField(std::string_view fieldName) {
     for(auto &field:fields){

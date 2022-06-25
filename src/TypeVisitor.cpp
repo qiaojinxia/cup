@@ -305,7 +305,7 @@ void TypeVisitor::Visitor(UnaryNode *node) {
 void TypeVisitor::Visitor(SizeOfExprNode *node) {
         CurAssignType = nullptr;
         node -> Lhs ->Accept(this);
-        node ->Type = node->Lhs->Type;
+        node ->Type = Type::ULongType;
 }
 
 void TypeVisitor::Visitor(DeclarationAssignmentStmtNode *node) {
@@ -549,12 +549,17 @@ void TypeVisitor::Visitor(CmpNode *node) {
 void TypeVisitor::Visitor(BitOpNode *node) {
     node ->Lhs ->Accept(this);
     node ->Rhs ->Accept(this);
+    auto upwardType = Type::TakeUpwardType(node->Lhs->Type,node->Rhs->Type);
     if (node->BinOp==BinaryOperator::BitSar && node ->Lhs->Type->IsUnsignedNum()){
         node->BinOp=BinaryOperator::BitShr;
     }else if(node->BinOp==BinaryOperator::BitSal && node ->Lhs->Type->IsUnsignedNum()){
-        node->BinOp=BinaryOperator::BitShr;
+        node->BinOp=BinaryOperator::BitShl;
     }
-    node ->Type = node ->Lhs ->Type;
+    if (node->Lhs->Type != upwardType)
+        node->Lhs->Type = upwardType;
+    if (node->Rhs->Type != upwardType)
+        node->Rhs->Type = upwardType;
+    node ->Type = upwardType;
 }
 
 void TypeVisitor::Visitor(TernaryNode *node) {
@@ -563,19 +568,23 @@ void TypeVisitor::Visitor(TernaryNode *node) {
     node -> isTypeInit = true;
     node ->Cond ->Accept(this);
     node ->Then ->Accept(this);
+    node ->Else ->Accept(this);
+    auto upwardType = Type::TakeUpwardType(node ->Then->Type,node->Else->Type);
+    CurAssignType = upwardType;
     if (CurAssignType && node ->Then ->Type != CurAssignType){
         auto castNode = std::make_shared<CastNode>(nullptr);
         castNode -> Type = CurAssignType;
         castNode ->CstNode = node ->Then;
         node ->Then = castNode;
     }
-    node ->Else ->Accept(this);
+
     if (CurAssignType && node ->Else ->Type != CurAssignType){
         auto castNode = std::make_shared<CastNode>(nullptr);
         castNode -> Type = CurAssignType;
         castNode ->CstNode = node ->Else;
         node ->Else = castNode;
     }
+
     if(CurAssignType){
         node  ->Type = CurAssignType;
     }else{

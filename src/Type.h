@@ -86,6 +86,9 @@ namespace BDD{
 
         bool IsULongType() const;
 
+        static std::shared_ptr<Type> TakeUpwardType(std::shared_ptr<Type>  type1,std::shared_ptr<Type> type2);
+
+        static std::shared_ptr<Type> ConvertToUnsignedType(std::shared_ptr<Type> type);
 
         bool IsAliasType() const;
 

@@ -152,3 +152,5 @@
     complete pointer test case
 - 2022-06-24
     add sizeof test cast
+- 2022-06-25
+    complete sizeof test cast
