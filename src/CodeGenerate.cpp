@@ -630,7 +630,7 @@ int CodeGenerate::GetVarStackOffset(std::shared_ptr<AstNode> node){
         auto field = record -> GetField(memberAccessNode -> fieldName);
         int _mOffset = GetVarStackOffset(memberAccessNode->Lhs);
         int _fOffset = field->Offset;
-        return _mOffset + _fOffset * -1;
+        return _mOffset + _fOffset;
     }else if(auto arrMemberNode = std::dynamic_pointer_cast<ArrayMemberNode>(node)){
         return GetVarStackOffset(arrMemberNode->Lhs) ;
     }else if(auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node)){
@@ -1103,10 +1103,15 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node, OffsetInfo * oi) {
 
 void CodeGenerate::Visitor(MemberAccessNode *node) {
     auto record = std::dynamic_pointer_cast<RecordType>(node ->Lhs ->Type ->GetBaseType());
-    GenerateAddress(node->Lhs.get());
     auto field = record -> GetField(node -> fieldName);
-    printf("\t  add  $%d,%%rax\n", field ->Offset);
-    Load(field ->type);
+    if(IsDirectInStack(node->Lhs)){
+        int offset = GetVarStackOffset(node->Lhs);
+        printf("\t  mov  %d(%%rbp),%s\n", offset + field->Offset, GetRax(field->type).data());
+    }else{
+        GenerateAddress(node->Lhs.get());
+        printf("\t  add  $%d,%%rax\n", field ->Offset);
+        Load(field ->type);
+    }
 }
 
 void CodeGenerate::Visitor(BreakStmtNode *node) {
@@ -1688,9 +1693,10 @@ void CodeGenerate::SetCurTargetReg(const std::string& reg) {
 
 
 void CodeGenerate::ClearCurTargetReg(){
-    if (!curTargetReg.empty())
+    while (!curTargetReg.empty())
         curTargetReg.pop_back();
 }
+
 
 int CodeGenerate::GetStructReturn2Offset() const {
     return Return2OffsetStack ;

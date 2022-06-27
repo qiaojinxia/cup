@@ -79,28 +79,28 @@ T ConstantNode::GetValue(std::shared_ptr<BuildInType> tp, const char *s_num) {
         return (unsigned short)atoi(s_num);
     }else if(tp == Type::IntType){
         char *end_ptr = NULL;
-        unsigned long _tmp = strtoul(s_num, &end_ptr, 10);
+        unsigned long _tmp = strtoull(s_num, &end_ptr, 10);
         return (int)_tmp;
     }else if(tp == Type::UIntType){
         char *end_ptr = NULL;
-        unsigned long _tmp = strtoul(s_num, &end_ptr, 10);
+        unsigned long _tmp = strtoull(s_num, &end_ptr, 10);
         return (unsigned int)_tmp;
     }else if(tp == Type::LongType){
         char *end_ptr = NULL;
-        unsigned long _tmp = strtoul(s_num, &end_ptr, 10);
+        unsigned long _tmp = strtoull(s_num, &end_ptr, 10);
         return (long)_tmp;
     }else if(tp == Type::ULongType){
         char *end_ptr = NULL;
-        unsigned long _tmp = strtoul(s_num, &end_ptr, 10);
+        unsigned long _tmp = strtoull(s_num, &end_ptr, 10);
         return _tmp;
     }else if(tp == Type::FloatType){
         char *end_ptr = NULL;
-        unsigned int _tmp = strtoll(s_num, &end_ptr, 10);
+        unsigned int _tmp = strtoull(s_num, &end_ptr, 10);
         float * f = reinterpret_cast<float *>(&_tmp);
         return *f;
     }else if(tp == Type::DoubleType){
         char *end_ptr = NULL;
-        unsigned long _tmp = strtoll(s_num, &end_ptr, 10);
+        unsigned long _tmp = strtoull(s_num, &end_ptr, 10);
         double * d = reinterpret_cast<double *>(&_tmp);
         return *d;
     }
@@ -156,14 +156,13 @@ T ConstantNode::GetValueT() {
         }
         if (Type ->IsFloatType()){
             double num_d = atof(s_num);
-            if (num_d > std::numeric_limits<float>::max()){
-                auto * ul = reinterpret_cast<unsigned long *>(&num_d);
-                s_num = string_format("%lu",*ul).c_str();
-            }else{
-                float num_f = num_d;
-                auto * ui = (unsigned int *)&num_f;
-                s_num = string_format("%u",*ui).c_str();
-            }
+            float num_f = num_d;
+            auto * ui = (unsigned int *)&num_f;
+            s_num = string_format("%u",*ui).c_str();
+        }else if(Type -> IsDoubleType()){
+            double num_d = atof(s_num);
+            auto * ul = reinterpret_cast<unsigned long *>(&num_d);
+            s_num = string_format("%lu",*ul).c_str();
         }
     }
     auto type = std::dynamic_pointer_cast<BuildInType>(this->Type->GetBaseType());

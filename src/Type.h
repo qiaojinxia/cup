@@ -54,6 +54,7 @@ namespace BDD{
         int Size;
         int Align;
         bool constant;
+        bool isTypedef;
         const char * Alias;
     private:
         TypeClass TypeC;

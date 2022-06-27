@@ -154,3 +154,5 @@
     add sizeof test cast
 - 2022-06-25
     complete sizeof test cast
+- 2022-06-27
+    add struct test cast

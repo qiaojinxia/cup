@@ -18,7 +18,6 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
     if(auto emptyNode= ParseEnumDeclaration()){
         return  emptyNode;
     }else if (IsTypeName()){
-
         std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
         auto tokens = std::list<std::shared_ptr<Token>>();
         std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
@@ -532,7 +531,7 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(std::shared_ptr<Attr> attr) {
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Float;
             continue;
-        }else if(Lex.CurrentToken -> Kind == TokenKind::DoubleNum){
+        }else if(Lex.CurrentToken -> Kind == TokenKind::Double){
             Lex.GetNextToken();
             baseType += (int) BuildInType::Kind::Double;
             continue;
@@ -550,6 +549,7 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(std::shared_ptr<Attr> attr) {
                 sType = std::make_shared<PointerType>(sType);
             }else{
                 sType = std::make_shared<PointerType>(GenerateType(baseType,isConstant));
+                baseType = 0;
             }
             isConstant = false;
             continue;
@@ -566,6 +566,8 @@ std::shared_ptr<Type> Parser::ParseDeclarationSpec(std::shared_ptr<Attr> attr) {
             auto enumType = std::make_shared<EnumType>(Lex.CurrentToken);
             return enumType;
         }else{
+            if (baseType > BuildInType::Kind::Void)
+                break;
             type = Scope::GetInstance() -> FindTag(Lex.CurrentToken ->Content);
             if (type){
                 if (isConstant){
@@ -714,6 +716,11 @@ std::shared_ptr<Type> Parser::ParseTypeSuffix(std::shared_ptr<Type> baseType) {
         return funcType;
     }else if(Lex.CurrentToken -> Kind == TokenKind::LBracket){
         Lex.GetNextToken();
+        if (Lex.CurrentToken->Kind == TokenKind::RBracket){
+            Lex.GetNextToken();
+            auto type = ParseTypeSuffix(baseType);
+            return std::make_shared<ArrayType>(type,0);
+        }
         int num = Lex.CurrentToken -> Value;
         Lex.ExceptToken(TokenKind::Num);
         Lex.ExceptToken(TokenKind::RBracket);
@@ -951,6 +958,7 @@ std::shared_ptr<Type> Parser::ParseUnionDeclaration() {
 std::shared_ptr<Type> Parser::ParseStructDeclaration() {
     auto structDeclaration = ParseRecord(RecordType::TagKind::Struct);
     int offset = 0;
+    //set struct field  align
     for (auto &field : structDeclaration ->fields) {
         offset = AlignTo(offset,field -> type ->Align);
         field -> Offset = offset;
@@ -1264,7 +1272,10 @@ bool Parser::IsTypeName() {
         || Lex.CurrentToken -> Kind == TokenKind::Void){
         return true;
     }
-    if(Scope::GetInstance() -> FindTag(Lex.CurrentToken->Content)){
+    if(auto symbolType = Scope::GetInstance() -> FindTag(Lex.CurrentToken->Content)){
+        //if record type not use typedef although type add to symbol table but still can't as typename
+        if (!symbolType->isTypedef)
+            return false;
         return true;
     }
     return false;
@@ -1529,6 +1540,7 @@ std::shared_ptr<AstNode> Parser::ParseTypeDef() {
         }
         for (auto token:tokens) {
             auto newType = std::make_shared<AliasType>(type,token);
+            newType ->isTypedef = true;
             Scope::GetInstance() ->PushTag(token->Content,newType);
         }
         Lex.ExceptToken(TokenKind::Semicolon);

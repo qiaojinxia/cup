@@ -257,7 +257,7 @@ void BDD::Lexer::GetNextToken() {
         }else{
             NumWhile:
             do {
-                if (kind == TokenKind::FloatNum || kind == TokenKind::DoubleNum){
+                if (kind == TokenKind::DoubleNum){
                     n+= 1;
                 }
                 value = value * 10 + CurChar - '0';
@@ -269,11 +269,7 @@ void BDD::Lexer::GetNextToken() {
                     GetNextChar();
                 }
             }while (isdigit(CurChar));
-            if (kind == TokenKind::FloatNum){
-                float a = atof(sValue.c_str());
-                unsigned int *m = (unsigned int *)&a;
-                value = *m;
-            }else if(kind == TokenKind::DoubleNum){
+            if(kind == TokenKind::DoubleNum){
                 double a = atof(sValue.c_str());
                 unsigned long *m = (unsigned long *)&a;
                 value = *m;
@@ -283,6 +279,9 @@ void BDD::Lexer::GetNextToken() {
                 GetNextChar();
                 kind = TokenKind::Long;
             }else if(CurChar == 'F' || CurChar == 'f'){
+                float a = atof(sValue.c_str());
+                unsigned long *m = (unsigned long *)&a;
+                value = *m;
                 GetNextChar();
                 kind = TokenKind::FloatNum;
             }else if(CurChar == '.'){

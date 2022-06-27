@@ -38,7 +38,7 @@ int main(){
 
 
     assert(8, sizeof(int(*)[10]));
-//    assert(8, sizeof(int(*)[][10]));
+    assert(8, sizeof(int(*)[][10]));
 
 //    assert(4, sizeof(struct { int x, y[]; }));
 
@@ -94,7 +94,7 @@ int main(){
 
 
     assert(4, sizeof(float));
-//    assert(8, sizeof(double));
+    assert(8, sizeof(double));
 
     assert(4, sizeof(1f+2));
     assert(8, sizeof(1.0 + 2));

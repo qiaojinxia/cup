@@ -68,7 +68,7 @@ int main() {
     assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--; a[2]; }));
     assert(2, ({ int a[3]; a[0]=0; a[1]=1; a[2]=2; int *p=a+1; (*p++)--; *p; }));
     assert_f(2.0, ({ float a[3]; a[0]=0.0; a[1]=1.0; a[2]=2.0; float *p=a+1; *p++;*p; }));
-    assert_f(3.0, ({ float i=2.0; i++; i; }));
+    assert_f(3.0, ({ float i= 2.0; i++; i; }));
     assert_f(1.0, ({ float i=2.0; i--; i; }));
     assert(0, !1);
     assert(0, !2);

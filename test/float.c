@@ -39,7 +39,7 @@ int main(){
 
     assert(-2147483648, (double)(unsigned long)(long)-1);
 
-//
+
     assert(1, 2e3==2e3);
 //    assert(0, 2e3==2e5);
     assert(1, 2.0==2);
@@ -59,7 +59,7 @@ int main(){
     assert(0, 5.1f<=5);
     assert(1, 5.0f<=5);
     assert(1, 4.9f<=5);
-
+//
     assert(6, 2.3+3.8);
     assert(-1, 2.3-3.8);
     assert(-3, -3.8);
