@@ -297,6 +297,8 @@ std::string BDD::GetCastCode(std::string fromTo) {
 }
 
 const std::string BDD::GetRdi(std::shared_ptr<Type> type) {
+    if (type->IsArrayType() || type ->IsRecordType())
+        return "%rdi";
     if (type ->Size == 1){
         return "%dil";
     }else if (type ->Size == 2){
@@ -306,13 +308,29 @@ const std::string BDD::GetRdi(std::shared_ptr<Type> type) {
     }else if (type ->Size == 8){
         return "%rdi";
     } else{
-        if (type->IsArrayType() || type ->IsRecordType())
-            return "%rdi";
+        assert(0);
+    }
+}
+
+const std::string BDD::GetRsi(std::shared_ptr<Type> type) {
+    if (type->IsArrayType() || type ->IsRecordType())
+        return "%rsi";
+    if (type ->Size == 1){
+        return "%sil";
+    }else if (type ->Size == 2){
+        return "%si";
+    }else if (type ->Size == 4){
+        return "%esi";
+    }else if (type ->Size == 8){
+        return "%rsi";
+    } else{
         assert(0);
     }
 }
 
 const std::string BDD::GetRcx(std::shared_ptr<Type> type) {
+    if (type->IsArrayType() || type ->IsRecordType())
+        return "%rcx";
     if (type -> Size == 1){
         return "%cl";
     }else if (type -> Size == 2){
@@ -322,8 +340,6 @@ const std::string BDD::GetRcx(std::shared_ptr<Type> type) {
     }else if (type -> Size == 8){
         return "%rcx";
     } else{
-        if (type->IsArrayType() || type ->IsRecordType())
-            return "%rcx";
         assert(0);
     }
 }
@@ -343,9 +359,9 @@ const std::string BDD::GetRcx(int size) {
 }
 
 const std::string BDD::GetRax(std::shared_ptr<Type> type) {
-    if (type->IsArrayType()) {
+    if (type->IsArrayType() || type ->IsRecordType())
         return "%rax";
-    }else if (type -> Size == 1){
+    if (type -> Size == 1){
         return "%al";
     }else if (type -> Size == 2){
         return "%ax";
@@ -359,6 +375,8 @@ const std::string BDD::GetRax(std::shared_ptr<Type> type) {
 }
 
 const std::string BDD::GetRdx(std::shared_ptr<Type> type) {
+    if (type->IsArrayType() || type ->IsRecordType())
+        return "%rdx";
     if (type -> Size == 1){
         return "%dl";
     }else if (type -> Size == 2){
@@ -578,4 +596,20 @@ std::shared_ptr<BDD::AstNode> BDD::CastNodeType(
     castNode->CstNode = destNode;
     castNode->Type = destType;
     return castNode;
+}
+
+std::string  BDD::SelectReg(std::string reg,std::shared_ptr<Type> type){
+    if (reg == "%rax"){
+        return GetRax(type);
+    }else if(reg == "%rdi"){
+        return GetRdi(type);
+    }else if(reg == "%rsi"){
+        return GetRsi(type);
+    }else if(reg == "%rcx"){
+        return GetRcx(type);
+    }else if(reg == "%rdx"){
+        return GetRdx(type);
+    }else{
+        assert(0);
+    }
 }

@@ -14,7 +14,7 @@ namespace BDD{
     class Parser{
     private:
         Lexer &Lex;
-        std::list<std::shared_ptr<Var>> *LocalVars{nullptr};
+        std::list<std::shared_ptr<Var>> *LocalVars{};
         BinaryOperator LastOperation{BinaryOperator::Eof};
         std::shared_ptr<AstNode> VarStack;
         std::shared_ptr<Token> SymbolStack;
@@ -37,7 +37,7 @@ namespace BDD{
 
         std::shared_ptr<Type> GenerateType(int baseType,bool isConstant) const;
 
-        std::shared_ptr<Type> ParseDeclarator(std::shared_ptr<Type> baseType,std::list<std::shared_ptr<Token>> *nameTokens);
+        std::shared_ptr<Type> ParseDeclarator(std::shared_ptr<Type> baseType,std::list<std::shared_ptr<AssignmentInfoNode>> *assignments);
 
         std::shared_ptr<Type> ParseTypeSuffix(std::shared_ptr<Type> baseType);
 
@@ -53,7 +53,7 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseEnumDeclaration();
 
-        std::shared_ptr<RecordType> ParseRecord(RecordType::TagKind recordeType);
+        std::shared_ptr<RecordType> ParseRecord(RecordType::TagKind recordeType,std::shared_ptr<std::string_view>& name);
 
         static std::shared_ptr<Var> FindLocalVar(std::string_view varName);
 
@@ -107,6 +107,8 @@ namespace BDD{
         std::shared_ptr<AssignNode> Assign(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
 
         bool IsConstant();
+
+        std::shared_ptr<AssignmentInfoNode> ParseIdentifier(std::shared_ptr<Type> baseType);
     };
 
 }

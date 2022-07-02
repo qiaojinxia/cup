@@ -70,6 +70,14 @@ namespace BDD{
         void Accept(AstVisitor *visitor) override;
     };
 
+    class AssignmentInfoNode: public AstNode{
+    public:
+        AssignmentInfoNode(std::shared_ptr<Token> tk) : AstNode(tk){};
+        std::shared_ptr<Token> ID;
+        std::shared_ptr<AstNode> Value;
+        std::shared_ptr<Var> Var;
+    };
+
     enum class UnaryOperator {
         Plus = 1,
         Minus = -1,

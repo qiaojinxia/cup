@@ -139,6 +139,7 @@ namespace BDD{
     const std::string GetDiv(std::shared_ptr<Type> type);
 
     const std::string GetRdx(std::shared_ptr<Type> type);
+    const std::string GetRsi(std::shared_ptr<Type> type);
 
     const std::string GetSet(BinaryOperator op);
     const std::string GetUnsignedSet(BinaryOperator op);
@@ -149,7 +150,7 @@ namespace BDD{
     const std::string GetSuffix(int size);
     const std::string RepeatN(std::string a, int n);
     std::string GetStoreCode(int size);
-
+    std::string SelectReg(std::string reg,std::shared_ptr<Type> type);
     std::shared_ptr<BDD::AstNode> CastNodeType(std::shared_ptr<Type> srcType, std::shared_ptr<Type> destType,
                                                std::shared_ptr<BDD::AstNode> destNode);
 }

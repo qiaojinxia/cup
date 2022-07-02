@@ -31,35 +31,35 @@ int main(){
     assert(0, ({ struct {} x; sizeof(x); }));
     assert(8, ({ struct {char a; int b;} x; sizeof(x); }));
     assert(8, ({ struct {int a; char b;} x; sizeof(x); }));
-//
-//    assert(8, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }));
-//    assert(8, ({ struct t {int a; int b;}; struct t y; sizeof(y); }));
+
+    assert(8, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }));
+    assert(8, ({ struct t {int a; int b;}; struct t y; sizeof(y); }));
 //    assert(2, ({ struct t {char a[2];}; { struct t {char a[4];}; } struct t y; sizeof(y); }));
-//    assert(3, ({ struct t {int x;}; int t = 1; struct t y; y.x=2; t+y.x; }));
-//
-//    assert(3, ({ struct t {char a;} x; struct t *y = &x; x.a=3; y->a; }));
-//    assert(3, ({ struct t {char a;} x; struct t *y = &x; y->a=3; x.a; }));
-//
-//    assert(3, ({ struct {int a,b;} x,y; x.a=3; y=x; y.a; }));
-//    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y; struct t *z=&y; *z=x; y.a; }));
-//    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y, *p=&x, *q=&y; *q=*p; y.a; }));
-//    assert(5, ({ struct t {char a, b;} x, y; x.a=5; y=x; y.a; }));
-//
-//    assert(3, ({ struct {int a,b;} x,y; x.a=3; y=x; y.a; }));
-//    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y; struct t *z=&y; *z=x; y.a; }));
-//    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y, *p=&x, *q=&y; *q=*p; y.a; }));
-//    assert(5, ({ struct t {char a, b;} x, y; x.a=5; y=x; y.a; }));
-//
-//    assert(8, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }));
-//    assert(8, ({ struct t {int a; int b;}; struct t y; sizeof(y); }));
-//
-//    assert(16, ({ struct {char a; long b;} x; sizeof(x); }));
-//    assert(4, ({ struct {char a; short b;} x; sizeof(x); }));
-//
-//    assert(8, ({ struct foo *bar; sizeof(bar); }));
-//    assert(4, ({ struct T *foo; struct T {int x;}; sizeof(struct T); }));
-//    assert(1, ({ struct T { struct T *next; int x; } a; struct T b; b.x=1; a.next=&b; a.next->x; }));
-//    assert(4, ({ typedef struct T T; struct T { int x; }; sizeof(T); }));
+    assert(3, ({ struct t {int x;}; int t = 1; struct t y; y.x=2; t+y.x; }));
+
+    assert(3, ({ struct t {char a;} x; struct t *y = &x; x.a=3; y->a; }));
+    assert(3, ({ struct t {char a;} x; struct t *y = &x; y->a=3; x.a; }));
+
+    assert(3, ({ struct {int a,b;} x,y; x.a=3; y=x; y.a; }));
+    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y; struct t *z=&y; *z=x;y.a;  }));
+    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y, *p=&x, *q=&y; *q=*p; y.a; }));
+    assert(5, ({ struct t {char a, b;} x, y; x.a=5; y=x; y.a; }));
+
+    assert(3, ({ struct {int a,b;} x,y; x.a=3; y=x; y.a; }));
+    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y; struct t *z=&y; *z=x; y.a; }));
+    assert(7, ({ struct t {int a,b;}; struct t x; x.a=7; struct t y, *p=&x, *q=&y; *q=*p; y.a; }));
+    assert(5, ({ struct t {char a, b;} x, y; x.a=5; y=x; y.a; }));
+
+    assert(8, ({ struct t {int a; int b;} x; struct t y; sizeof(y); }));
+    assert(8, ({ struct t {int a; int b;}; struct t y; sizeof(y); }));
+
+    assert(16, ({ struct {char a; long b;} x; sizeof(x); }));
+    assert(4, ({ struct {char a; short b;} x; sizeof(x); }));
+
+    assert(8, ({ struct foo *bar; sizeof(bar); }));
+    assert(4, ({ struct T *foo; struct T {int x;}; sizeof(struct T); }));
+    assert(1, ({ struct T { struct T *next; int x; } a; struct T b; b.x=1; a.next=&b; a.next->x; }));
+    assert(4, ({ typedef struct U U; struct U { int x; }; sizeof(U); }));
 
     return 0;
 }

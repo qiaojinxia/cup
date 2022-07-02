@@ -151,6 +151,7 @@ namespace BDD{
         void ClearAssignState();
         bool ISAssignState();
 
+        void PopCurTargetReg();
     };
 }
 

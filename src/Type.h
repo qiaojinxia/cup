@@ -181,7 +181,7 @@ namespace BDD{
         std::shared_ptr<Field> GetField(std::string_view fieldName);
         TagKind Kind;
         std::vector<std::shared_ptr<Field>> fields;
-        RecordType() : Type(TypeClass::RecordType,1,1,"u64"){}
+        RecordType() : Type(TypeClass::RecordType,0,0,"0"){}
 
         std::shared_ptr<Type> GetBaseType();
     };

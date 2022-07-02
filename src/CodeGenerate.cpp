@@ -78,10 +78,12 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
     if (IsDirectInStack(nd)){
         if (nd->Type->IsFloatPointNum()){
             printf("\t  %s %d(%%rbp),%s\n", GetMoveCode2(nd->Type).data(), GetVarStackOffset(nd),Xmm[Depth++]);
-        }else if(node ->Type -> IsFunctionType() || node -> Type -> IsRecordType() ||  node -> Type -> IsArrayType()){
+        }else if(node ->Type -> IsFunctionType()  ||  node -> Type -> IsArrayType()){
             printf("\t  lea %d(%%rbp),%%rax\n", GetVarStackOffset(nd));
+        }else if(node ->Type -> IsRecordType()){
+            printf("\t  lea %d(%%rbp),%s\n", GetVarStackOffset(nd), SelectReg(GetCurTargetReg(),node ->Type).data());
         }else{
-            printf("\t  mov%s %d(%%rbp),%s\n", GetSuffix(nd->Type->Size).data(), GetVarStackOffset(nd), GetRax(nd->Type).data());
+            printf("\t  mov%s %d(%%rbp),%s\n", GetSuffix(nd->Type->Size).data(), GetVarStackOffset(nd),  SelectReg(GetCurTargetReg(),node ->Type).data());
         }
     }else{
         if (node->VarObj->VarAttr->isStatic){
@@ -314,6 +316,9 @@ void CodeGenerate::Visitor(FunctionNode *node) {
         if (v-> VarAttr->isInit){
             continue;
         }
+        //empty var continue  such as : struct {} x;
+        if (v->Type->Size == 0)
+            continue;
         offset += v ->Type ->Size;
         offset = AlignTo(offset,v -> Type -> Align);
         v -> Offset = -offset;
@@ -684,9 +689,9 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
         }
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         if (unaryNode -> Uop == UnaryOperator::Deref){
-            ClearCurTargetReg();
             SetCurTargetReg("%rax");
             unaryNode ->Lhs->Accept(this);
+            printf("\t  mov %%rax,%%rdi\n");
         }else if (unaryNode -> Uop == UnaryOperator::Addr){
             GenerateAddress(unaryNode ->Lhs.get());
         }else{
@@ -1084,7 +1089,7 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node, OffsetInfo * oi) {
         }
         if (!oi->IsLoadAddTOReg())
             printf("\t  lea %s,%%rdi\n",oi->GetOffset().data());
-        printf("\t  mov $%d,%%rcx\n",type ->GetBaseType()->Size);
+        printf("\t  mov $%d,%%rcx\n",type->Size);
         printf("\t  call _mempcy\n");
         return;
     }else if(type ->IsArrayType()){
@@ -1289,7 +1294,11 @@ void CodeGenerate::Visitor(AssignNode *node) {
         SetStructReturn2Offset(varExprNode->VarObj->Offset);
     auto constantNode = std::dynamic_pointer_cast<ConstantNode>(node -> Rhs);
     if (!constantNode){
+        if (node->Rhs->Type->IsRecordType())
+            SetCurTargetReg("%rsi");
         node -> Rhs -> Accept(this);
+        if (node->Rhs->Type->IsRecordType())
+            PopCurTargetReg();
         if(auto funcCall = std::dynamic_pointer_cast<FuncCallNode>(node->Rhs)){
             if (funcCall->Type->GetBaseType()->IsRecordType()){
                 SetCurTargetReg("%rsi");// when rhs is fun call and return struct eval rhs  and load rhs struct beginaddress
@@ -1696,7 +1705,9 @@ void CodeGenerate::ClearCurTargetReg(){
     while (!curTargetReg.empty())
         curTargetReg.pop_back();
 }
-
+void CodeGenerate::PopCurTargetReg(){
+        curTargetReg.pop_back();
+}
 
 int CodeGenerate::GetStructReturn2Offset() const {
     return Return2OffsetStack ;

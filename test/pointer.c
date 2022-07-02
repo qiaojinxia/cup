@@ -15,21 +15,21 @@ int main(){
     assert(7, ({ int x=3; int y=5; *(&y+2-1)=7; x; }));
     assert(5, ({ int x=3; (&x+2)-&x + 3; }));
     assert(8, ({ int x, y; x=3; y=5; x+y; }));
-//    assert(8, ({ int x=3, y=5; x+y; }));
+    assert(8, ({ int x=3, y=5; x+y; }));
 
     assert(3, ({ int x[2]; int *y=&x; *y=3; *x; }));
-//
+
     assert(3, ({ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; *x; }));
     assert(4, ({ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; *(x+1); }));
     assert(5, ({ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; *(x+2); }));
-//
+
     assert(0, ({ int x[2][3]; int *y=x; *y=0; **x; }));
     assert(1, ({ int x[2][3]; int *y=x; *(y+1)=1; *(*x+1); }));
     assert(2, ({ int x[2][3]; int *y=x; *(y+2)=2; *(*x+2); }));
     assert(3, ({ int x[2][3]; int *y=x; *(y+3)=3; **(x+1); }));
     assert(4, ({ int x[2][3]; int *y=x; *(y+4)=4; *(*(x+1)+1); }));
     assert(5, ({ int x[2][3]; int *y=x; *(y+5)=5; *(*(x+1)+2); }));
-//
+
     assert(3, ({ int x[3]; *x=3; x[1]=4; x[2]=5; *x; }));
     assert(4, ({ int x[3]; *x=3; x[1]=4; x[2]=5; *(x+1); }));
     assert(5, ({ int x[3]; *x=3; x[1]=4; x[2]=5; *(x+2); }));
