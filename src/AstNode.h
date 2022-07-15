@@ -55,6 +55,8 @@ namespace BDD{
         explicit ProgramNode(std::shared_ptr<Token> tk):AstNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
         std::list<std::shared_ptr<AstNode>> Funcs;
+        std::list<std::shared_ptr<AstNode>> DeclarationNode;
+        std::list<std::shared_ptr<Var>> Global{};
     };
 
     class FunctionNode: public AstNode{
@@ -381,9 +383,11 @@ class BinaryNode :public  AstNode{
 
     class AssignNode : public BinaryNode{
     public:
+        bool isConstantAssign;
         explicit AssignNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};
         void Accept(AstVisitor *visitor) override;
     };
+
     class AddNode : public BinaryNode{
     public:
         explicit AddNode(std::shared_ptr<Token> tk):BinaryNode(std::move(tk)){};

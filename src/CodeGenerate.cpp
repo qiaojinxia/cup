@@ -1297,6 +1297,10 @@ void CodeGenerate::Visitor(AssignNode *node) {
         if (node->Rhs->Type->IsRecordType())
             SetCurTargetReg("%rsi");
         node -> Rhs -> Accept(this);
+        //to handle a = b = 3 if rhs is b = 3 need to load b value
+        if (auto rhs = std::dynamic_pointer_cast<AssignNode>(node->Rhs)){
+            rhs->Lhs->Accept(this);
+        }
         if (node->Rhs->Type->IsRecordType())
             PopCurTargetReg();
         if(auto funcCall = std::dynamic_pointer_cast<FuncCallNode>(node->Rhs)){

@@ -40,7 +40,7 @@ int main(){
     assert(8, sizeof(int(*)[10]));
     assert(8, sizeof(int(*)[][10]));
 
-//    assert(4, sizeof(struct { int x, y[]; }));
+    assert(4, sizeof(struct { int x, y[]; }));
 
 
     assert(1, sizeof(char));

@@ -15,15 +15,23 @@ using namespace BDD;
 
 //ParseDeclarationExpr
 std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
+    Lex.BeginPeekToken();
     if(auto emptyNode= ParseEnumDeclaration()){
         return  emptyNode;
     }else if (IsTypeName()){
+        auto tk = Lex.CurrentToken;
         auto multiAssignNode = std::make_shared<DeclarationAssignmentStmtNode>(Lex.CurrentToken);
         std::list<std::shared_ptr<AssignNode>> assignNodes;
         std::list<std::shared_ptr<ExprVarNode>> declarationNodes;
         auto assignInfoNodes = std::list<std::shared_ptr<AssignmentInfoNode>>();
         std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
         ParseDeclarator(ParseDeclarationSpec(varAttr),&assignInfoNodes);
+        if (auto funcType = std::dynamic_pointer_cast<FunctionType>(assignInfoNodes.back()->Type)){
+            auto funcNode =  std::make_shared<FunctionNode>(tk);
+            funcNode ->Type = funcType;
+            funcNode ->FuncName = assignInfoNodes.back()->ID->Content;
+            return funcNode;
+        }
         for (auto &assignInfoNode:assignInfoNodes) {
             auto newVarNode = assignInfoNode ->Var;
             newVarNode->VarAttr = varAttr;
@@ -45,8 +53,9 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
             }
 
         }
-        //if func pointer is int (*a)(int,int) = max; not int (*a)(int,int) = &max; Is the same meaning
-        // so  we  need to auto convert to &max use unaryNode warp
+
+//        if func pointer is int (*a)(int,int) = max; not int (*a)(int,int) = &max; Is the same meaning
+//         so  we  need to auto convert to &max use unaryNode warp
 //        auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(valueNode);
 //        if (type ->IsFuncPointerType() && !unaryNode && valueNode ->Type->IsFunctionType() ){
 //            auto unaryNode = std::make_shared<UnaryNode>(nullptr);
@@ -224,7 +233,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                     Lex.ExceptToken(TokenKind::RParent);
                 }
             }else{
-                sizeOfNode -> Lhs = ParsePrimaryExpr();
+                sizeOfNode -> Lhs = ParseCastExpr();
             }
 
             node =  sizeOfNode;
@@ -257,6 +266,7 @@ std::shared_ptr<AstNode> Parser::ParseExpr() {
 std::shared_ptr<ProgramNode> Parser::Parse() {
     Scope::GetInstance() -> PushScope("p");
     auto node = std::make_shared<ProgramNode>(Lex.CurrentToken);
+    LocalVars = &node -> Global;
     while (Lex.CurrentToken -> Kind != TokenKind::Eof){
         if (ParseExtern()){
             continue;
@@ -264,7 +274,20 @@ std::shared_ptr<ProgramNode> Parser::Parse() {
         if(ParseTypeDef()){
             continue;
         }
-        node ->Funcs.push_back(ParseFunc());
+        while(true){
+            auto declNode = ParseDeclarationExpr();
+            if (auto funcNode = std::dynamic_pointer_cast<FunctionNode>(declNode)){
+                node ->Funcs.push_back(ParseFunc(funcNode));
+            }else if(declNode){
+                node->DeclarationNode.push_back(declNode);
+                Lex.ExceptToken(TokenKind::Semicolon);
+                continue;
+            }else{
+                break;
+            }
+        }
+
+
     }
     Scope::GetInstance() -> PopScope();
     return node;
@@ -326,27 +349,21 @@ std::shared_ptr<ExprVarNode> Parser::GetVarExprNode(std::shared_ptr<AstNode> nod
 }
 
 
-std::shared_ptr<AstNode> Parser::ParseFunc() {
-    auto node = std::make_shared<FunctionNode>(Lex.CurrentToken);
+std::shared_ptr<AstNode> Parser::ParseFunc(std::shared_ptr<FunctionNode> node) {
+    //if not func impl return null
+    if (Lex.CurrentToken->Kind != TokenKind::LBrace){
+        return nullptr;
+    }
     LocalVars = &node -> Locals;
-    std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
-    auto type = ParseDeclarationSpec(varAttr);
-    std::list<std::shared_ptr<AssignmentInfoNode>> assignInfoNodes;
-    auto FuncNameToken = Lex.CurrentToken;
-    node -> FuncName = FuncNameToken->Content;
     Scope::GetInstance() -> PushScope(node -> FuncName);
-    type = ParseDeclarator(type,&assignInfoNodes);
-    node -> Type = type;
-    std::shared_ptr<FunctionType> funcType = std::dynamic_pointer_cast<FunctionType>(type);
-    if (funcType != nullptr){
-        for(auto it = funcType -> Params.rbegin();it != funcType -> Params.rend();++it) {
+    auto funcType = std::dynamic_pointer_cast<FunctionType>(node->Type);
+    for(auto it = funcType -> Params.rbegin();it != funcType -> Params.rend();++it) {
             //if paramer is arry actually is pointer
-            if ((*it)->Type->IsArrayType()) {
-                auto  pType = std::make_shared<PointerType>((*it)->Type);
-                node->Params.push_front(NewLocalVar((*it)->TToken->Content, pType,(*it)->ParamAttr));
-            } else {
-                node->Params.push_front(NewLocalVar((*it)->TToken->Content, (*it)->Type, (*it)->ParamAttr));
-            }
+        if ((*it)->Type->IsArrayType()) {
+            auto  pType = std::make_shared<PointerType>((*it)->Type);
+            node->Params.push_front(NewLocalVar((*it)->TToken->Content, pType,(*it)->ParamAttr));
+        } else {
+            node->Params.push_front(NewLocalVar((*it)->TToken->Content, (*it)->Type, (*it)->ParamAttr));
         }
     }
     TypeVisitor typeVisitor;
@@ -387,10 +404,10 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
             node -> ReturnStmts.push_back(rtStmt);
             if (rtStmt -> ReturnVarExpr)
                 node ->ReturnVarMap[rtStmt -> ReturnVarExpr ->Name] = rtStmt -> ReturnVarExpr;
-            rtStmt -> Type = type->GetBaseType();
+            rtStmt -> Type = funcType->ReturnType;
             rtStmt ->Accept(&typeVisitor);
-            if (!Type::IsTypeEqual(type->GetBaseType(),rtStmt->Type)){
-                auto tips =  string_format("excepted return type %s  get type %s !",type->GetBaseType()->Align,rtStmt->Type->Align);
+            if (!Type::IsTypeEqual(funcType->ReturnType, rtStmt->Type)){
+                auto tips =  string_format("excepted return type %s  get type %s !", funcType->ReturnType->Align, rtStmt->Type->Align);
                 DiagLoc(Lex.SourceCode, rtStmt->Tk->Location,tips.c_str());
             }
         }
@@ -406,17 +423,16 @@ std::shared_ptr<AstNode> Parser::ParseFunc() {
         varExprNode ->VarObj-> VarAttr -> isReference = true;
     }
 
-    auto funcSign = std::make_shared<FuncSign>(std::dynamic_pointer_cast<FunctionType>(type));
+    auto funcSign = std::make_shared<FuncSign>(funcType);
     funcSign ->FuncName = node ->FuncName;
 
     if (Scope::GetInstance() ->GetFuncSign(funcSign ->FuncName)){
         auto tips =  string_format("redefinition of '%s' !",std::string(funcSign ->FuncName).c_str());
-        DiagLoc(Lex.SourceCode, FuncNameToken->Location,tips.c_str());
+        DiagLoc(Lex.SourceCode, node->Tk->Location,tips.c_str());
     }
 
-
     if (node->ReturnStmts.empty() && node->Type->GetBaseType() != Type::VoidType)
-        DiagLoc(Lex.SourceCode,FuncNameToken->Location, string_format("func %s excepted return ",std::string(funcSign ->FuncName).data()).data());
+        DiagLoc(Lex.SourceCode,node->Tk->Location, string_format("func %s excepted return ",std::string(funcSign ->FuncName).data()).data());
 
     Scope::GetInstance() ->PushFuncSign(funcSign);
 
@@ -1061,7 +1077,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
     TypeVisitor typeVisitor;
     auto leftNode  = ParseCastExpr();
     while(true){
-        if (TopPrecedence[Lex.CurrentToken->Kind] >= priority){
+        if (TopPrecedence[Lex.CurrentToken->Kind] > priority){
             break;
         }
         switch (Lex.CurrentToken->Kind) {
@@ -1198,6 +1214,9 @@ std::shared_ptr<AssignNode> Parser::Assign(std::shared_ptr<AstNode> left,std::sh
     auto assignNode = std::make_shared<AssignNode>(Lex.CurrentToken);
     assignNode -> Lhs = left;
     assignNode -> Rhs = right;
+    if (std::dynamic_pointer_cast<ConstantNode>(right)){
+        assignNode ->isConstantAssign = true;
+    }
     //if assign rhs is func convert to &func
     if (auto exprNode = std::dynamic_pointer_cast<ExprVarNode>(assignNode ->Rhs)){
         if(Scope::GetInstance()->GetFuncSign(exprNode->Name)){
@@ -1217,6 +1236,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(std::shared_ptr<AstNod
     switch (op){
         case BinaryOperator::Assign:
         {
+
             binaryNode = Assign(left,ParseBinaryExpr(curPriority));
             break;
         }
@@ -1665,5 +1685,10 @@ std::shared_ptr<AstNode> Parser::ParseCompoundStmt() {
         return node;
     }
     return nullptr;
+}
+
+bool Parser::IsFunc() {
+
+    return false;
 }
 

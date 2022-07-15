@@ -29,7 +29,7 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseExpr();
 
-        std::shared_ptr<AstNode> ParseFunc();
+        std::shared_ptr<AstNode> ParseFunc(std::shared_ptr<FunctionNode> node);
 
         std::shared_ptr<AstNode> ParseFuncCallNode();
 
@@ -109,6 +109,8 @@ namespace BDD{
         bool IsConstant();
 
         std::shared_ptr<AssignmentInfoNode> ParseIdentifier(std::shared_ptr<Type> baseType);
+
+        bool IsFunc();
     };
 
 }
