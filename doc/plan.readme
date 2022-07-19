@@ -160,3 +160,5 @@
     complete struct test cast
 - 2022-07-15
     add variable testcase
+- 2022-07-15
+    optimization var declaration parse
