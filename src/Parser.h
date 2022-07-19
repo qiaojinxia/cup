@@ -9,7 +9,13 @@
 #include "Lexer.h"
 #include "AstNode.h"
 #include "Scope.h"
-
+#define  TokenEqualTo(x) Lex.CurrentToken -> Kind == TokenKind::x
+#define  TokenNotEqualTo(x) Lex.CurrentToken -> Kind != TokenKind::x
+#define NextToken Lex.GetNextToken();
+#define ExceptToken(x) Lex.ExceptToken(TokenKind::x);
+#define ASSERT(x) DiagLoc(Lex.SourceCode,Lex.GetLocation(),x);
+#define Peek Lex.BeginPeekToken();
+#define EndPeek Lex.EndPeekToken();
 namespace BDD{
     class Parser{
     private:
@@ -33,11 +39,11 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseFuncCallNode();
 
-        std::shared_ptr<Type> ParseDeclarationSpec(std::shared_ptr<Attr> attr);
+        std::shared_ptr<Type> ParseDeclarationSpec(const std::shared_ptr<Attr>& attr);
 
         std::shared_ptr<Type> GenerateType(int baseType,bool isConstant) const;
 
-        std::shared_ptr<Type> ParseDeclarator(std::shared_ptr<Type> baseType,std::list<std::shared_ptr<AssignmentInfoNode>> *assignments);
+        std::shared_ptr<DeclarationInfoNode> ParseDeclarator(std::shared_ptr<Type> baseType);
 
         std::shared_ptr<Type> ParseTypeSuffix(std::shared_ptr<Type> baseType);
 
@@ -61,7 +67,7 @@ namespace BDD{
 
         std::shared_ptr<AstNode> ParseBinaryExpr(int priority);
 
-        std::shared_ptr<AstNode> ParseBinaryOperationExpr(std::shared_ptr<AstNode> left,BinaryOperator op);
+        std::shared_ptr<AstNode> ParseBinaryOperationExpr(const std::shared_ptr<AstNode>& left,BinaryOperator op);
 
         std::shared_ptr<AstNode> ParseCastExpr();
 
@@ -98,19 +104,21 @@ namespace BDD{
         bool ParseExtern();
 
     private:
-        bool IsTypeName();
+        bool IsTypeName() const;
 
         std::shared_ptr<ConstantNode> parseInitListExpr(std::shared_ptr<ConstantNode> root);
 
-        std::shared_ptr<ExprVarNode> GetVarExprNode(std::shared_ptr<AstNode> node);
+        static std::shared_ptr<ExprVarNode> GetVarExprNode(const std::shared_ptr<AstNode>& node);
 
-        std::shared_ptr<AssignNode> Assign(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
+        std::shared_ptr<AssignNode> Assign(std::shared_ptr<AstNode> left, const std::shared_ptr<AstNode>& right);
 
-        bool IsConstant();
+        bool IsConstant() const;
 
-        std::shared_ptr<AssignmentInfoNode> ParseIdentifier(std::shared_ptr<Type> baseType);
+        std::shared_ptr<DeclarationInfoNode> ParseIdentifier(std::shared_ptr<Type> baseType);
 
-        bool IsFunc();
+        std::shared_ptr<FunctionNode> IsFunc();
+
+
     };
 
 }

@@ -8,7 +8,8 @@
 #include "AstNode.h"
 #include "Type.h"
 #include <unordered_map>
-
+#define ROOTSCOPE "p"
+#define FINDROOTSCOPE  "p."
 namespace BDD{
     class Scope;
     static std::shared_ptr<Scope> m_scopeInstance;
@@ -71,7 +72,12 @@ namespace BDD{
         std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<ConstantNode>>>
         GetStaticTable();
 
+        std::shared_ptr<ConstantNode> GetStaticUnInitVar(std::string name);
+
         std::shared_ptr<ConstantNode> GetStaticVar(std::string name);
+
+
+        bool IsRootScope();
     };
 
 }

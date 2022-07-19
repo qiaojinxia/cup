@@ -37,17 +37,20 @@ namespace BDD{
     class Attr{
     public:
         bool isInit{false};
-        bool isPublic{false};
         bool isReference{false};
         bool isStatic{false};
+        bool isGlobal{false};
     };
 
     class Var{
     public:
+        Var(std::shared_ptr<Type> type):Type(type){VarAttr = std::make_shared<Attr>();}
+        Var(std::shared_ptr<Type> type,std::string_view name):Type(type),Name(name){VarAttr = std::make_shared<Attr>();}
+    public:
         std::shared_ptr<Type> Type;
         std::string_view Name;
         std::string GlobalName;
-        std::shared_ptr<Attr> VarAttr;
+        std::shared_ptr<Attr> VarAttr{};
         int Offset;
     };
     class ProgramNode:public  AstNode{
@@ -72,9 +75,9 @@ namespace BDD{
         void Accept(AstVisitor *visitor) override;
     };
 
-    class AssignmentInfoNode: public AstNode{
+    class DeclarationInfoNode: public AstNode{
     public:
-        AssignmentInfoNode(std::shared_ptr<Token> tk) : AstNode(tk){};
+        DeclarationInfoNode(std::shared_ptr<Token> tk) : AstNode(tk){};
         std::shared_ptr<Token> ID;
         std::shared_ptr<AstNode> Value;
         std::shared_ptr<Var> Var;

@@ -86,11 +86,11 @@ void CodeGenerate::Visitor(ExprVarNode *node) {
             printf("\t  mov%s %d(%%rbp),%s\n", GetSuffix(nd->Type->Size).data(), GetVarStackOffset(nd),  SelectReg(GetCurTargetReg(),node ->Type).data());
         }
     }else{
-        if (node->VarObj->VarAttr->isStatic){
+        if (node->VarObj->VarAttr->isStatic || node->VarObj->VarAttr->isGlobal)  {
             if (node->Type->IsFloatPointNum()){
                 printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(node->Type).data(),node->VarObj->GlobalName.data(),Xmm[Depth++]);
             }else if(node ->Type -> IsFunctionType() || node -> Type -> IsRecordType() ||  node -> Type -> IsArrayType()){
-                printf("\t  mov %s(%%rip),%%rax\n", node->VarObj->GlobalName.data());
+                printf("\t  lea %s(%%rip),%%rax\n", node->VarObj->GlobalName.data());
             }else{
                 printf("\t  %s %s(%%rip),%s\n", GetMoveCode2(node->Type).data(),node->VarObj->GlobalName.data(), GetRax(node->Type).data());
             }
@@ -603,7 +603,7 @@ void CodeGenerate::Visitor(UnaryNode *node) {
 // for exmaple static var store in data segment 、*y .s all can't index by %d(%rbp) need dereference first
 bool  CodeGenerate::IsDirectInStack(std::shared_ptr<AstNode> node){
     if(auto varExprNode = std::dynamic_pointer_cast<ExprVarNode>(node)){
-        if (varExprNode->VarObj->VarAttr->isReference || varExprNode->VarObj->VarAttr->isStatic)
+        if (varExprNode->VarObj->VarAttr->isReference || varExprNode->VarObj->VarAttr->isStatic || varExprNode->VarObj->VarAttr->isGlobal)
             return false;
     }else if(auto memberAccessNode = std::dynamic_pointer_cast<MemberAccessNode>(node)){
         return IsDirectInStack(memberAccessNode->Lhs);
@@ -671,7 +671,7 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
 #else
             printf("\t  lea _%s(%%rip),%s\n", std::string(varExprNode->Tk->Content).data(), GetCurTargetReg().data());
 #endif
-        }else if(varExprNode ->VarObj ->VarAttr->isStatic){
+        }else if(varExprNode ->VarObj ->VarAttr->isStatic || varExprNode ->VarObj ->VarAttr->isGlobal){
             printf("\t  lea %s(%%rip),%s\n", varExprNode -> VarObj ->GlobalName.data(), GetCurTargetReg().data());
         }else if(varExprNode ->VarObj ->VarAttr->isReference){
             printf("\t  mov %d(%%rbp),%s\n", varExprNode -> VarObj -> Offset, GetCurTargetReg().data());

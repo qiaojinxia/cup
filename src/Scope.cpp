@@ -5,6 +5,7 @@
 #include "Scope.h"
 #include "Common.h"
 
+
 using namespace BDD;
 void Scope::PushScope(std::string_view scopeTagName) {
     if (scopeTagName == ""){
@@ -18,6 +19,10 @@ void Scope::PushScope(std::string_view scopeTagName) {
 
 void Scope::PopScope() {
     CurScope = CurScope -> parent;
+}
+
+bool Scope::IsRootScope() {
+    return CurScope->scopeTag  == ROOTSCOPE;
 }
 
 std::shared_ptr<Var> Scope::FindVar(std::string_view varName) {
@@ -88,7 +93,7 @@ std::unordered_map<std::string, std::shared_ptr<ConstantNode>> Scope::GetConstan
     return ConstTable;
 }
 
-std::shared_ptr<ConstantNode>  Scope::GetStaticVar(std::string name){
+std::shared_ptr<ConstantNode>  Scope::GetStaticUnInitVar(std::string name){
     auto stZVar = GetStaticZeroVarTable().find(name);
     if (stZVar != GetStaticZeroVarTable().end()){
         return stZVar->second;
@@ -157,9 +162,22 @@ std::string Scope::PushStaticVar(std::string_view name,std::shared_ptr<Type> typ
     cstNode ->Value = 0;
     cstNode ->Type = type;
     std::string varName(name);
-    std::string curVarScopeTag = string_format("%s.%s",CurScope->scopeTag.data(),varName.data());
+    std::string curVarScopeTag = string_format("%s%s",FINDROOTSCOPE,varName.data());
     cstNode ->Name = curVarScopeTag;
     GetStaticZeroVarTable()[curVarScopeTag] = cstNode;
     return curVarScopeTag;
 }
 
+
+std::shared_ptr<ConstantNode> Scope::GetStaticVar(std::string name){
+    std::string globalName = FINDROOTSCOPE + name;
+    auto stZVar = GetStaticZeroVarTable().find(globalName);
+    if (stZVar != GetStaticZeroVarTable().end()){
+        return stZVar->second;
+    }else{
+        auto stVar = GetStaticInitVarTable().find(globalName);
+        if (stVar != GetStaticInitVarTable().end())
+            return stVar->second;
+    }
+    return nullptr;
+}
