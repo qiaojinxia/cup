@@ -162,3 +162,5 @@
     add variable testcase
 - 2022-07-15
     optimization var declaration parse
+- 2022-07-15
+    optimization parse identifier and pass variable.c test case
