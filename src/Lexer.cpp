@@ -497,20 +497,8 @@ char Lexer::PeekChar(int n) {
 
 
 
-void Lexer::EndPeekToken() {
-    CurChar = PeekPointCurChar;
-    Cursor = PeekPointCursor;
-    Line = PeekPointLine;
-    LineHead = PeekPointLineHead;
-    CurrentToken = PeekPointCurrentToken;
-}
-
-void Lexer::BeginPeekToken() {
-    PeekPointCurChar = CurChar;
-    PeekPointCursor = Cursor;
-    PeekPointLine = Line;
-    PeekPointLineHead = LineHead;
-    PeekPointCurrentToken = CurrentToken;
+Lexer * Lexer::CurLexer() {
+   return this;
 }
 
 void Lexer::SkipWhiteSpace() {

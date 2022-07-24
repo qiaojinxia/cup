@@ -111,12 +111,12 @@ namespace BDD{
         void ClearCurTargetReg();
 
         void Push(std::shared_ptr<Type> ty);
-        void Pop(std::shared_ptr<Type> ty);
-        void Pop(std::shared_ptr<Type> ty,const char *reg);
+        void Pop(const std::shared_ptr<Type>& ty);
+        void Pop(const std::shared_ptr<Type>& ty,const char *reg);
 
         void Load(std::shared_ptr<AstNode> node);
         void Load(AstNode *node);
-        void Store(std::shared_ptr<AstNode> node, OffsetInfo * offset);
+        void Store(const std::shared_ptr<AstNode>& node, OffsetInfo * offset);
 
 
         void GenerateAddress(AstNode *node);
@@ -129,7 +129,7 @@ namespace BDD{
 
 
 
-        void PushJmpLabel(std::string labelName);
+        void PushJmpLabel(const std::string& labelName);
         std::string PopJmpLabel();
         std::string GetJmpLabel();
 

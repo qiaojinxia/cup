@@ -9,7 +9,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-
+#include <list>
 
 namespace BDD{
     enum class TokenKind{
@@ -114,24 +114,22 @@ namespace BDD{
         SourceLocation Location;
 
     };
-    class Lexer {
-    private:
+    static std::shared_ptr<Token> EmptyToken = std::make_shared<Token>();
+    class BaseLexer {
+    public:
         char CurChar{' '};
         int Cursor{0};
         int Line{0};
         int LineHead{0};
-        char PeekPointCurChar;
-        int PeekPointCursor;
-        int PeekPointLine;
-        int PeekPointLineHead;
-        int StartPos;
-        std::shared_ptr<Token> PeekPointCurrentToken;
-    public:
         std::shared_ptr<Token> CurrentToken;
-        std::string_view SourceCode;
-        std::shared_ptr<Token> EmptyToken = std::make_shared<Token>();
-        SourceLocation GetLocation();
+        int StartPos;
+    };
 
+    class Lexer:  public BaseLexer{
+    private:
+    public:
+        std::string_view SourceCode;
+        SourceLocation GetLocation();
     public:
         Lexer(const char *code){
             SourceCode = code;
@@ -141,8 +139,6 @@ namespace BDD{
         void SkipToken(TokenKind  kind);
         void ExceptToken(TokenKind  kind);
         void ExceptedNextToken(TokenKind kind);
-        void BeginPeekToken();
-        void EndPeekToken();
     private:
         bool IsLetter();
         bool IsDigit();
@@ -153,10 +149,10 @@ namespace BDD{
         void SkipWhiteSpace();
         void SkipComment();
 
-
         bool IsHex();
 
 
+        Lexer *CurLexer();
     };
 
 

@@ -14,8 +14,8 @@
 #define NextToken Lex.GetNextToken();
 #define ExceptToken(x) Lex.ExceptToken(TokenKind::x);
 #define ASSERT(x) DiagLoc(Lex.SourceCode,Lex.GetLocation(),x);
-#define Peek Lex.BeginPeekToken();
-#define EndPeek Lex.EndPeekToken();
+#define StoreLex(x) auto x = Lex;
+#define ResumeLex(x) Lex = x;
 namespace BDD{
     class Parser{
     private:
@@ -48,6 +48,8 @@ namespace BDD{
         std::shared_ptr<Type> ParseTypeSuffix(std::shared_ptr<Type> baseType);
 
         std::shared_ptr<AstNode> ParsePostFixExpr();
+
+        std::shared_ptr<AstNode> ParsePostFixArray(std::shared_ptr<AstNode> left);
 
         std::shared_ptr<AstNode> ParsePrimaryExpr();
 

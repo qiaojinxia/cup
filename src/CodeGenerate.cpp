@@ -27,7 +27,6 @@ const std::string CodeGenerate::GetReg(int size,int n){
     return Regx64[size/2][n];
 }
 
-
 void BDD::CodeGenerate::Visitor(BDD::BinaryNode *node) {}
 
 //if constantNode is buildIntype load value rax else not load
@@ -127,7 +126,6 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     }
 
 }
-
 
 void preProcessCstNode(std::shared_ptr<ConstantNode> node, bool isInStructOrArray){
     if(!node){
@@ -527,7 +525,8 @@ void CodeGenerate::Visitor(UnaryNode *node) {
             break;
         case UnaryOperator::Deref://*
             node->Lhs->Accept(this);
-            Load(node->Lhs);
+            if (!node->Type->IsArrayType() && !node->Type->IsRecordType())
+                Load(node->Lhs);
             break;
         case UnaryOperator::Addr://&
             GenerateAddress(node -> Lhs.get());
@@ -689,9 +688,12 @@ void CodeGenerate::GenerateAddress(AstNode *node,bool LValue) {
         }
     }else if (auto unaryNode = dynamic_cast<UnaryNode *>(node)){
         if (unaryNode -> Uop == UnaryOperator::Deref){
+            Push(Type::VoidType);
             SetCurTargetReg("%rax");
             unaryNode ->Lhs->Accept(this);
             printf("\t  mov %%rax,%%rdi\n");
+            PopCurTargetReg();
+            Pop(Type::VoidType);
         }else if (unaryNode -> Uop == UnaryOperator::Addr){
             GenerateAddress(unaryNode ->Lhs.get());
         }else{
@@ -1046,12 +1048,12 @@ void mmStoreCst(std::shared_ptr<ConstantNode>& node, OffsetInfo * oi, std::strin
 
 void storeArray(std::shared_ptr<ConstantNode>& node, OffsetInfo * oi ){
     //todo array is struct
-    mmStoreCst(node->Next,oi, node->Name.data(), node->isStore);
+    mmStoreCst(node->Next,oi, node->Name, node->isStore);
 }
 
 
 
-void CodeGenerate::Store(std::shared_ptr<AstNode> node, OffsetInfo * oi) {
+void CodeGenerate::Store(const std::shared_ptr<AstNode>& node, OffsetInfo * oi) {
     std::shared_ptr<AstNode> cursor = node;
     std::shared_ptr<Type> type;
     while (auto castNode = std::dynamic_pointer_cast<CastNode>(cursor)){
@@ -1068,8 +1070,8 @@ void CodeGenerate::Store(std::shared_ptr<AstNode> node, OffsetInfo * oi) {
         type = unaryNode->Type;
     }else if(auto funcCallNode = std::dynamic_pointer_cast<FuncCallNode>(cursor)){
         type = funcCallNode->Type;
-    }else if(auto arefNode = std::dynamic_pointer_cast<ArrayMemberNode>(cursor)){
-        type = arefNode->Type;
+    }else if(auto arrayMemberNode = std::dynamic_pointer_cast<ArrayMemberNode>(cursor)){
+        type = arrayMemberNode->Type;
     }else if(auto ternaryNode = std::dynamic_pointer_cast<TernaryNode>(cursor)){
         type = ternaryNode->Type;
     }else if(auto memberAccessType = std::dynamic_pointer_cast<MemberAccessNode>(cursor)){
@@ -1196,7 +1198,7 @@ void CodeGenerate::Visitor(CastNode *node) {
     auto castCode = GetCastCode(fromTo);
     if (castCode == "NULL"){
         return;
-    }else if (castCode == ""){
+    }else if (castCode.empty()){
         printf("%s code not exists!\n",fromTo.data());
         return;
     }
@@ -1243,7 +1245,7 @@ void CodeGenerate::Push(std::shared_ptr<Type> ty) {
     StackLevel ++;
 }
 
-void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
+void CodeGenerate::Pop(const std::shared_ptr<Type>& ty) {
     printf("\t  mov(%%rsp),%s           #Pop %s\n",GetRax(ty).data(),GetRax(ty).data());
     StackLevel --;
     if (ty->IsRecordType() || ty ->IsArrayType() || ty -> IsPointerType()){
@@ -1253,7 +1255,7 @@ void CodeGenerate::Pop(std::shared_ptr<Type> ty) {
     printf("\t  add $%d, %%rsp\n",ty->Size);
 }
 
-void CodeGenerate::Pop(std::shared_ptr<Type> ty,const char *reg) {
+void CodeGenerate::Pop(const std::shared_ptr<Type>& ty,const char *reg) {
     if (ty ->IsFloatPointNum()){
         if (reg){
             printf("\t  movsd (%%rsp),%s \n",reg);
@@ -1279,7 +1281,6 @@ void CodeGenerate::Visitor(ArrayMemberNode *node) {
         printf("\t  mov %d(%%rbp),%s\n",offset, GetRax(node->Lhs->Type).data());
     }else{
         node ->Lhs->Accept(this);
-        Load(node->Lhs);
     }
 }
 
@@ -1678,14 +1679,14 @@ void CodeGenerate::Visitor(OrNode *node) {
 }
 
 
-void CodeGenerate::PushJmpLabel(std::string labelName) {
+void CodeGenerate::PushJmpLabel(const std::string& labelName) {
     JmpStack.push_back(labelName);
 }
 
 std::string CodeGenerate::PopJmpLabel() {
     auto backLabel = GetJmpLabel();
     JmpStack.pop_back();
-    return std::string(backLabel);
+    return backLabel;
 }
 
 std::string CodeGenerate::GetJmpLabel() {

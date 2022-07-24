@@ -336,12 +336,7 @@ void TypeVisitor::Visitor(CastNode *node) {
 
 void TypeVisitor::Visitor(ArrayMemberNode *node) {
     node -> Lhs ->Accept(this);
-    node -> Type  = node ->Lhs ->Type->GetBaseType();
-//    if (CurAssignType && node -> Type != CurAssignType && CurAssignType ->IsBInType()){
-//        auto castNode = std::make_shared<CastNode>(nullptr);
-//        castNode ->Type = CurAssignType;
-//        castNode ->CstNode = std::make_shared<ArrayMemberNode>(*node);
-//    }
+    node -> Type  = node ->Lhs ->Type;
     CurAssignType = nullptr;
 }
 

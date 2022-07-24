@@ -48,25 +48,26 @@ int main() {
     assert(2, ({ int x=2; { int x=3; } int y=4; x; }));
     assert(3, ({ int x=2; { x=3; } x; }));
 
-//    assert(7, ({ int x; int y; char z; char *a=&y; char *b=&z; b-a; }));
-//    assert(1, ({ int x; char y; int z; char *a=&y; char *b=&z; b-a; }));
+    assert(-1, ({ int x; int y; char z; char *a=&y; char *b=&z; b-a; }));
+    assert(-7, ({ int x; char y; int z; char *a=&y; char *b=&z; b-a; }));
 
     assert(8, ({ long x; sizeof(x); }));
     assert(2, ({ short x; sizeof(x); }));
 
-//    assert(24, ({ char *x[3]; sizeof(x); }));
-//    assert(8, ({ char (*x)[3]; sizeof(x); }));
-//    assert(1, ({ char (x); sizeof(x); }));
-//    assert(3, ({ char (x)[3]; sizeof(x); }));
-//    assert(12, ({ char (x[3])[4]; sizeof(x); }));
-//    assert(4, ({ char (x[3])[4]; sizeof(x[0]); }));
-//    assert(3, ({ char *x[3]; char y; x[0]=&y; y=3; x[0][0]; }));
-//    assert(4, ({ char x[3]; char (*y)[3]=x; y[0][0]=4; y[0][0]; }));
-//
-//    { void *x; }
-//
-//    assert(3, g3);
+    assert(24, ({ char *x[3]; sizeof(x); }));
+    assert(8, ({ char (*x)[3]; sizeof(x); }));
+    assert(1, ({ char (x); sizeof(x); }));
+    assert(3, ({ char (x)[3]; sizeof(x); }));
+    assert(12, ({ char (x[3])[4]; sizeof(x); }));
+    assert(4, ({ char (x[3])[4]; sizeof(x[0]); }));
+    assert(3, ({ char *x[3]; char y; x[0]=&y; y=3;x[0][0]; }));
+    assert(3, ({ char x[3]; char (*y)[3]=x; y[1]-y[0]; }));
+    assert(3, ({ char x[3]; char (*y)[3]=x; *(y+1)-*(y+0); }));
+    assert(4, ({ char x[3]; char (*y)[3]=x; y[0][0]=4; y[0][0]; }));
 
+    { void *x; }
+
+    assert(3, g3);
 
   return 0;
 }

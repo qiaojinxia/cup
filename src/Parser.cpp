@@ -15,7 +15,6 @@ using namespace BDD;
 
 //ParseDeclarationExpr
 std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
-    Peek
     if(auto emptyNode= ParseEnumDeclaration()){
         return  emptyNode;
     }else if (IsTypeName()){
@@ -123,18 +122,17 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         }
         case TokenKind::Identifier:
         {
-            Peek
+            StoreLex(n1)
             NextToken
             if (TokenEqualTo(LParent)){
-                EndPeek
+                ResumeLex(n1)
                 auto funcCallNode =  ParseFuncCallNode();
                 //to record funcall node if return is structType to distribution  memory in stack
                 if (funcCallNode ->Type->GetBaseType()->IsRecordType())
                     CurFuncCall.push_back(std::dynamic_pointer_cast<FuncCallNode>(funcCallNode));
                 return  funcCallNode;
             }
-            EndPeek
-
+            ResumeLex(n1)
             auto exprVarNode = std::make_shared<ExprVarNode>(Lex.CurrentToken);
             exprVarNode -> Name = Lex.CurrentToken->Content;
             auto nodeName = std::string (Lex.CurrentToken -> Content);
@@ -725,27 +723,31 @@ std::shared_ptr<DeclarationInfoNode> Parser::ParseIdentifier(std::shared_ptr<Typ
             pointer = true;
             NextToken
         }
-        din ->ID = Lex.CurrentToken;
-        ExceptToken(Identifier)
-        ExceptToken(LParent)
+        StoreLex(n1)
+        ParseIdentifier(type);
+        ExceptToken(RParent)
+        type = ParseTypeSuffix(type);
+        StoreLex(n2)
+        ResumeLex(n1)
+        din =  ParseIdentifier(type);
+        ResumeLex(n2)
         if (pointer)
-            type = std::make_shared<PointerType>(ParseTypeSuffix(baseType));
+            din -> Type = std::make_shared<PointerType>(din -> Type);
     }else if(TokenEqualTo(Identifier)){
         if (TokenEqualTo(Asterisk)){
-            type = std::make_shared<PointerType>(baseType);
+            type = std::make_shared<PointerType>(type);
             NextToken
         }
         din ->ID = Lex.CurrentToken;
         ExceptToken(Identifier)
-        type = ParseTypeSuffix(baseType);
-        if (Lex.CurrentToken->Kind == TokenKind::Assign){
-            NextToken
-            din ->Value = ParseExpr();
-        }
+        din ->Type = ParseTypeSuffix(type);
     }else{
         return nullptr;
     }
-    din ->Type = type;
+    if (Lex.CurrentToken->Kind == TokenKind::Assign){
+        NextToken
+        din ->Value = ParseExpr();
+    }
     return din;
 }
 
@@ -840,6 +842,22 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
     return node;
 }
 
+std::shared_ptr<AstNode> Parser::ParsePostFixArray(std::shared_ptr<AstNode> left) {
+    if(TokenEqualTo(LBracket)){
+        auto addNode = std::make_shared<AddNode>(Lex.CurrentToken);
+        NextToken
+        addNode ->BinOp = BinaryOperator::Add;
+        addNode ->Lhs = left;
+        addNode ->Rhs = ParsePrimaryExpr();
+        if (TokenEqualTo(RBracket))
+            NextToken
+        auto deferNode = std::make_shared<UnaryNode>(Lex.CurrentToken);
+        deferNode ->Uop = UnaryOperator::Deref;
+        deferNode ->Lhs = addNode;
+        return ParsePostFixArray(deferNode);
+    }
+    return left;
+}
 
 //ParsePostFixExpr ::= ParsePrimaryExpr ("++" | "--" ｜ "->" ident | "." ident ｜ "[" ParseExpr "]" )*
 std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
@@ -852,23 +870,8 @@ std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
             return ParseFuncCallNode();
         }else if (TokenEqualTo(LBracket)){
             auto arrayMemberNode = std::make_shared<ArrayMemberNode>(Lex.CurrentToken);
-            bool first = true;
-            do{
-                if (!first){
-                    auto deferArrayNode = std::make_shared<UnaryNode>(Lex.CurrentToken);
-                    deferArrayNode->Uop = UnaryOperator::Deref;
-                    deferArrayNode ->Lhs = left;
-                }
-                auto addNode = std::make_shared<AddNode>(Lex.CurrentToken);
-                NextToken
-                addNode ->BinOp = BinaryOperator::Add;
-                addNode ->Lhs = left;
-                addNode ->Rhs = ParsePrimaryExpr();
-                left = addNode;
-                first = false;
-            }while(TokenEqualTo(LBracket));
-            arrayMemberNode ->Lhs = left;
-            ExceptToken(RBracket)
+            auto deferArrayNode = std::make_shared<UnaryNode>(Lex.CurrentToken);
+            arrayMemberNode ->Lhs = ParsePostFixArray(left);
             left = arrayMemberNode;
             continue;
         }else if(TokenEqualTo(Period)){
@@ -1300,7 +1303,7 @@ bool Parser::IsTypeName() const {
 
 //ParseCastExpr ::= "(" type-name ")" ParseCastExpr | ParseUnaryExpr
 std::shared_ptr<AstNode> Parser::ParseCastExpr() {
-    Peek
+    StoreLex(n1)
     if (TokenEqualTo(LParent)){
         auto token = Lex.CurrentToken;
         NextToken
@@ -1313,7 +1316,7 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
                 castNode-> Tk = token;
             return castNode;
         }else{
-            EndPeek
+            ResumeLex(n1)
         }
     }
     return ParseUnaryExpr();
@@ -1360,7 +1363,7 @@ bool Parser::IsConstant() const {
 }
 // ParseInitListExpr ::= "{" (ParsePrimaryExpr,",")* | (ParsePrimaryExpr:ParsePrimaryExpr ",")* "}"
 std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
-    Peek
+    StoreLex(n1)
     if (TokenEqualTo(LBrace)){
         ExceptToken(LBrace)
         auto initCstNode = parseInitListExpr(nullptr);
@@ -1370,7 +1373,7 @@ std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
                 return initCstNode;
             }
         }
-        EndPeek
+        ResumeLex(n1)
     }
     return nullptr;
 }
@@ -1633,19 +1636,19 @@ std::shared_ptr<AstNode> Parser::ParseCompoundStmt() {
 
 std::shared_ptr<FunctionNode> Parser::IsFunc() {
     auto funcNode = std::make_shared<FunctionNode>(Lex.CurrentToken);
-    Peek
+    StoreLex(n1)
     std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
     auto baseType = ParseDeclarationSpec(varAttr);
     if(TokenEqualTo(Identifier)){
         funcNode->FuncName = Lex.CurrentToken->Content;
         NextToken
     }else{
-        EndPeek
+        ResumeLex(n1)
         return nullptr;
     }
     auto type = ParseTypeSuffix(baseType);
     if (!std::dynamic_pointer_cast<FunctionType>(type)){
-        EndPeek
+        ResumeLex(n1)
         return nullptr;
     }
     funcNode -> Type = type;
