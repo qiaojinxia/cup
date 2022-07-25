@@ -148,40 +148,51 @@ namespace BDD{
         And,
         Or,
     };
-    static std::map<TokenKind,int> TopPrecedence = {
+    enum class Associativity{
+        LeftAssociative = 1,
+        RightAssociative = 2
+    };
+    class OperationPriority {
+    public:
+        TokenKind symbol;
+        int priority;
+        Associativity associativity;
+        OperationPriority(TokenKind sb,int pri,Associativity ass ):symbol(sb),priority(pri),associativity(ass){};
+    };
 
-            {TokenKind::Assign, 14},
-            {TokenKind::Plus,     4},
-            {TokenKind::Minus,    4},
-            {TokenKind::Slash,    3},
-            {TokenKind::Asterisk, 3},
-            {TokenKind::Mod,         3},
-            {TokenKind::Equal,     7},
-            {TokenKind::NotEqual,     7},
-            {TokenKind::LesserEqual,     6},
-            {TokenKind::Lesser,     6},
-            {TokenKind::GreaterEqual,     6},
-            {TokenKind::Greater,     6},
-            {TokenKind::VerticalBar, 10},
-            {TokenKind::Sal, 5},
-            {TokenKind::Sar, 5},
-            {TokenKind::Caret, 9},
-            {TokenKind::Amp, 8},
-            {TokenKind::Eof,      13},
-            {TokenKind::And,               11},
-            {TokenKind::Or,                12},
+    static std::map<TokenKind,OperationPriority> TopPrecedenceTable = {
 
-            {TokenKind::PlusAssign,        14},
-            {TokenKind::MinusAssign,       14},
-            {TokenKind::AsteriskAssign,    14},
-            {TokenKind::SlashAssign,       14},
+            {TokenKind::Assign, OperationPriority(TokenKind::Assign,14,Associativity::RightAssociative)},
+            {TokenKind::Plus,   OperationPriority(TokenKind::Plus,4,Associativity::LeftAssociative)  },
+            {TokenKind::Minus,    OperationPriority(TokenKind::Minus, 4,Associativity::LeftAssociative)},
+            {TokenKind::Slash,     OperationPriority(TokenKind::Slash, 3,Associativity::LeftAssociative)},
+            {TokenKind::Asterisk,  OperationPriority(TokenKind::Asterisk, 3,Associativity::LeftAssociative)},
+            {TokenKind::Mod,         OperationPriority(TokenKind::Mod,  3,Associativity::LeftAssociative)},
+            {TokenKind::Equal,      OperationPriority(TokenKind::Equal, 7,Associativity::LeftAssociative)},
+            {TokenKind::NotEqual,      OperationPriority(TokenKind::NotEqual, 7,Associativity::LeftAssociative)},
+            {TokenKind::LesserEqual,      OperationPriority(TokenKind::LesserEqual, 6,Associativity::LeftAssociative)},
+            {TokenKind::Lesser,      OperationPriority(TokenKind::Lesser, 6,Associativity::LeftAssociative)},
+            {TokenKind::GreaterEqual,      OperationPriority(TokenKind::GreaterEqual, 6,Associativity::LeftAssociative)},
+            {TokenKind::Greater,     OperationPriority(TokenKind::Greater,  6,Associativity::LeftAssociative)},
+            {TokenKind::VerticalBar,  OperationPriority(TokenKind::VerticalBar, 10,Associativity::LeftAssociative)},
+            {TokenKind::Sal,  OperationPriority(TokenKind::Sal, 5,Associativity::LeftAssociative)},
+            {TokenKind::Sar,  OperationPriority(TokenKind::Sar, 5,Associativity::LeftAssociative)},
+            {TokenKind::Caret,  OperationPriority(TokenKind::Caret, 9,Associativity::LeftAssociative)},
+            {TokenKind::Amp,  OperationPriority(TokenKind::Amp, 8,Associativity::LeftAssociative)},
+            {TokenKind::Eof,      OperationPriority(TokenKind::Eof,  13,Associativity::LeftAssociative)},
+            {TokenKind::And,               OperationPriority(TokenKind::And,  11,Associativity::LeftAssociative)},
+            {TokenKind::Or,                OperationPriority(TokenKind::Or,  12,Associativity::LeftAssociative)},
 
+            {TokenKind::PlusAssign,         OperationPriority(TokenKind::PlusAssign, 14,Associativity::RightAssociative)},
+            {TokenKind::MinusAssign,       OperationPriority(TokenKind::MinusAssign,  14,Associativity::RightAssociative)},
+            {TokenKind::AsteriskAssign,    OperationPriority(TokenKind::AsteriskAssign,  14,Associativity::RightAssociative)},
+            {TokenKind::SlashAssign,       OperationPriority(TokenKind::SlashAssign,  14,Associativity::RightAssociative)},
 
-            {TokenKind::ModAssign,         14}, //%=
-            {TokenKind::AmpAssign,         14},  // &=
-            {TokenKind::VerticalBarAssign, 14}, // |=
-            {TokenKind::SarAssign,         14},// >>=
-            {TokenKind::SalAssign,         14}, // <<=
+            {TokenKind::ModAssign,         OperationPriority(TokenKind::ModAssign,  14,Associativity::RightAssociative)}, //%=
+            {TokenKind::AmpAssign,          OperationPriority(TokenKind::AmpAssign, 14,Associativity::RightAssociative)},  // &=
+            {TokenKind::VerticalBarAssign,  OperationPriority(TokenKind::VerticalBarAssign, 14,Associativity::RightAssociative)}, // |=
+            {TokenKind::SarAssign,         OperationPriority(TokenKind::SarAssign,  14,Associativity::RightAssociative)},// >>=
+            {TokenKind::SalAssign,         OperationPriority(TokenKind::SalAssign,  14,Associativity::RightAssociative)}, // <<=
 
 
 

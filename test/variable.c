@@ -66,7 +66,7 @@ int main() {
     assert(4, ({ char x[3]; char (*y)[3]=x; y[0][0]=4; y[0][0]; }));
 
     { void *x; }
-
+    //todo y[i][j]=4;
     assert(3, g3);
 
   return 0;

@@ -216,9 +216,13 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
                 NextToken
                 if (IsTypeName()){
                     std::shared_ptr<Attr> varAttr = std::make_shared<Attr>();
-                    auto din = ParseDeclarator(ParseDeclarationSpec(varAttr));
+                    auto baseType = ParseDeclarationSpec(varAttr);
+                    auto din = ParseDeclarator(baseType);
                     auto emptyNode= std::make_shared<EmptyNode>(nullptr);
-                    emptyNode ->Type = din->Type;
+                    if (din)
+                        emptyNode ->Type = din->Type;
+                    else
+                        emptyNode ->Type = baseType;
                     sizeOfNode -> Lhs = emptyNode;
                     ExceptToken(RParent);
                 }else{
@@ -724,7 +728,8 @@ std::shared_ptr<DeclarationInfoNode> Parser::ParseIdentifier(std::shared_ptr<Typ
             NextToken
         }
         StoreLex(n1)
-        ParseIdentifier(type);
+        if (TokenNotEqualTo(RParent))
+            ParseIdentifier(type);
         ExceptToken(RParent)
         type = ParseTypeSuffix(type);
         StoreLex(n2)
@@ -741,8 +746,11 @@ std::shared_ptr<DeclarationInfoNode> Parser::ParseIdentifier(std::shared_ptr<Typ
         din ->ID = Lex.CurrentToken;
         ExceptToken(Identifier)
         din ->Type = ParseTypeSuffix(type);
+    }else if(TokenEqualTo(RParent) || TokenEqualTo(LBracket)){
+        din ->Type = ParseTypeSuffix(type);
+        return din;
     }else{
-        return nullptr;
+       return nullptr;
     }
     if (Lex.CurrentToken->Kind == TokenKind::Assign){
         NextToken
@@ -757,7 +765,8 @@ std::shared_ptr<DeclarationInfoNode> Parser::ParseDeclarator(std::shared_ptr<Typ
         return nullptr;
     }
     std::shared_ptr<DeclarationInfoNode> din;
-    if (TokenEqualTo(Identifier) || TokenEqualTo(Asterisk) || TokenEqualTo(LParent)){
+    if (TokenEqualTo(Identifier) || TokenEqualTo(Asterisk)
+    || TokenEqualTo(LParent) || TokenEqualTo(LBracket) ){
         if (TokenEqualTo(Asterisk)){
             NextToken
             auto ptrType = std::make_shared<PointerType>(baseType);
@@ -1024,8 +1033,18 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
     TypeVisitor typeVisitor;
     auto leftNode  = ParseCastExpr();
     while(true){
-        if (TopPrecedence[Lex.CurrentToken->Kind] > priority){
+        auto oPrior = TopPrecedenceTable.find(Lex.CurrentToken->Kind);
+        if (oPrior->first == TopPrecedenceTable.end()->first)
             break;
+        switch(oPrior->second.associativity){
+            case Associativity::LeftAssociative:
+                if (oPrior->second.priority >= priority){
+                    break;
+                }
+            case Associativity::RightAssociative:
+                if (oPrior->second.priority > priority){
+                    break;
+                }
         }
         switch (Lex.CurrentToken->Kind) {
             case TokenKind::Plus:
@@ -1177,7 +1196,7 @@ std::shared_ptr<AssignNode> Parser::Assign(std::shared_ptr<AstNode> left,const s
 }
 
 std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(const std::shared_ptr<AstNode>& left, BinaryOperator op) {
-    auto curPriority =  TopPrecedence[Lex.CurrentToken->Kind];
+    auto curPriority =  TopPrecedenceTable.find(Lex.CurrentToken->Kind)->second.priority;
     NextToken
     std::shared_ptr<BinaryNode> binaryNode;
     switch (op){

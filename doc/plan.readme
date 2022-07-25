@@ -164,3 +164,5 @@
     optimization var declaration parse
 - 2022-07-15
     optimization parse identifier and pass variable.c test case
+- 2022-07-16
+    add operator Associativity  fix parseIdentifier
