@@ -1033,17 +1033,17 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
     TypeVisitor typeVisitor;
     auto leftNode  = ParseCastExpr();
     while(true){
-        auto oPrior = TopPrecedenceTable.find(Lex.CurrentToken->Kind);
-        if (oPrior->first == TopPrecedenceTable.end()->first)
+        auto oPrior = OperatorPriorityTable.find(Lex.CurrentToken->Kind);
+        if (oPrior == OperatorPriorityTable.end())
             break;
         switch(oPrior->second.associativity){
             case Associativity::LeftAssociative:
                 if (oPrior->second.priority >= priority){
-                    break;
+                    return leftNode;
                 }
             case Associativity::RightAssociative:
                 if (oPrior->second.priority > priority){
-                    break;
+                    return leftNode;
                 }
         }
         switch (Lex.CurrentToken->Kind) {
@@ -1196,7 +1196,7 @@ std::shared_ptr<AssignNode> Parser::Assign(std::shared_ptr<AstNode> left,const s
 }
 
 std::shared_ptr<AstNode> Parser::ParseBinaryOperationExpr(const std::shared_ptr<AstNode>& left, BinaryOperator op) {
-    auto curPriority =  TopPrecedenceTable.find(Lex.CurrentToken->Kind)->second.priority;
+    auto curPriority =  OperatorPriorityTable.find(Lex.CurrentToken->Kind)->second.priority;
     NextToken
     std::shared_ptr<BinaryNode> binaryNode;
     switch (op){
@@ -1572,7 +1572,6 @@ std::shared_ptr<AstNode> Parser::ParseTypeDef() {
     auto emptyNode = std::make_shared<EmptyNode>(Lex.CurrentToken);
     if (Lex.CurrentToken->Kind == TokenKind::TypeDef){
         ExceptToken(TypeDef)
-        auto diNodes = ParseDeclarator(ParseDeclarationSpec(nullptr));
         while (auto din = ParseDeclarator(ParseDeclarationSpec(nullptr))){
             auto newType = std::make_shared<AliasType>(din->Type,din->ID);
             newType ->isTypedef = true;

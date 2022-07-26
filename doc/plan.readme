@@ -166,3 +166,5 @@
     optimization parse identifier and pass variable.c test case
 - 2022-07-16
     add operator Associativity  fix parseIdentifier
+- 2022-07-26
+    fix cast arith test case

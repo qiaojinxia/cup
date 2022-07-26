@@ -159,9 +159,7 @@ namespace BDD{
         Associativity associativity;
         OperationPriority(TokenKind sb,int pri,Associativity ass ):symbol(sb),priority(pri),associativity(ass){};
     };
-
-    static std::map<TokenKind,OperationPriority> TopPrecedenceTable = {
-
+    static std::map<TokenKind,OperationPriority> OperatorPriorityTable = {
             {TokenKind::Assign, OperationPriority(TokenKind::Assign,14,Associativity::RightAssociative)},
             {TokenKind::Plus,   OperationPriority(TokenKind::Plus,4,Associativity::LeftAssociative)  },
             {TokenKind::Minus,    OperationPriority(TokenKind::Minus, 4,Associativity::LeftAssociative)},
@@ -193,9 +191,7 @@ namespace BDD{
             {TokenKind::VerticalBarAssign,  OperationPriority(TokenKind::VerticalBarAssign, 14,Associativity::RightAssociative)}, // |=
             {TokenKind::SarAssign,         OperationPriority(TokenKind::SarAssign,  14,Associativity::RightAssociative)},// >>=
             {TokenKind::SalAssign,         OperationPriority(TokenKind::SalAssign,  14,Associativity::RightAssociative)}, // <<=
-
-
-
+            {TokenKind::CaretAssign,         OperationPriority(TokenKind::CaretAssign,  14,Associativity::RightAssociative)}, // <<=
     };
 
 class BinaryNode :public  AstNode{

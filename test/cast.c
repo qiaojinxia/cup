@@ -12,7 +12,7 @@ int main() {
 
     assert(3, ({int ab = 3;(int)*(int *)&ab;}));
     assert(0, (long)&*(int *)0);
-//    assert(513, ({ int x=512; *(char *)&x=1; x; }));
+    assert(513, ({ int x=512; *(char *)&x=1; x; }));
     assert(5, ({ int x=5; long y=(long)&x; *(int *)y; }));
 
 //    (void)1;
