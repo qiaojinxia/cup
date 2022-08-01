@@ -168,3 +168,5 @@
     add operator Associativity  fix parseIdentifier
 - 2022-07-26
     fix cast arith test case
+- 2022-08-1
+    add global static variable parse

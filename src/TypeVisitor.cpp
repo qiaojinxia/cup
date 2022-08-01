@@ -62,10 +62,16 @@ void TypeVisitor::Visitor(BinaryNode *node) {
         node->Rhs = CastNodeType(node->Rhs->Type, Type::UIntType, node->Rhs);
     }else if (node -> Lhs -> Type -> IsArrayType() && node->Rhs->Type->IsIntegerNum()){
         node ->Type = Type::Pointer;
+        if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node->Rhs)){
+            cstNode->Value *= node->Lhs->Type->GetBaseType()->Size;
+        }
         return;
     }else if(node -> Lhs -> Type -> IsPointerType() && node->Rhs->Type->IsIntegerNum()){
         node ->Type = node->Lhs->Type;
         node->Rhs = CastNodeType(node->Rhs->Type,Type::LongType, node->Rhs);
+        if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node->Rhs)){
+            cstNode->Value *= node->Lhs->Type->GetBaseType()->Size;
+        }
         return;
     }else if(node -> Lhs -> Type -> IsLongType() && node->Rhs->Type->IsUIntType()){
         node ->Type = Type::LongType;
@@ -97,7 +103,6 @@ void TypeVisitor::Visitor(ConstantNode *node) {
     if (CurAssignType){
         if (node->isRoot){
             node ->Type = CurAssignType;
-            cursor = cursor->Next.get();
         }
         if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
             for (auto &filed:structType->fields) {
@@ -107,6 +112,7 @@ void TypeVisitor::Visitor(ConstantNode *node) {
                     auto bak = CurAssignType;
                     CurAssignType = cursor ->Type;
                     cursor -> Sub ->Accept(this);
+
                     CurAssignType = bak;
                 }
                 cursor  = cursor ->Next.get();
@@ -116,23 +122,23 @@ void TypeVisitor::Visitor(ConstantNode *node) {
             }
             return;
         }else if(auto arrType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
-            if (arrType ->IsStringType()){
+            if (cursor ->isRoot)
                 cursor = cursor->Next.get();
-            }
             int offset = 0;
             while (cursor) {
                 cursor -> Offset = offset;
                 offset += arrType->ElementType->Size;
                 cursor ->Type = arrType->ElementType;
+                if (cursor ->Sub != nullptr){
+                    auto bak = CurAssignType;
+                    CurAssignType = CurAssignType ->GetBaseType();
+                    cursor -> Sub ->Accept(this);
+                    CurAssignType = bak;
+                }
                 if (cursor ->Next == nullptr){
                     break;
                 }
                 cursor  = cursor ->Next.get();
-                if (cursor ->Sub != nullptr){
-                    auto bak = CurAssignType;
-                    cursor -> Sub ->Accept(this);
-                    CurAssignType = bak;
-                }
 
             }
             return;
@@ -351,7 +357,6 @@ void TypeVisitor::Visitor(AssignNode *node) {
     if (CurAssignType ->IsAliasType()){
         CurAssignType = std::dynamic_pointer_cast<AliasType>(CurAssignType)->Base;
     }
-
     if(auto ternaryNode = std::dynamic_pointer_cast<TernaryNode>(node->Rhs)){
         ternaryNode ->Type = node->Lhs->Type;
     }

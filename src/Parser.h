@@ -108,7 +108,7 @@ namespace BDD{
     private:
         bool IsTypeName() const;
 
-        std::shared_ptr<ConstantNode> parseInitListExpr(std::shared_ptr<ConstantNode> root);
+        std::shared_ptr<ConstantNode> parseInitListExpr();
 
         static std::shared_ptr<ExprVarNode> GetVarExprNode(const std::shared_ptr<AstNode>& node);
 

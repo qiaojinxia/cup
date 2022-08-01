@@ -8,8 +8,8 @@
 #include "AstNode.h"
 #include "Type.h"
 #include <unordered_map>
-#define ROOTSCOPE "p"
-#define FINDROOTSCOPE  "p."
+#define ROOTSCOPEPREFIX "p"
+#define FINDROOTSCOPEPREFIX  "p."
 namespace BDD{
     class Scope;
     static std::shared_ptr<Scope> m_scopeInstance;

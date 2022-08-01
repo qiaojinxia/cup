@@ -22,7 +22,7 @@ void Scope::PopScope() {
 }
 
 bool Scope::IsRootScope() {
-    return CurScope->scopeTag  == ROOTSCOPE;
+    return CurScope->scopeTag == ROOTSCOPEPREFIX;
 }
 
 std::shared_ptr<Var> Scope::FindVar(std::string_view varName) {
@@ -162,7 +162,7 @@ std::string Scope::PushStaticVar(std::string_view name,std::shared_ptr<Type> typ
     cstNode ->Value = 0;
     cstNode ->Type = type;
     std::string varName(name);
-    std::string curVarScopeTag = string_format("%s%s",FINDROOTSCOPE,varName.data());
+    std::string curVarScopeTag = string_format("%s%s", FINDROOTSCOPEPREFIX, varName.data());
     cstNode ->Name = curVarScopeTag;
     GetStaticZeroVarTable()[curVarScopeTag] = cstNode;
     return curVarScopeTag;
@@ -170,7 +170,7 @@ std::string Scope::PushStaticVar(std::string_view name,std::shared_ptr<Type> typ
 
 
 std::shared_ptr<ConstantNode> Scope::GetStaticVar(std::string name){
-    std::string globalName = FINDROOTSCOPE + name;
+    std::string globalName = FINDROOTSCOPEPREFIX + name;
     auto stZVar = GetStaticZeroVarTable().find(globalName);
     if (stZVar != GetStaticZeroVarTable().end()){
         return stZVar->second;

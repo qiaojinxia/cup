@@ -44,8 +44,8 @@ namespace BDD{
 
     class Var{
     public:
-        Var(std::shared_ptr<Type> type):Type(type){VarAttr = std::make_shared<Attr>();}
-        Var(std::shared_ptr<Type> type,std::string_view name):Type(type),Name(name){VarAttr = std::make_shared<Attr>();}
+        Var(std::shared_ptr<Type> type):Type(std::move(type)){VarAttr = std::make_shared<Attr>();}
+        Var(std::shared_ptr<Type> type,std::string_view name):Type(std::move(type)),Name(name){VarAttr = std::make_shared<Attr>();}
     public:
         std::shared_ptr<Type> Type;
         std::string_view Name;
@@ -210,7 +210,9 @@ class BinaryNode :public  AstNode{
         explicit ConstantNode(std::shared_ptr<Token> tk): AstNode(std::move(tk)){};
         std::shared_ptr<ConstantNode> Next;
         std::shared_ptr<ConstantNode> Sub;
+        std::shared_ptr<AstNode> Expr;
         std::string Name;
+        bool isExpr;
         bool isRoot{};
         bool isStore{};
         int Offset{};

@@ -114,7 +114,7 @@ namespace BDD{
         void Pop(const std::shared_ptr<Type>& ty);
         void Pop(const std::shared_ptr<Type>& ty,const char *reg);
 
-        void Load(std::shared_ptr<AstNode> node);
+        void Load(const std::shared_ptr<AstNode>& node);
         void Load(AstNode *node);
         void Store(const std::shared_ptr<AstNode>& node, OffsetInfo * offset);
 
@@ -138,7 +138,7 @@ namespace BDD{
 
         const std::string GetReg(int size, int n);
 
-        void PushStructOrUnion(std::shared_ptr<AstNode> node);
+        static void PushStructOrUnion(const std::shared_ptr<AstNode>& node);
 
         void Push(std::shared_ptr<Type> ty, const char *reg);
 
@@ -149,7 +149,6 @@ namespace BDD{
 
         void SetAssignState();
         void ClearAssignState();
-        bool ISAssignState();
 
         void PopCurTargetReg();
     };

@@ -46,8 +46,9 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
                 assignNode ->BinOp = BinaryOperator::Assign;
                 assignNode ->Rhs = din->Value;
                 assignNodes.push_back(assignNode);
+                TypeVisitor typeVisitor;
+                assignNode  ->Accept(&typeVisitor);
             }
-
         }
 
 //        if func pointer is int (*a)(int,int) = max; not int (*a)(int,int) = &max; Is the same meaning
@@ -64,22 +65,21 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
             //static var init value
             if (leftDec->VarObj->VarAttr->isStatic || Scope::GetInstance()->IsRootScope()){
                 auto cstNode = std::dynamic_pointer_cast<ConstantNode>(n->Rhs);
-                TypeVisitor typeVisitor;
-                n  ->Accept(&typeVisitor);
-                //if declaration rhs not a constNode for example  : static int * m = &m;
                 if (!cstNode){
-                    auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(n->Rhs);
-                    if(auto refVar = std::dynamic_pointer_cast<ExprVarNode>(unaryNode->Lhs)){
-                        if (refVar && refVar->VarObj->VarAttr->isStatic){
-                            auto snd = Scope::GetInstance()->GetStaticUnInitVar(leftDec->VarObj->GlobalName);
-                            auto nNode = std::make_shared<ConstantNode>(nullptr);
-                            nNode ->refStatic = refVar->VarObj->GlobalName;
-                            nNode -> Type = unaryNode->Type;
-                            snd ->Next = nNode;
-                            cstNode = snd;
-                        }
-                    }
+                    //if static variable or global variable rhs not constant
+                    // for example:
+                    // char g17[] = "foobar";
+                    // char *g20 = g17+0;
+                    // int * m = &g17;
+                    // int main(）{}
+                    cstNode = std::make_shared<ConstantNode>(n->Rhs->Tk);
+                    cstNode ->isExpr = true;
+                    cstNode ->Expr = n ->Rhs;
+                    cstNode->Type = n->Lhs ->Type;
                 }
+
+                //if global or static variable has default val need set constNode to staticVariable Table
+                //it is used to init val in data segment
                 Scope::GetInstance() -> PushStaticVar(leftDec->VarObj->GlobalName, cstNode);
             }else{
                 multiAssignNode ->AssignNodes.push_back(n);
@@ -188,8 +188,8 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
         case TokenKind::String:
         {
             auto constNode = std::make_shared<ConstantNode>(Lex.CurrentToken);
-            constNode -> Value = Lex.CurrentToken -> Value;
-            constNode -> Type = Type::PtrCharType;
+            constNode -> Type = std::make_shared<ArrayType>(Type::CharType,constNode->Tk->Content.size()-1);
+            constNode->isRoot = true;
             NextToken
             node =  constNode;
             break;
@@ -261,7 +261,7 @@ std::shared_ptr<AstNode> Parser::ParseExpr() {
 }
 
 std::shared_ptr<ProgramNode> Parser::Parse() {
-    Scope::GetInstance() -> PushScope(ROOTSCOPE);
+    Scope::GetInstance() -> PushScope(ROOTSCOPEPREFIX);
     auto node = std::make_shared<ProgramNode>(Lex.CurrentToken);
     LocalVars = &node -> Global;
     while (Lex.CurrentToken -> Kind != TokenKind::Eof){
@@ -755,7 +755,13 @@ std::shared_ptr<DeclarationInfoNode> Parser::ParseIdentifier(std::shared_ptr<Typ
     if (Lex.CurrentToken->Kind == TokenKind::Assign){
         NextToken
         din ->Value = ParseExpr();
+        //array init not set length  use rhs size char g17[] = "foobar";
+        if (din->Type->Size == 0){
+            din->Type = din->Value->Type;
+        }
     }
+
+
     return din;
 }
 
@@ -1342,34 +1348,33 @@ std::shared_ptr<AstNode> Parser::ParseCastExpr() {
 }
 
 //{xx,xx,xx}
-std::shared_ptr<ConstantNode> Parser::parseInitListExpr(std::shared_ptr<ConstantNode> root) {
-    if(!root){
-        root = std::make_shared<ConstantNode>(nullptr);
-        root ->isRoot = true;
-    }
-    std::shared_ptr<ConstantNode> cursor= root;
-    do {
-        if (Lex.CurrentToken->Kind == TokenKind::Comma){
+std::shared_ptr<ConstantNode> Parser::parseInitListExpr() {
+    std::shared_ptr<ConstantNode> root = std::make_shared<ConstantNode>(nullptr);
+    root ->isRoot = true;
+    auto cursor = root;
+    bool isFirstLBrace = true;
+    while(true){
+        if (TokenEqualTo(LBrace)){
             NextToken
-        }
-        if (Lex.CurrentToken ->Kind == TokenKind::LBrace){
-            NextToken
-            std::shared_ptr<ConstantNode> nextNode = std::make_shared<ConstantNode>(nullptr);
-            nextNode ->isRoot = true;
-            parseInitListExpr(nextNode);
-            cursor -> Next = nextNode;
-            nextNode ->Sub = nextNode->Next;
-            ExceptToken(RBrace)
-        }else {
-            if (!IsConstant()){
-                return nullptr;
+            if (isFirstLBrace){
+                cursor ->Next = std::make_shared<ConstantNode>(nullptr);
+                cursor = cursor ->Next;
             }
-            cursor->Next  = std::dynamic_pointer_cast<ConstantNode>(ParsePrimaryExpr());
+            cursor -> Sub = parseInitListExpr() ->Next;
+            cursor ->isRoot = true;
+            isFirstLBrace = false;
+            ExceptToken(RBrace)
+        }else if(TokenEqualTo(Comma)){
+            NextToken
             if (!cursor ->Next)
-                return nullptr;
+                cursor ->Next = std::make_shared<ConstantNode>(nullptr);
+            cursor = cursor ->Next;
+        }else if (IsConstant()){
+            cursor -> Next = std::dynamic_pointer_cast<ConstantNode>(ParsePrimaryExpr());
+        }else{
+            break;
         }
-        cursor = cursor -> Next;
-    }while(Lex.CurrentToken->Kind == TokenKind::Comma);
+    }
     return root;
 }
 
@@ -1385,11 +1390,11 @@ std::shared_ptr<ConstantNode> Parser::ParseInitListExpr() {
     StoreLex(n1)
     if (TokenEqualTo(LBrace)){
         ExceptToken(LBrace)
-        auto initCstNode = parseInitListExpr(nullptr);
-        if (initCstNode){
+        auto initCst =  parseInitListExpr();
+        if (initCst){
             ExceptToken(RBrace)
-            if(initCstNode ->HasSetValue()){
-                return initCstNode;
+            if(initCst->HasSetValue()){
+                return initCst;
             }
         }
         ResumeLex(n1)

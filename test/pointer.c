@@ -13,7 +13,7 @@ int main(){
     assert(5, ({ int x=3; int *y=&x; *y=5; x; }));
     assert(7, ({ int x=3; int y=5; *(&x-1)=7; y; }));
     assert(7, ({ int x=3; int y=5; *(&y+2-1)=7; x; }));
-//    assert(5, ({ int x=3; (&x+2)-&x + 3; }));
+    assert(5, ({ int x=3; (&x+2)-&x + 3; }));
     assert(8, ({ int x, y; x=3; y=5; x+y; }));
     assert(8, ({ int x=3, y=5; x+y; }));
 
