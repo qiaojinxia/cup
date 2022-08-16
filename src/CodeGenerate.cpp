@@ -111,17 +111,19 @@ int printString(std::shared_ptr<ConstantNode>& node);
 int printBuildIn(std::shared_ptr<ConstantNode>& node);
 int printArray(std::shared_ptr<ConstantNode>& node);
 void printPointer(std::shared_ptr<ConstantNode>& node);
-void printExpr(std::shared_ptr<AstNode>& node);
+int printExpr(std::shared_ptr<AstNode>& node,int offset);
 void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     if (!cstNode){
         return;
     }
     if (cstNode ->isExpr){
         printf("\t %s ", GetStoreCode(cstNode->Type->Size).data());
-        printExpr(cstNode->Expr);
+        printExpr(cstNode->Expr,0);
+        printf("\n");
     }else if (cstNode->Type->IsRecordType()){
+        int size = cstNode->Type->Size;
         int offset = printStruct(cstNode);
-        printZero(cstNode->Type->Size - offset);
+        printZero(size - offset);
     } else if (cstNode->Type->IsPtrCharType()){
         printString(cstNode);
     }else if (cstNode->Type->IsStringType()){
@@ -138,43 +140,58 @@ void PrintConstNode(std::shared_ptr<ConstantNode> cstNode){
     }
 }
 
-void printBinary(std::shared_ptr<BinaryNode>& node){
+void printBinary(std::shared_ptr<BinaryNode>& node,int addOffset){
     if (!node)
         return;
-    printExpr(node ->Lhs);
+    printExpr(node ->Lhs,addOffset);
     if(auto addNode = std::dynamic_pointer_cast<AddNode>(node)){
         printf("+");
     }else if(auto subNode = std::dynamic_pointer_cast<MinusNode>(node)){
         printf("-");
     }
-    printExpr(node ->Rhs);
+    printExpr(node ->Rhs,addOffset);
     printf("\n");
 }
 
-void printExprVar(std::shared_ptr<ExprVarNode>& node){
+void printExprVar(std::shared_ptr<ExprVarNode> &node,int addOffset) {
     printf("%s%s", FINDROOTSCOPEPREFIX, std::string(node->Name).data());
 }
 
-void printConstantVal(std::shared_ptr<ConstantNode>& node,int mulNum = 1){
-    printf("%lu",node->Value);
+void printConstantVal(std::shared_ptr<ConstantNode>& node,int addOffset){
+    printf("%lu",node->Value + addOffset);
 }
 
-void printUnaryNode(std::shared_ptr<UnaryNode>& node){
-    printExpr(node->Lhs);
+void printUnaryNode(std::shared_ptr<UnaryNode>& node,int addOffset){
+    printExpr(node->Lhs,addOffset);
 }
 
-void printExpr(std::shared_ptr<AstNode>& node){
+int printMemberAccessNode(std::shared_ptr<MemberAccessNode>& node,int addOffset){
+    auto rdType = std::dynamic_pointer_cast<RecordType>(node->Lhs->Type);
+    auto fid = rdType->GetField(node->fieldName);
+    return printExpr(node->Lhs,fid->Offset);
+}
+
+int printArrayMemberNode(std::shared_ptr<ArrayMemberNode>& node,int addOffset){
+    return printExpr(node->Lhs,addOffset);
+}
+
+int printExpr(std::shared_ptr<AstNode>& node ,int addOffset ){
     if(auto binaryNode = std::dynamic_pointer_cast<BinaryNode>(node)){
-        printBinary(binaryNode);
+        printBinary(binaryNode,addOffset);
     }else if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node)){
-        printConstantVal(cstNode);
+        printConstantVal(cstNode,addOffset);
     }else if (auto exprVarNode = std::dynamic_pointer_cast<ExprVarNode>(node)){
-        printExprVar(exprVarNode);
+        printExprVar(exprVarNode, addOffset);
     }else if (auto unaryNode = std::dynamic_pointer_cast<UnaryNode>(node)){
-        printUnaryNode(unaryNode);
+        printUnaryNode(unaryNode,addOffset);
+    }else if (auto maNode = std::dynamic_pointer_cast<MemberAccessNode>(node)){
+        printMemberAccessNode(maNode,addOffset);
+    }else if (auto amNode = std::dynamic_pointer_cast<ArrayMemberNode>(node)){
+        printArrayMemberNode(amNode,addOffset);
     }else{
         assert(0);
     }
+    return 8;
 }
 
 void preProcessCstNode(std::shared_ptr<ConstantNode> node, bool isInStructOrArray){
@@ -184,8 +201,8 @@ void preProcessCstNode(std::shared_ptr<ConstantNode> node, bool isInStructOrArra
     if (node ->Type->IsPtrCharType() && isInStructOrArray){
         auto strNode = std::make_shared<ConstantNode>(node->Tk);
         strNode ->Type = Type::StringType;
-        Scope::GetInstance()->PutToConstantTable(strNode);
-        node ->Name = strNode->Name;
+//        Scope::GetInstance()->PutToConstantTable(strNode);
+//        node ->Name = strNode->Name;
     }
     if(node ->Type->IsRecordType() || node ->Type->IsArrayType())
         isInStructOrArray = true;
@@ -908,39 +925,44 @@ int printArray(std::shared_ptr<ConstantNode>& node){
     }
     int offset = 0;
     while(cursor){
-        offset += p(cursor);
-        cursor = cursor->Next;
+        if (cursor->isExpr){
+            printf("\t %s ", GetStoreCode(node->Type->Size).data());
+            offset += printExpr(cursor->Expr,0);
+        }else{
+            offset += p(cursor);
+        }
+        if (cursor)
+            cursor = cursor->Next;
     }
     return offset;
 }
 
 int printStruct(std::shared_ptr<ConstantNode>& node){
-    auto cursor = node;
     int offset = 0;
-    while(cursor){
-        if (cursor->Sub){
-            offset = printStruct(cursor->Sub);
+    while(node){
+        if (node->Sub){
+            offset = printStruct(node->Sub);
             break;
         }
-        if (cursor->isRoot)
-            cursor = cursor->Next;
-        int gap = cursor->Offset - offset;
+        if (node->isRoot)
+            node = node->Next;
+        int gap = node->Offset - offset;
         printZero(gap);
-        if (cursor->Type->IsRecordType()){
-            printStruct(cursor);
-        } else if (cursor->Type->IsPtrCharType()){
-            printCharPointer(cursor);
-        }else if (cursor->Type->IsStringType()){
-            printString(cursor);
-        }else if (cursor->Type->IsBInType()){
-            printBuildIn(cursor);
-        }else if (cursor->Type->IsArrayType()){
-            printArray(cursor->Sub);
+        if (node->Type->IsRecordType()){
+            printStruct(node);
+        } else if (node->Type->IsPtrCharType()){
+            printCharPointer(node);
+        }else if (node->Type->IsStringType()){
+            printString(node);
+        }else if (node->Type->IsBInType()){
+            printBuildIn(node);
+        }else if (node->Type->IsArrayType()){
+            printArray(node->Sub);
         }
-        offset += cursor->Type->Size + gap;
-        cursor = cursor ->Next;
+        offset += node->Type->Size + gap;
+        node = node ->Next;
     }
-    if (node->Type->IsRecordType())
+    if (node && node->Type->IsRecordType())
         printZero(node->Type->Size - offset);
     return offset;
 
@@ -1397,7 +1419,9 @@ void CodeGenerate::Visitor(AddNode *node) {
         node -> Lhs -> Accept(this);
         Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
         if (node -> BinOp == BinaryOperator::PointerAdd){
-            printf("\t  imul $%d,%s\n", node ->Lhs-> Type ->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
+            if (!std::dynamic_pointer_cast<ConstantNode>(node -> Rhs)){
+                printf("\t  imul $%d,%s\n", node ->Lhs-> Type ->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
+            }
             printf("\t  add %%rdi,%%rax\n");
 
         }else{
@@ -1424,7 +1448,9 @@ void CodeGenerate::Visitor(MinusNode *node) {
         node -> Lhs -> Accept(this);
         Pop(node->Rhs->Type, GetRdi(node->Rhs->Type).data());
         if (node -> BinOp == BinaryOperator::PointerSub){
-            printf("\t  imul $%d,%s\n", node -> Lhs-> Type->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
+            if (!std::dynamic_pointer_cast<ConstantNode>(node -> Rhs)){
+                printf("\t  imul $%d,%s\n", node -> Lhs-> Type->GetBaseType() -> Size , GetRdi(node -> Rhs->Type).data());
+            }
             printf("\t  sub %%rdi,%%rax\n");
         }else if(node-> BinOp == BinaryOperator::PointerDiff){
             printf("\t  sub %s,%s\n", GetRdi(node -> Rhs->Type).data(), GetRax(node -> Lhs->Type).data());

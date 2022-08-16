@@ -25,6 +25,10 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     node ->Rhs ->Accept(this);
     CurAssignType = bak;
     if (node->Lhs->Type->IsArrayType() && node->Rhs->Type->IsIntegerNum()){
+        if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node->Rhs)){
+            cstNode->Value *= node->Lhs->Type->GetBaseType()->Size;
+            cstNode ->isModify = true;
+        }
         return;
     }
     if (node->Lhs->Type->IsIntegerNum() && node -> Rhs -> Type -> IsArrayType()) {
@@ -60,17 +64,12 @@ void TypeVisitor::Visitor(BinaryNode *node) {
     }else if(maxBitSize < 4 && hasUnsigned){
         node->Lhs = CastNodeType(node->Lhs->Type, Type::UIntType, node->Lhs);
         node->Rhs = CastNodeType(node->Rhs->Type, Type::UIntType, node->Rhs);
-    }else if (node -> Lhs -> Type -> IsArrayType() && node->Rhs->Type->IsIntegerNum()){
-        node ->Type = Type::Pointer;
-        if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node->Rhs)){
-            cstNode->Value *= node->Lhs->Type->GetBaseType()->Size;
-        }
-        return;
     }else if(node -> Lhs -> Type -> IsPointerType() && node->Rhs->Type->IsIntegerNum()){
         node ->Type = node->Lhs->Type;
         node->Rhs = CastNodeType(node->Rhs->Type,Type::LongType, node->Rhs);
         if (auto cstNode = std::dynamic_pointer_cast<ConstantNode>(node->Rhs)){
             cstNode->Value *= node->Lhs->Type->GetBaseType()->Size;
+            cstNode ->isModify = true;
         }
         return;
     }else if(node -> Lhs -> Type -> IsLongType() && node->Rhs->Type->IsUIntType()){
@@ -104,42 +103,64 @@ void TypeVisitor::Visitor(ConstantNode *node) {
         if (node->isRoot){
             node ->Type = CurAssignType;
         }
+        if (cursor ->isRoot && !cursor->Sub && !cursor->isExpr)
+            cursor = cursor->Next.get();
         if (auto structType = std::dynamic_pointer_cast<RecordType>(CurAssignType)){
-            for (auto &filed:structType->fields) {
-                cursor -> Offset = filed ->Offset;
-                cursor ->Type = filed ->type;
-                if (cursor ->Sub != nullptr){
-                    auto bak = CurAssignType;
-                    CurAssignType = cursor ->Type;
-                    cursor -> Sub ->Accept(this);
-
-                    CurAssignType = bak;
+            //if define struct {int a[2];} g41[2] = {1, 2, 3, 4}; It should have been{ 1,2 },{3,4}
+            if (CurAssignType->IsRecordType() && !cursor ->isRoot) {
+                auto bak = CurAssignType;
+                auto rType = std::dynamic_pointer_cast<RecordType>(CurAssignType);
+                for (auto &f:rType->fields) {
+                    CurAssignType = f->type;
+                    cursor ->Accept(this);
                 }
-                cursor  = cursor ->Next.get();
-                if (cursor == nullptr){
-                    break;
+                CurAssignType = bak;
+            }else{
+                for (auto &filed:structType->fields) {
+                    cursor -> Offset = filed ->Offset;
+                    cursor ->Type = filed ->type;
+                    if (cursor ->Sub != nullptr){
+                        auto bak = CurAssignType;
+                        CurAssignType = cursor ->Type;
+                        cursor -> Sub ->Accept(this);
+                        CurAssignType = bak;
+                    }
+                    if (cursor->isExpr)
+                        cursor->Expr->Accept(this);
+                    cursor  = cursor ->Next.get();
+                    if (!cursor)
+                        break;
                 }
             }
             return;
         }else if(auto arrType = std::dynamic_pointer_cast<ArrayType>(CurAssignType)){
-            if (cursor ->isRoot)
-                cursor = cursor->Next.get();
             int offset = 0;
-            while (cursor) {
+            while (offset / arrType->ElementType->Size < arrType->ArrayLen) {
                 cursor -> Offset = offset;
                 offset += arrType->ElementType->Size;
                 cursor ->Type = arrType->ElementType;
+                if (cursor->isExpr)
+                    cursor->Expr->Accept(this);
+                //if define struct {int a[2];} g41[2] = {1, 2, 3, 4}; It should have been{ 1,2 },{3,4}
+                if (cursor->Type->IsRecordType() && !cursor ->isRoot) {
+                    auto bak = CurAssignType;
+                    auto rType = std::dynamic_pointer_cast<RecordType>(cursor->Type);
+                    for (auto &f:rType->fields) {
+                        CurAssignType = f->type;
+                        cursor ->Accept(this);
+                    }
+                    CurAssignType = bak;
+                }
                 if (cursor ->Sub != nullptr){
                     auto bak = CurAssignType;
                     CurAssignType = CurAssignType ->GetBaseType();
                     cursor -> Sub ->Accept(this);
                     CurAssignType = bak;
                 }
-                if (cursor ->Next == nullptr){
+                if (!cursor ->Next){
                     break;
                 }
                 cursor  = cursor ->Next.get();
-
             }
             return;
         }
@@ -390,6 +411,7 @@ void TypeVisitor::Visitor(AddNode *node) {
     }else if (node -> Lhs -> Type -> IsArrayType() && (node->Rhs->Type->IsIntegerNum() || node->Rhs->Type->IsUnsignedNum()) ){
         node -> BinOp = BinaryOperator::PointerAdd;
         node ->Type = node -> Lhs -> Type;
+
     }
 }
 

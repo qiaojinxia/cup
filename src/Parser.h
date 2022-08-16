@@ -24,9 +24,9 @@ namespace BDD{
         BinaryOperator LastOperation{BinaryOperator::Eof};
         std::shared_ptr<AstNode> VarStack;
         std::shared_ptr<Token> SymbolStack;
-        bool ThrowWaring{true};
         std::list<std::shared_ptr<FuncCallNode>> CurFuncCall{};
         std::list<std::shared_ptr<ReturnStmtNode>> CurFuncReturnNode{};
+        bool addToConstant{true};
     public:
         Parser(Lexer &Lex):Lex(Lex){}
         std::shared_ptr<ProgramNode> Parse();

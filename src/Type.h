@@ -18,7 +18,7 @@ namespace BDD{
     class RecordType;
     class AliasType;
     class Attr;
-    class Type {
+    class Type :std::enable_shared_from_this<Type> {
     public:
         static std::shared_ptr<BuildInType> VoidType;
         static std::shared_ptr<BuildInType> IntType;

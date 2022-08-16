@@ -47,7 +47,7 @@ std::shared_ptr<AstNode> Parser::ParseDeclarationExpr() {
                 assignNode ->Rhs = din->Value;
                 assignNodes.push_back(assignNode);
                 TypeVisitor typeVisitor;
-                assignNode  ->Accept(&typeVisitor);
+                assignNode ->Accept(&typeVisitor);
             }
         }
 
@@ -237,8 +237,7 @@ std::shared_ptr<AstNode> Parser::ParsePrimaryExpr() {
             break;
         }
        default:
-           if (ThrowWaring)
-               DiagLoc(Lex.SourceCode,Lex.GetLocation(),"snot support type",Lex.CurrentToken->Kind);
+           break;
     }
     return node;
 }
@@ -757,7 +756,11 @@ std::shared_ptr<DeclarationInfoNode> Parser::ParseIdentifier(std::shared_ptr<Typ
         din ->Value = ParseExpr();
         //array init not set length  use rhs size char g17[] = "foobar";
         if (din->Type->Size == 0){
-            din->Type = din->Value->Type;
+            if (din->Type->IsArrayType())
+                din ->Type = std::make_shared<ArrayType>(din ->Type->GetBaseType(),
+                                                         din ->Value->Type->Size);
+            else
+                assert(0);
         }
     }
 
@@ -877,6 +880,8 @@ std::shared_ptr<AstNode> Parser::ParsePostFixArray(std::shared_ptr<AstNode> left
 //ParsePostFixExpr ::= ParsePrimaryExpr ("++" | "--" ｜ "->" ident | "." ident ｜ "[" ParseExpr "]" )*
 std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
     auto left = ParsePrimaryExpr();
+    if (!left)
+        return nullptr;
     if (auto constNode = std::dynamic_pointer_cast<ConstantNode>(left)){
         Scope::GetInstance() -> PutToConstantTable(constNode);
     }
@@ -1019,7 +1024,7 @@ std::shared_ptr<RecordType> Parser::ParseRecord(RecordType::TagKind recordeType,
         while(Lex.CurrentToken  -> Kind != TokenKind::RBrace){
             auto type = ParseDeclarationSpec(nullptr);
             while(auto din = ParseDeclarator(type)){
-                rtype ->fields.push_back(std::make_shared<Field>(din->Type,din->ID,0));
+                rtype ->fields.push_back(std::make_shared<Field>(din->Type,din->ID,din->Type->Size));
             }
             ExceptToken(Semicolon)
         }
@@ -1175,7 +1180,7 @@ std::shared_ptr<AstNode> Parser::ParseBinaryExpr(int priority) {
                 leftNode = ParseBinaryOperationExpr(leftNode,BinaryOperator::Or);
                 break;
             default:
-                return leftNode;
+                break;
         }
     }
     return leftNode;
@@ -1353,6 +1358,7 @@ std::shared_ptr<ConstantNode> Parser::parseInitListExpr() {
     root ->isRoot = true;
     auto cursor = root;
     bool isFirstLBrace = true;
+    int len = 1;
     while(true){
         if (TokenEqualTo(LBrace)){
             NextToken
@@ -1364,17 +1370,29 @@ std::shared_ptr<ConstantNode> Parser::parseInitListExpr() {
             cursor ->isRoot = true;
             isFirstLBrace = false;
             ExceptToken(RBrace)
+            if (TokenEqualTo(Comma))
+                NextToken
         }else if(TokenEqualTo(Comma)){
             NextToken
             if (!cursor ->Next)
                 cursor ->Next = std::make_shared<ConstantNode>(nullptr);
             cursor = cursor ->Next;
-        }else if (IsConstant()){
-            cursor -> Next = std::dynamic_pointer_cast<ConstantNode>(ParsePrimaryExpr());
-        }else{
+            len += 1;
+        }else if(auto node = ParseExpr()){
+            if (std::dynamic_pointer_cast<ConstantNode>(node))
+                cursor -> Next = std::dynamic_pointer_cast<ConstantNode>(node);
+            else {
+                auto cstNode =  std::make_shared<ConstantNode>(node->Tk);
+                cstNode ->isExpr = true;
+                cstNode ->Expr = node;
+                cursor ->Next = cstNode;
+            }
+        } else{
             break;
         }
     }
+    root->Type = std::make_shared<BuildInType>(BuildInType::Kind::UnDefine,len,8 ,"u64");
+
     return root;
 }
 
